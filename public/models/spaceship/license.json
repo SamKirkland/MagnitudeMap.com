@@ -1,0 +1,9 @@
+{
+  "id": "spaceship",
+  "file": "model.glb",
+  "license": "CC0-1.0",
+  "author": "Kenney",
+  "source": "https://kenney.nl/assets/space-kit",
+  "sourceAsset": "craft_cargoA.glb",
+  "notes": "Stylized cargo craft. Scaled in-app to 18 m length."
+}

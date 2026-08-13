@@ -1,0 +1,43 @@
+---
+description: Search Sketchfab (downloadable, .env API key) when adding 3D models
+alwaysApply: true
+---
+
+# Sketchfab models
+
+When adding or replacing 3D models, **search Sketchfab first** — not generic web image/model sites.
+
+## Search (downloadable only)
+
+Use the token in repo-root `.env` (`SKETCHFAB_API_TOKEN`). Never commit the token.
+
+```bash
+npm run search-sketchfab -- "Eiffel Tower"
+npm run search-sketchfab -- "Eiffel Tower" --user=nazidefenseforceofficial
+```
+
+Web: https://sketchfab.com/search?features=downloadable&q=Eiffel+Tower&type=models  
+API: `GET https://api.sketchfab.com/v3/search?type=models&q=Eiffel+Tower&downloadable=true`  
+Header: `Authorization: Token $SKETCHFAB_API_TOKEN`
+
+A linked Sketchfab URL is **not** enough. Confirm `isDownloadable` and a redistributable license.
+
+## License (must ship)
+
+OK: **CC0**, **CC-BY**, **CC-BY-SA**.  
+Not OK: Editorial (`ed`), Standard (`st`), NC, store-only, non-downloadable.
+
+If the requested model is Editorial/Standard, search for a downloadable CC stand-in and note the substitution in `scripts/fetch-sketchfab.mjs` (existing comment style).
+
+## Creator preference
+
+1. Search https://sketchfab.com/nazidefenseforceofficial/models (or `--user=nazidefenseforceofficial`).
+2. Use that creator when a suitable downloadable CC model exists.
+3. Otherwise pick the best downloadable CC match (recognizable silhouette, prefer ≲200k tris, no huge terrain/ground plane).
+
+## Wire-up
+
+1. Drop or fetch `public/models/{id}/model.glb` + `license.json` and **commit them**. Fetch is optional: `npm run fetch-sketchfab -- --only={id} --force`.
+2. Add the item to `src/data/catalog.ts` (meters + `yawDegrees` so +Z is nose) and tags in `src/data/catalogTags.ts`.
+3. Inspect in the viewer at Facing 0°: silhouette cropped, sitting on the ground, scale vs person-male (1.75 m).
+4. If you used the fetch script, attributions sync via `postfetch-sketchfab`; otherwise `npm run sync-attributions`.

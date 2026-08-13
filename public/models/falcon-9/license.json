@@ -1,0 +1,12 @@
+{
+  "id": "falcon-9",
+  "file": "model.glb",
+  "license": "CC-BY-4.0",
+  "licenseLabel": "CC BY",
+  "author": "AllThingsSpace",
+  "source": "https://sketchfab.com/3d-models/spacex-falcon-9-block-5-61067a8b341c4b4b96053d5fa607f232",
+  "sourceAsset": "SpaceX Falcon 9 Block 5",
+  "sketchfabUid": "61067a8b341c4b4b96053d5fa607f232",
+  "notes": "Falcon 9 Block 5 full stack (CC-BY, ~29k tris). Scaled to 70 m height in-app.",
+  "attribution": "SpaceX Falcon 9 Block 5 by AllThingsSpace on Sketchfab (CC BY) — https://sketchfab.com/3d-models/spacex-falcon-9-block-5-61067a8b341c4b4b96053d5fa607f232"
+}

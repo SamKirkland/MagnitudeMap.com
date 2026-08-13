@@ -1,0 +1,9 @@
+{
+  "id": "rifle",
+  "file": "model.glb",
+  "license": "CC0-1.0",
+  "author": "Kenney",
+  "source": "https://kenney.nl/assets/space-kit",
+  "sourceAsset": "weapon_rifle.glb",
+  "notes": "Stylized sci-fi rifle stand-in. Scaled to 0.88 m length."
+}

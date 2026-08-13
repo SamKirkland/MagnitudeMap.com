@@ -1,0 +1,120 @@
+{
+  "captured": "2026-08-11",
+  "purpose": "Catalog / lineup priorities for MagnitudeMap based on YouTube size-comparison demand",
+  "already_covered": [
+    "Nuclear bombs (Little Boy, Fat Man, Tsar Bomba)",
+    "Rockets (Electron through Starship / Saturn V)",
+    "Fighter jets (F-16, F-35, F-22)",
+    "Partial landmarks (Statue of Liberty, Eiffel, Burj, Ford carrier)",
+    "Street vehicles + house + tanks (Sherman, Abrams)",
+    "Stargate fiction ships"
+  ],
+  "build_order": [
+    "Living giants (animals)",
+    "Dinosaurs",
+    "Giant statues + ships/airliners",
+    "Defer full cosmic mode; optional near-Earth asteroid later"
+  ],
+  "recommendations": [
+    {
+      "priority": "P0",
+      "category": "Animals",
+      "lineup": "Living giants",
+      "why": "Multiple 16–21M+ videos; largest unmet earth-scale gap",
+      "objects": [
+        "blue whale",
+        "African elephant",
+        "giraffe",
+        "polar bear",
+        "great white shark",
+        "horse",
+        "dog",
+        "house cat",
+        "ant"
+      ],
+      "fit": "Excellent — sits on the ground plane like street/landmarks"
+    },
+    {
+      "priority": "P0",
+      "category": "Dinosaurs",
+      "lineup": "Dinosaurs",
+      "why": "~14M combined in sample; evergreen educational demand",
+      "objects": [
+        "Compsognathus",
+        "Velociraptor",
+        "Stegosaurus",
+        "Tyrannosaurus rex",
+        "Brachiosaurus",
+        "Argentinosaurus"
+      ],
+      "fit": "Excellent — classic side-by-side height/length reveal"
+    },
+    {
+      "priority": "P1",
+      "category": "Giant statues",
+      "lineup": "Giant statues",
+      "why": "Single statue video at ~58M; catalog mostly has Liberty among statues",
+      "objects": [
+        "Statue of Unity",
+        "Spring Temple Buddha",
+        "Motherland Calls",
+        "Christ the Redeemer"
+      ],
+      "fit": "Excellent — extends Landmark heights"
+    },
+    {
+      "priority": "P1",
+      "category": "Kaiju / movie monsters",
+      "lineup": "Movie monsters",
+      "why": "Multiple MetaBall hits 13–16M; fiction already converts (Stargate)",
+      "objects": [
+        "Godzilla",
+        "King Kong",
+        "Cloverfield",
+        "Xenomorph"
+      ],
+      "fit": "Good — fan-scale like Stargate; license CC models carefully"
+    },
+    {
+      "priority": "P1",
+      "category": "Large ships & airliners",
+      "lineup": "Ships & airliners",
+      "why": "Aircraft ~4M+; tanker/ship tropes recur; carrier already works",
+      "objects": [
+        "Seawise Giant / TI-class tanker",
+        "Titanic",
+        "Oasis-class cruise ship",
+        "Airbus A380",
+        "Boeing 747",
+        "C-5 Galaxy"
+      ],
+      "fit": "Excellent"
+    },
+    {
+      "priority": "P2",
+      "category": "Expand tanks / nukes",
+      "lineup": "Extend military + munitions",
+      "why": "German-tank video ~18M; nuke explainers 16–26M",
+      "objects": [
+        "Tiger I",
+        "Panther",
+        "Maus",
+        "optional yield markers (Ivy Mike / Castle Bravo)"
+      ],
+      "fit": "Good — Abrams/Sherman/Little Boy/Fat Man/Tsar already present"
+    },
+    {
+      "priority": "P3",
+      "category": "Cosmic (optional mode)",
+      "lineup": "Near-Earth space",
+      "why": "Highest raw views (160M+) but breaks earth-slab metaphor",
+      "objects": [
+        "Moon",
+        "ISS",
+        "city-scale asteroid"
+      ],
+      "fit": "Stretch — asteroid-vs-city works; full star ladder needs a different scene mode"
+    }
+  ],
+  "license_reminder": "Only add Sketchfab/models that are downloadable CC0 / CC-BY / CC-BY-SA. No Standard, Editorial, NC, or Store-only."
+}

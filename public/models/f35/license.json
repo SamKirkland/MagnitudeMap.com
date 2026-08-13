@@ -1,0 +1,12 @@
+{
+  "id": "f35",
+  "file": "model.glb",
+  "license": "CC-BY-4.0",
+  "licenseLabel": "CC BY",
+  "author": "AF267",
+  "source": "https://sketchfab.com/3d-models/lockheed-martin-f-35b-lightning-ii-5d54a6af45974ad386ae74d42b33374a",
+  "sourceAsset": "Lockheed Martin F-35B Lightning II",
+  "sketchfabUid": "5d54a6af45974ad386ae74d42b33374a",
+  "notes": "F-35B Lightning II (CC-BY). Tiny gear-animation helper meshes stripped from the GLB. Scaled to 15.61 m length in-app.",
+  "attribution": "Lockheed Martin F-35B Lightning II by AF267 on Sketchfab (CC BY) — https://sketchfab.com/3d-models/lockheed-martin-f-35b-lightning-ii-5d54a6af45974ad386ae74d42b33374a"
+}

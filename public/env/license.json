@@ -1,0 +1,20 @@
+{
+  "id": "env",
+  "files": [
+    {
+      "file": "environmentSpecular.env",
+      "license": "Apache-2.0",
+      "author": "Babylon.js",
+      "source": "https://assets.babylonjs.com/environments/environmentSpecular.env",
+      "notes": "Prefiltered specular IBL for metallic glTF materials."
+    },
+    {
+      "file": "sky_puresky_2k.hdr",
+      "license": "CC0-1.0",
+      "author": "Poly Haven",
+      "source": "https://polyhaven.com/a/kloofendal_43d_clear_puresky",
+      "sourceAsset": "kloofendal_43d_clear_puresky (2k HDR)",
+      "notes": "Clear daytime skybox HDRI."
+    }
+  ]
+}

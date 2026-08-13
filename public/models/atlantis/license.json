@@ -1,0 +1,12 @@
+{
+  "id": "atlantis",
+  "file": "model.glb",
+  "license": "CC-BY-4.0",
+  "licenseLabel": "CC BY",
+  "author": "rossrobotics",
+  "source": "https://sketchfab.com/3d-models/stargate-atlantis-cc5e04fc277941b0b37ac7b066dcbb21",
+  "sourceAsset": "Stargate Atlantis",
+  "sketchfabUid": "cc5e04fc277941b0b37ac7b066dcbb21",
+  "notes": "Atlantis city-ship (CC-BY). Scaled to ~3 km span in-app.",
+  "attribution": "Stargate Atlantis by rossrobotics on Sketchfab (CC BY) — https://sketchfab.com/3d-models/stargate-atlantis-cc5e04fc277941b0b37ac7b066dcbb21"
+}

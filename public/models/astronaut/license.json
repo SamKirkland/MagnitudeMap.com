@@ -1,0 +1,9 @@
+{
+  "id": "astronaut",
+  "file": "model.glb",
+  "license": "CC0-1.0",
+  "author": "Kenney",
+  "source": "https://kenney.nl/assets/space-kit",
+  "sourceAsset": "astronautA.glb",
+  "notes": "Stylized astronaut. Scaled in-app to 1.9 m height."
+}

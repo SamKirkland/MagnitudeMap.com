@@ -1,0 +1,12 @@
+{
+  "id": "money",
+  "file": "model.glb",
+  "license": "CC-BY-4.0",
+  "licenseLabel": "CC BY",
+  "author": "LeopardGepard",
+  "source": "https://sketchfab.com/3d-models/money-dc5ee4de0d1744e79d990cb4891b3a47",
+  "sourceAsset": "Money",
+  "sketchfabUid": "dc5ee4de0d1744e79d990cb4891b3a47",
+  "notes": "Textured money cube (LeopardGepard CC-BY). One cube ≈ 7×3×20 × $100k bundles ($42M by volume). Piles are atlas-tiled mega-meshes snapped to whole cubes.",
+  "attribution": "Money by LeopardGepard on Sketchfab (CC BY) — https://sketchfab.com/3d-models/money-dc5ee4de0d1744e79d990cb4891b3a47"
+}

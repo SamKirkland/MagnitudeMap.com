@@ -1,0 +1,12 @@
+{
+  "id": "electron",
+  "file": "model.glb",
+  "license": "CC-BY-4.0",
+  "licenseLabel": "CC BY",
+  "author": "Stanley Creative",
+  "source": "https://sketchfab.com/3d-models/electron-rocket-lab-0376dfab27574a909cb8714841379894",
+  "sourceAsset": "Electron - Rocket Lab",
+  "sketchfabUid": "0376dfab27574a909cb8714841379894",
+  "notes": "Rocket Lab Electron (CC-BY, ~53k tris). Scaled to 18 m height in-app.",
+  "attribution": "Electron - Rocket Lab by Stanley Creative on Sketchfab (CC BY) — https://sketchfab.com/3d-models/electron-rocket-lab-0376dfab27574a909cb8714841379894"
+}

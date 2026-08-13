@@ -1,0 +1,277 @@
+{
+  "captured": "2026-08-11",
+  "method": "yt-dlp YouTube search sample + manual category/object curation",
+  "note": "Views change over time. Object lists may be inferred from titles/tags/descriptions.",
+  "videos": [
+    {
+      "rank": 1,
+      "views": 161637081,
+      "views_label": "162M",
+      "title": "Universe Size Comparison 3D",
+      "channel": "Alex Evett",
+      "category": "Cosmic",
+      "objects": ["Moons", "planets", "stars (UY Scuti)", "black holes", "galaxies"],
+      "id": "i93Z7zljQ7I",
+      "url": "https://www.youtube.com/watch?v=i93Z7zljQ7I"
+    },
+    {
+      "rank": 2,
+      "views": 57832406,
+      "views_label": "58M",
+      "title": "Tallest statue size comparison",
+      "channel": "Real Data",
+      "category": "Statues / landmarks",
+      "objects": ["Statue of Unity", "Guishan Guanyin", "Buddha statues", "Motherland Calls", "Statue of Liberty"],
+      "id": "YEPJDkZRdJU",
+      "url": "https://www.youtube.com/watch?v=YEPJDkZRdJU"
+    },
+    {
+      "rank": 3,
+      "views": 48591445,
+      "views_label": "49M",
+      "title": "Universe Size Comparison | Stars Real Scale",
+      "channel": "Global Data",
+      "category": "Cosmic",
+      "objects": ["Planets", "stars", "cosmic scale ladder"],
+      "id": "5zlcWdTs2-s",
+      "url": "https://www.youtube.com/watch?v=5zlcWdTs2-s"
+    },
+    {
+      "rank": 4,
+      "views": 31570780,
+      "views_label": "32M",
+      "title": "ASTEROIDS Size Comparison",
+      "channel": "MetaBallStudios",
+      "category": "Cosmic",
+      "objects": ["Near-Earth asteroids", "Ceres", "New York City scale reference"],
+      "id": "bSkPNMjRRio",
+      "url": "https://www.youtube.com/watch?v=bSkPNMjRRio"
+    },
+    {
+      "rank": 5,
+      "views": 26138666,
+      "views_label": "26M",
+      "title": "The True Scale Of Modern Nuclear Weapons",
+      "channel": "Science Time",
+      "category": "Nuclear / explosions",
+      "objects": ["B83", "RS-28 Sarmat", "modern warheads vs WWII bombs"],
+      "id": "ujfC0NgdU48",
+      "url": "https://www.youtube.com/watch?v=ujfC0NgdU48"
+    },
+    {
+      "rank": 6,
+      "views_label": "23M",
+      "title": "Animal, Dinosaur, and Sea Monster Eyeballs",
+      "channel": "Data Brain",
+      "category": "Animals",
+      "objects": ["Animal eyeballs", "dinosaur eyeballs", "sea monster eyeballs"],
+      "url": null,
+      "note": "ID not retained in curated export; see yt-dlp sample by title"
+    },
+    {
+      "rank": 7,
+      "views": 20800000,
+      "views_label": "21M",
+      "title": "ANIMAL size in perspective",
+      "channel": "MetaBallStudios",
+      "category": "Animals",
+      "objects": ["Insects", "small mammals", "elephant", "blue whale"],
+      "id": "H2ip65Berf0",
+      "url": "https://www.youtube.com/watch?v=H2ip65Berf0"
+    },
+    {
+      "rank": 8,
+      "views_label": "18M",
+      "title": "Eye Size Comparison | Monster Eyes",
+      "channel": "Data Ball",
+      "category": "Fiction / monsters",
+      "objects": ["Monster eyes", "creature eye scales"]
+    },
+    {
+      "rank": 9,
+      "views_label": "18M",
+      "title": "Crazy German Tanks Size Comparison 3D",
+      "channel": "AmazingViz",
+      "category": "Military vehicles",
+      "objects": ["German WWII tanks", "prototype tanks"]
+    },
+    {
+      "rank": 10,
+      "views": 17551652,
+      "views_label": "18M",
+      "title": "Animal Size Comparison | Real Scale",
+      "channel": "Global Data",
+      "category": "Animals",
+      "objects": ["Living animals true-scale 3D"],
+      "id": "mRfJls03IT4",
+      "url": "https://www.youtube.com/watch?v=mRfJls03IT4"
+    },
+    {
+      "rank": 11,
+      "views_label": "17M",
+      "title": "Most DESTRUCTIVE EXPLOSIONS comparison",
+      "channel": "MetaBallStudios",
+      "category": "Nuclear / explosions",
+      "objects": ["Historic explosions", "cinematic explosion yields"]
+    },
+    {
+      "rank": 12,
+      "views_label": "17M",
+      "title": "The Terrifying True Scale of Nuclear Weapons",
+      "channel": "RealLifeLore",
+      "category": "Nuclear / explosions",
+      "objects": ["Modern nuclear arsenal"]
+    },
+    {
+      "rank": 13,
+      "views_label": "16M",
+      "title": "Animal Size Comparison 3D",
+      "channel": "Reigarw Comparisons",
+      "category": "Animals",
+      "objects": ["Animals true-scale lineup"]
+    },
+    {
+      "rank": 14,
+      "views_label": "16M",
+      "title": "(Movie) MONSTERS Size COMPARISON",
+      "channel": "MetaBallStudios",
+      "category": "Fiction / monsters",
+      "objects": ["Godzilla", "King Kong", "movie kaiju"]
+    },
+    {
+      "rank": 15,
+      "views_label": "14M",
+      "title": "MONSTER SIZES — First person view",
+      "channel": "MetaBallStudios",
+      "category": "Fiction / monsters",
+      "objects": ["Movie/TV monsters", "street-scale first person"]
+    },
+    {
+      "rank": 16,
+      "views": 13194366,
+      "views_label": "13M",
+      "title": "TSUNAMI Height Comparison (3D)",
+      "channel": "RED SIDE",
+      "category": "Disasters",
+      "objects": ["Tsunami wave heights", "buildings", "people"]
+    },
+    {
+      "rank": 17,
+      "views_label": "12M",
+      "title": "Universe Size in Perspective 2024",
+      "channel": "Global Data",
+      "category": "Cosmic",
+      "objects": ["Atoms", "planets", "stars", "cosmic structures"]
+    },
+    {
+      "rank": 18,
+      "views_label": "10M",
+      "title": "Legendary Sea Monsters Size Comparison",
+      "channel": "MetaVine Labs",
+      "category": "Fiction / monsters",
+      "objects": ["Bloop", "sea eater", "marine cryptids"]
+    },
+    {
+      "rank": 19,
+      "views_label": "9.4M",
+      "title": "MECHAS (piloted robots) SIZE COMPARISON",
+      "channel": "MetaBallStudios",
+      "category": "Fiction / mecha",
+      "objects": ["Gundam", "anime mechs", "game mechs"]
+    },
+    {
+      "rank": 20,
+      "views": 9198158,
+      "views_label": "9.2M",
+      "title": "Dinosaur Size Comparison (60FPS)",
+      "channel": "Global Data",
+      "category": "Dinosaurs",
+      "objects": ["Dinosaurs", "sauropods"],
+      "id": "jLhToi3XdZ0",
+      "url": "https://www.youtube.com/watch?v=jLhToi3XdZ0"
+    },
+    {
+      "rank": 21,
+      "views_label": "8.7M",
+      "title": "FISH Size Comparison 3D",
+      "channel": "Global Data",
+      "category": "Animals",
+      "objects": ["Fish species"]
+    },
+    {
+      "rank": 22,
+      "views_label": "8.4M",
+      "title": "Attack on Titan Size Comparison 2024",
+      "channel": "Global Data",
+      "category": "Fiction / monsters",
+      "objects": ["Attack on Titan Titans", "walls", "humans"]
+    },
+    {
+      "rank": 23,
+      "views_label": "7.4M",
+      "title": "(Video game) MONSTERS Size COMPARISON",
+      "channel": "MetaBallStudios",
+      "category": "Fiction / monsters",
+      "objects": ["Game bosses", "game monsters"]
+    },
+    {
+      "rank": 24,
+      "views_label": "7.0M",
+      "title": "MICROORGANISMS Size Comparison",
+      "channel": "MetaBallStudios",
+      "category": "Micro / biology",
+      "objects": ["Microbes", "cells"]
+    },
+    {
+      "rank": 25,
+      "views_label": "6.9M",
+      "title": "Solar System Size In Perspective",
+      "channel": "Global Data",
+      "category": "Cosmic",
+      "objects": ["Solar system bodies"]
+    },
+    {
+      "rank": 26,
+      "views_label": "6.4M",
+      "title": "Tornado Size Comparison",
+      "channel": "InfoGeek",
+      "category": "Disasters",
+      "objects": ["Tornado EF-scale sizes"]
+    },
+    {
+      "rank": 27,
+      "views_label": "5.4M",
+      "title": "SEA MONSTERS Size Comparison",
+      "channel": "MetaBallStudios",
+      "category": "Fiction / monsters",
+      "objects": ["Sea monsters", "marine cryptids"]
+    },
+    {
+      "rank": 28,
+      "views_label": "5.2M",
+      "title": "DINOSAURS | 3D Comparison",
+      "channel": "MetaBallStudios",
+      "category": "Dinosaurs",
+      "objects": ["Dinosaur species"]
+    },
+    {
+      "rank": 29,
+      "views": 4952879,
+      "views_label": "5.0M",
+      "title": "Biggest STARSHIPS 3D Comparison",
+      "channel": "MetaBallStudios",
+      "category": "Sci-fi ships",
+      "objects": ["Movie/TV/game starships"],
+      "id": "tG8uC24Gbos",
+      "url": "https://www.youtube.com/watch?v=tG8uC24Gbos"
+    },
+    {
+      "rank": 30,
+      "views_label": "4.4M",
+      "title": "Aircraft Size Comparison 3D",
+      "channel": "Reigarw Comparisons",
+      "category": "Aircraft",
+      "objects": ["Civil aircraft", "military aircraft"]
+    }
+  ]
+}

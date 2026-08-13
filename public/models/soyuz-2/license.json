@@ -1,0 +1,12 @@
+{
+  "id": "soyuz-2",
+  "file": "model.glb",
+  "license": "CC-BY-4.0",
+  "licenseLabel": "CC BY",
+  "author": "Paculino",
+  "source": "https://sketchfab.com/3d-models/soyuz-fg-1320bf0fd1b242cd8cfda77d381a147f",
+  "sourceAsset": "Soyuz-FG",
+  "sketchfabUid": "1320bf0fd1b242cd8cfda77d381a147f",
+  "notes": "Soyuz-FG stand-in for Soyuz-2 (CC-BY, ~5k tris). Scaled to 46.1 m height in-app.",
+  "attribution": "Soyuz-FG by Paculino on Sketchfab (CC BY) — https://sketchfab.com/3d-models/soyuz-fg-1320bf0fd1b242cd8cfda77d381a147f"
+}

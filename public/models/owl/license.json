@@ -1,0 +1,12 @@
+{
+  "id": "owl",
+  "file": "model.glb",
+  "license": "CC-BY-4.0",
+  "licenseLabel": "CC BY",
+  "author": "po",
+  "source": "https://sketchfab.com/3d-models/owl-d177e1fbcce940cba32e434cc5a62f1a",
+  "sourceAsset": "Owl",
+  "sketchfabUid": "d177e1fbcce940cba32e434cc5a62f1a",
+  "notes": "Owl (CC-BY, pothedev, fly/walk/idle clips). Linked GremorySaiyan fly is Standard. Scaled to 1.4 m wingspan in-app.",
+  "attribution": "Owl by po on Sketchfab (CC BY) — https://sketchfab.com/3d-models/owl-d177e1fbcce940cba32e434cc5a62f1a"
+}

@@ -1,0 +1,18 @@
+---
+description: Inspect, orient, crop, and commit 3D models when adding them
+alwaysApply: true
+---
+
+# Adding a 3D model
+
+Committed files under `public/models/{id}/` are the source of truth (`model.glb` + `license.json`). The site loads those at runtime. `npm run fetch-sketchfab` is optional (download + license.json). Do not treat fetch as a build step.
+
+## After every add or replace
+
+1. **Inspect** the GLB: skip MSFS/sim dumps, studio ground planes, huge terrain, hide-to-infinity helpers. Prefer ≲200k tris, exterior silhouette only.
+2. **Orient** in `src/data/catalog.ts`: `yawDegrees` / `pitchDegrees` / `rollDegrees` so after authoring pose **+Y up, +Z nose/length, +X width**. Check at Facing **0°**.
+3. **Crop / ground**: no dead AABB (lights, cameras, GBU helpers, shadow slabs). Wheels/gear should sit on y=0 — not floating on engines or a helper below the hull.
+4. **Scale** with the trusted axis (`length` / `width` / `height`) in real-world meters. Tags in `src/data/catalogTags.ts`.
+5. **Commit** `public/models/{id}/model.glb` and `license.json`. Runtime crop in `ComparisonScene` is a safety net, not a substitute for a clean asset.
+
+Example: B-21 empty hangar was an autoplayed sim “hide” clip (nodes teleported to y≈−8192). 747 float was engine meshes hanging below the tires.
