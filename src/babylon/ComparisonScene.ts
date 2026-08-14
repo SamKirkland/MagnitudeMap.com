@@ -24,9 +24,11 @@ import {
   PBRMaterial,
   PointerEventTypes,
   type PointerInfo,
+  Quaternion,
   RawTexture,
   Scene,
   SceneLoader,
+  ShadowGenerator,
   Skeleton,
   StandardMaterial,
   SubMesh,
@@ -132,6 +134,11 @@ const IDLE_SETTLE_MS = 300
  * human-scale navigation stays the same; larger views scale pan and zoom with it.
  */
 const CAMERA_NAV_REFERENCE_RADIUS = 40
+/**
+ * Directional sun + contact shadows. Off restores the original unlit comparison
+ * look (no shadow maps, no extra lights). Flip true to ship lighting later.
+ */
+const ENABLE_SCENE_LIGHTING = false
 
 export class ComparisonScene {
   readonly engine: Engine
@@ -140,6 +147,8 @@ export class ComparisonScene {
 
   private readonly placements = new Map<string, PlacedObject>()
   private ground: Mesh
+  private sun!: DirectionalLight
+  private shadows: ShadowGenerator | null = null
   private neighborhoodTex: DynamicTexture | null = null
   private dirtSideTex: DynamicTexture | null = null
   private undersideTex: DynamicTexture | null = null
@@ -194,7 +203,9 @@ export class ComparisonScene {
 
     this.scene = new Scene(this.engine)
     this.scene.clearColor = new Color4(0.894, 0.933, 0.945, 1)
-    this.scene.ambientColor = new Color3(0.35, 0.38, 0.4)
+    this.scene.ambientColor = ENABLE_SCENE_LIGHTING
+      ? new Color3(0.18, 0.2, 0.22)
+      : new Color3(0.35, 0.38, 0.4)
     this.scene.skipPointerMovePicking = true
     this.scene.constantlyUpdateMeshUnderPointer = false
     this.scene.collisionsEnabled = false
@@ -204,7 +215,8 @@ export class ComparisonScene {
     this.scene.proceduralTexturesEnabled = false
     this.scene.probesEnabled = false
     this.scene.postProcessesEnabled = false
-    this.scene.renderTargetsEnabled = false
+    this.scene.renderTargetsEnabled = ENABLE_SCENE_LIGHTING
+    this.scene.shadowsEnabled = ENABLE_SCENE_LIGHTING
     this.scene.fogEnabled = false
 
     this.camera = new ArcRotateCamera(
@@ -217,10 +229,14 @@ export class ComparisonScene {
     )
     this.camera.mode = Camera.PERSPECTIVE_CAMERA
     this.camera.lowerRadiusLimit = 0.4
-    // Large enough for Tsar-scale blast radii (~tens of km).
-    this.camera.upperRadiusLimit = 500_000
+    // Death Star II is 160 km; leave headroom to zoom out past km-scale subjects.
+    this.camera.upperRadiusLimit = 50_000_000
     this.camera.wheelPrecision = 8
     this.camera.panningSensibility = 40
+    // Babylon's default 0.9 pan inertia *adds* each mouse delta onto leftover
+    // velocity, so a steady drag ramps to ~10× speed. Map-style pan: 1:1 with
+    // the cursor, no coast after release.
+    this.camera.panningInertia = 0
     this.syncCameraNavigationScale()
     this.camera.minZ = 0.05
     this.camera.maxZ = 1_000_000
@@ -237,20 +253,7 @@ export class ComparisonScene {
       canvas.addEventListener('wheel', this.onCanvasWheel, { passive: true })
     }
 
-    const hemi = new HemisphericLight('hemi', new Vector3(0, 1, 0), this.scene)
-    hemi.intensity = 0.8
-    hemi.groundColor = new Color3(0.28, 0.3, 0.28)
-
-    const sun = new DirectionalLight('sun', new Vector3(-0.4, -1, 0.35), this.scene)
-    sun.intensity = 0.7
-    sun.position = new Vector3(40, 80, -20)
-
-    // Modest IBL so metallic glTF doesn't go black.
-    const envUrl = publicAssetUrl('env/environmentSpecular.env')
-    const env = CubeTexture.CreateFromPrefilteredData(envUrl, this.scene)
-    env.onLoadObservable.addOnce(() => this.markDirty())
-    this.scene.environmentTexture = env
-    this.scene.environmentIntensity = 0.4
+    this.installLights()
 
     this.createGradientSkybox()
 
@@ -1025,7 +1028,7 @@ export class ComparisonScene {
     this.rebuildGround(centerX, centerZ, width, depth)
   }
 
-  /** Soft zenith→horizon→ground wash. Sized to sit inside camera.maxZ; follows the camera. */
+  /** Soft zenith→horizon→ground wash. Camera-relative via infiniteDistance; not clipped. */
   private createGradientSkybox(): Mesh {
     // Must stay inside the tightest far plane (syncCameraClipPlanes uses max(r*20, 200)).
     const size = 160
@@ -1086,7 +1089,8 @@ export class ComparisonScene {
    * underside with a thin cutaway rim (see-through, but clearly intentional).
    */
   private buildEarthSlab(centerX: number, centerZ: number, width: number, depth: number): Mesh {
-    const thickness = Math.min(28, Math.max(8, Math.sqrt(Math.max(width, depth)) * 0.55))
+    const span = Math.max(width, depth)
+    const thickness = Math.max(8, Math.min(span * 0.0025, Math.sqrt(span) * 0.8))
 
     const slab = MeshBuilder.CreateBox(
       'ground',
@@ -1094,43 +1098,61 @@ export class ComparisonScene {
       this.scene,
     )
     slab.position.set(centerX, -thickness / 2, centerZ)
-    slab.receiveShadows = false
+    slab.receiveShadows = ENABLE_SCENE_LIGHTING
     slab.isPickable = true
     slab.metadata = { kind: 'ground' }
 
     const topMat = new StandardMaterial('groundTopMat', this.scene)
-    topMat.disableLighting = true
     topMat.specularColor = Color3.Black()
-    topMat.emissiveColor = Color3.White()
     topMat.diffuseColor = Color3.White()
     topMat.backFaceCulling = true
+    // Lose depth vs models/plaques so a 160 km sphere doesn't z-fight the slab.
+    topMat.zOffset = 2
+    if (ENABLE_SCENE_LIGHTING) {
+      topMat.emissiveColor = Color3.Black()
+      topMat.ambientColor = new Color3(0.38, 0.4, 0.36)
+    } else {
+      topMat.disableLighting = true
+      topMat.emissiveColor = Color3.White()
+    }
 
-    if (this.neighborhoodTex) {
+    if (this.neighborhoodTex && span < 8_000) {
       // Clone so each rebuild can set its own UV scale without fighting prior mats.
       const topTex = this.neighborhoodTex
-      topTex.uScale = width / NEIGHBORHOOD_TILE_METERS
-      topTex.vScale = depth / NEIGHBORHOOD_TILE_METERS
+      // Cap tiling: huge quads with uScale in the thousands swim and alias.
+      topTex.uScale = Math.min(width / NEIGHBORHOOD_TILE_METERS, 48)
+      topTex.vScale = Math.min(depth / NEIGHBORHOOD_TILE_METERS, 48)
       topTex.wrapU = Texture.WRAP_ADDRESSMODE
       topTex.wrapV = Texture.WRAP_ADDRESSMODE
       topMat.diffuseTexture = topTex
-      topMat.emissiveTexture = topTex
+      if (!ENABLE_SCENE_LIGHTING) topMat.emissiveTexture = topTex
+    } else if (ENABLE_SCENE_LIGHTING) {
+      topMat.diffuseColor = new Color3(0.5, 0.53, 0.51)
     } else {
-      topMat.emissiveColor = new Color3(0.5, 0.53, 0.51)
+      // Km-scale slabs: aerial blocks become moiré; a flat earth read is enough.
+      topMat.emissiveColor = new Color3(0.48, 0.5, 0.44)
     }
 
     const sideMat = new StandardMaterial('groundSideMat', this.scene)
-    sideMat.disableLighting = true
     sideMat.specularColor = Color3.Black()
-    sideMat.emissiveColor = Color3.White()
     sideMat.diffuseColor = Color3.White()
     sideMat.backFaceCulling = true
+    if (ENABLE_SCENE_LIGHTING) {
+      sideMat.emissiveColor = Color3.Black()
+      sideMat.ambientColor = new Color3(0.34, 0.28, 0.2)
+    } else {
+      sideMat.disableLighting = true
+      sideMat.emissiveColor = Color3.White()
+    }
     if (this.dirtSideTex) {
       const sideTex = this.dirtSideTex
       // Tile dirt horizontally with world size; V stays 0–1 so grass rim stays on top.
-      sideTex.uScale = Math.max(width, depth) / 16
+      sideTex.uScale = Math.min(Math.max(width, depth) / 16, 48)
       sideTex.vScale = 1
       sideMat.diffuseTexture = sideTex
-      sideMat.emissiveTexture = sideTex
+      if (!ENABLE_SCENE_LIGHTING) sideMat.emissiveTexture = sideTex
+    } else if (ENABLE_SCENE_LIGHTING) {
+      sideMat.diffuseColor = new Color3(0.42, 0.28, 0.16)
     } else {
       sideMat.emissiveColor = new Color3(0.42, 0.28, 0.16)
     }
@@ -1271,7 +1293,9 @@ export class ComparisonScene {
 
   private syncCameraClipPlanes() {
     const r = Math.max(this.camera.radius, 1)
-    const minZ = Math.min(Math.max(r / 500, 0.05), 2)
+    // Keep far/near ≈ 10k. Capping minZ at 2m (old) made km-scale views
+    // z-fight: hulls vanish, ground/plaques wiggle.
+    const minZ = Math.max(r / 500, 0.05)
     const maxZ = Math.max(r * 20, 200)
     if (this.camera.minZ !== minZ || this.camera.maxZ !== maxZ) {
       this.camera.unfreezeProjectionMatrix()
@@ -1379,8 +1403,113 @@ export class ComparisonScene {
   }
 
   private freezeStaticScene() {
+    if (ENABLE_SCENE_LIGHTING) this.syncShadowCasters()
     for (const placement of this.placements.values()) {
       this.freezeStaticPlacement(placement)
+    }
+    if (ENABLE_SCENE_LIGHTING) this.fitSunShadows()
+  }
+
+  private installLights() {
+    if (ENABLE_SCENE_LIGHTING) {
+      const hemi = new HemisphericLight('hemi', new Vector3(0.2, 1, 0.1), this.scene)
+      hemi.intensity = 0.28
+      hemi.diffuse = new Color3(0.9, 0.93, 1)
+      hemi.groundColor = new Color3(0.36, 0.34, 0.3)
+      hemi.specular = Color3.Black()
+
+      this.sun = new DirectionalLight('sun', new Vector3(-0.45, -1, 0.62), this.scene)
+      this.sun.direction.normalize()
+      this.sun.intensity = 1.9
+      this.sun.diffuse = new Color3(1, 0.93, 0.8)
+      this.sun.specular = new Color3(1, 0.9, 0.72)
+      this.fitSunShadows()
+
+      const fill = new DirectionalLight('fill', new Vector3(0.55, -0.35, -0.7), this.scene)
+      fill.intensity = 0.16
+      fill.diffuse = new Color3(0.6, 0.74, 0.95)
+      fill.specular = Color3.Black()
+      fill.shadowEnabled = false
+
+      this.shadows = this.createSunShadows(this.sun)
+      this.scene.environmentIntensity = 0.28
+    } else {
+      const hemi = new HemisphericLight('hemi', new Vector3(0, 1, 0), this.scene)
+      hemi.intensity = 0.8
+      hemi.groundColor = new Color3(0.28, 0.3, 0.28)
+
+      this.sun = new DirectionalLight('sun', new Vector3(-0.4, -1, 0.35), this.scene)
+      this.sun.intensity = 0.7
+      this.sun.position = new Vector3(40, 80, -20)
+      this.scene.environmentIntensity = 0.4
+    }
+
+    // Modest IBL so metallic glTF doesn't go black.
+    const envUrl = publicAssetUrl('env/environmentSpecular.env')
+    const env = CubeTexture.CreateFromPrefilteredData(envUrl, this.scene)
+    env.onLoadObservable.addOnce(() => this.markDirty())
+    this.scene.environmentTexture = env
+  }
+
+  /**
+   * Directional shadows must be a square ortho looking along `sun.direction`
+   * through the lineup center. Auto-fit off-center ortho shears the window so
+   * contact shadows look overhead at one end of the row and low-angle at the other.
+   */
+  private fitSunShadows() {
+    const bounds = this.lineupWorldBounds()
+    const center = bounds
+      ? Vector3.Center(bounds.min, bounds.max)
+      : new Vector3(0, 4, 0)
+    const extent = bounds
+      ? bounds.max.subtract(bounds.min)
+      : new Vector3(60, 20, 60)
+    const radius = Math.max(extent.length() * 0.5, 8)
+    const dir = this.sun.direction.clone()
+    if (dir.lengthSquared() < 1e-6) dir.set(-0.45, -1, 0.62)
+    dir.normalize()
+    this.sun.direction.copyFrom(dir)
+
+    const standoff = radius * 2 + 24
+    this.sun.position.copyFrom(center).subtractInPlace(dir.scale(standoff))
+    this.sun.autoUpdateExtends = false
+    this.sun.autoCalcShadowZBounds = false
+    this.sun.shadowFrustumSize = radius * 2.15
+    this.sun.shadowMinZ = 1
+    this.sun.shadowMaxZ = standoff + radius + 16
+    this.sun.forceProjectionMatrixCompute()
+  }
+
+  private createSunShadows(sun: DirectionalLight): ShadowGenerator {
+    const shadows = new ShadowGenerator(4096, sun, true)
+    shadows.usePercentageCloserFiltering = true
+    shadows.filteringQuality = ShadowGenerator.QUALITY_MEDIUM
+    shadows.bias = 0.0004
+    shadows.normalBias = 0.015
+    shadows.darkness = 0.22
+    return shadows
+  }
+
+  private syncShadowCasters() {
+    if (!this.shadows) return
+    const map = this.shadows.getShadowMap()
+    if (map?.renderList) map.renderList.length = 0
+
+    for (const placement of this.placements.values()) {
+      const item = CATALOG_BY_ID[placement.itemId]
+      if (item?.model && this.isAirBlastModel(item.model.path)) continue
+
+      if (placement.body instanceof AbstractMesh) {
+        placement.body.receiveShadows = true
+        this.shadows.addShadowCaster(placement.body, true)
+      }
+      for (const mesh of placement.body.getChildMeshes(false)) {
+        if (!mesh.isVisible || mesh.getTotalVertices() < 3) continue
+        mesh.receiveShadows = true
+        if (!(placement.body instanceof AbstractMesh)) {
+          this.shadows.addShadowCaster(mesh, false)
+        }
+      }
     }
   }
 
@@ -1390,6 +1519,9 @@ export class ComparisonScene {
       for (const sub of material.subMaterials) this.freezeMaterialTree(sub)
       return
     }
+    // Linear 24-bit depth falls apart for 160 km subjects; log depth keeps
+    // hulls and the ground from z-fighting. Must be on every depth-tested mat.
+    if (!material.useLogarithmicDepth) material.useLogarithmicDepth = true
     if (!material.isFrozen) material.freeze()
   }
 
@@ -1562,14 +1694,11 @@ export class ComparisonScene {
       mesh.setEnabled(true)
     }
 
-    if (model.pitchDegrees) {
-      container.rotation.x = (model.pitchDegrees * Math.PI) / 180
-    }
-    if (model.rollDegrees) {
-      container.rotation.z = (model.rollDegrees * Math.PI) / 180
-    }
-    if (!model.randomYaw && model.yawDegrees) {
-      container.rotation.y = (model.yawDegrees * Math.PI) / 180
+    const pitch = ((model.pitchDegrees ?? 0) * Math.PI) / 180
+    const roll = ((model.rollDegrees ?? 0) * Math.PI) / 180
+    const yaw = model.randomYaw ? 0 : ((model.yawDegrees ?? 0) * Math.PI) / 180
+    if (pitch || roll || yaw) {
+      container.rotationQuaternion = Quaternion.FromEulerAngles(pitch, yaw, roll)
     }
 
     this.enableVertexColors(container)
@@ -1583,6 +1712,13 @@ export class ComparisonScene {
     const keepClips = Boolean(item.playClips || item.shape === 'person')
     if (!keepClips) {
       // Stop sim "hide" clips (B-21 teleports GBUs to y≈-8192) before measuring.
+      for (const skeleton of result.skeletons ?? []) {
+        try {
+          skeleton.returnToRest()
+        } catch {
+          // Some imports have no rest pose.
+        }
+      }
       this.disposeImportedAnimations(result.animationGroups)
     } else {
       for (const group of result.animationGroups ?? []) {
@@ -1595,6 +1731,10 @@ export class ComparisonScene {
       }
     }
     container.computeWorldMatrix(true)
+    for (const mesh of container.getChildMeshes(false)) {
+      mesh.computeWorldMatrix(true)
+      mesh.refreshBoundingInfo(true, true)
+    }
     this.normalizeToMeters(container, item, model.scaleAxis)
     if (model.randomYaw) {
       // After scale so size stays stable; spin about vertical only.
@@ -1747,8 +1887,17 @@ export class ComparisonScene {
       }
       mat.metallic = Math.min(mat.metallic ?? 0, 0.05)
       mat.roughness = Math.max(mat.roughness ?? 0.5, isMinecraft ? 0.85 : 0.55)
-      mat.environmentIntensity = isMinecraft ? 0.35 : 0.65
-      mat.directIntensity = isMinecraft ? 1.25 : 1.15
+      if (ENABLE_SCENE_LIGHTING) {
+        mat.environmentIntensity = isMinecraft ? 0.2 : 0.3
+        mat.directIntensity = isMinecraft ? 1.45 : 1.4
+        mat.unlit = false
+        mat.emissiveColor = Color3.Black()
+        mat.emissiveIntensity = 0
+        mat.emissiveTexture = null
+      } else {
+        mat.environmentIntensity = isMinecraft ? 0.35 : 0.65
+        mat.directIntensity = isMinecraft ? 1.25 : 1.15
+      }
       mat.backFaceCulling = false
       mat.twoSidedLighting = true
       mat.markDirty?.()
@@ -2084,8 +2233,8 @@ export class ComparisonScene {
       mat.roughness = 0.58
       mat.alpha = 1
       mat.transparencyMode = PBRMaterial.PBRMATERIAL_OPAQUE
-      mat.environmentIntensity = 0.55
-      mat.directIntensity = 1.1
+      mat.environmentIntensity = ENABLE_SCENE_LIGHTING ? 0.3 : 0.55
+      mat.directIntensity = ENABLE_SCENE_LIGHTING ? 1.35 : 1.1
       mat.backFaceCulling = false
       mat.twoSidedLighting = true
       mesh.material = mat
@@ -2136,8 +2285,31 @@ export class ComparisonScene {
         mat.transparencyMode = PBRMaterial.PBRMATERIAL_OPAQUE
       }
 
-      mat.environmentIntensity = 0.85
-      mat.directIntensity = 1
+      // MASK cutouts minify to empty at km-scale (Death Star II hull). Treat as
+      // opaque so the silhouette stays solid; geometric gaps still read.
+      if (mat.transparencyMode === PBRMaterial.PBRMATERIAL_ALPHATEST) {
+        mat.transparencyMode = PBRMaterial.PBRMATERIAL_OPAQUE
+        mat.alpha = 1
+        mat.needDepthPrePass = false
+        mat.backFaceCulling = false
+        mat.twoSidedLighting = true
+        if (mat.albedoTexture) {
+          mat.albedoTexture.hasAlpha = false
+          mat.useAlphaFromAlbedoTexture = false
+        }
+      }
+
+      if (ENABLE_SCENE_LIGHTING) {
+        mat.environmentIntensity = 0.35
+        mat.directIntensity = 1.35
+        mat.unlit = false
+        mat.emissiveColor = Color3.Black()
+        mat.emissiveIntensity = 0
+        mat.emissiveTexture = null
+      } else {
+        mat.environmentIntensity = 0.85
+        mat.directIntensity = 1
+      }
 
       // Dark metallic shells (bombs, ships) → readable painted metal, not black chrome.
       const metallic = mat.metallic ?? 0
@@ -2229,6 +2401,7 @@ export class ComparisonScene {
   private disposeImportedAnimations(groups: AnimationGroup[] | undefined) {
     for (const group of groups ?? []) {
       try {
+        group.reset()
         group.stop()
         group.dispose()
       } catch {
@@ -2337,8 +2510,10 @@ export class ComparisonScene {
       const dims = [size.x, size.y, size.z].sort((a, b) => a - b)
       const span = dims[2]
       const needle = span > 50 && span > 25 * Math.max(dims[1], 1e-8)
+      // Zero-thickness cards (Death Star II equator planes) z-fight into noise at km scale.
+      const paper = span > 1 && dims[0] < Math.max(span * 1e-5, 1e-4)
       const label = `${mesh.name} ${mesh.parent?.name ?? ''}`
-      if (needle || helperName.test(label)) {
+      if (needle || paper || helperName.test(label)) {
         mesh.setEnabled(false)
         mesh.isVisible = false
         mesh.isPickable = false
@@ -2531,7 +2706,7 @@ export class ComparisonScene {
     label.parent = root
     label.position.set(
       (localMin.x + localMax.x) * 0.5,
-      Math.max(0.05, magnitude * 0.0005),
+      Math.max(0.05, magnitude * 0.002),
       z,
     )
     label.isPickable = false
@@ -2555,6 +2730,7 @@ export class ComparisonScene {
     mat.backFaceCulling = false
     mat.transparencyMode = StandardMaterial.MATERIAL_OPAQUE
     mat.disableDepthWrite = false
+    mat.zOffset = -2
     label.material = mat
 
     label.onDisposeObservable.add(() => {
@@ -2685,6 +2861,7 @@ export class ComparisonScene {
     boxMat.alpha = 0
     boxMat.transparencyMode = StandardMaterial.MATERIAL_ALPHABLEND
     boxMat.disableDepthWrite = true
+    boxMat.useLogarithmicDepth = true
     box.material = boxMat
     box.enableEdgesRendering(0.999)
     box.edgesWidth = Math.min(Math.max(magnitude * 0.12, 3), 14)
@@ -2762,6 +2939,7 @@ export class ComparisonScene {
     mat.backFaceCulling = false
     mat.transparencyMode = StandardMaterial.MATERIAL_OPAQUE
     mat.disableDepthWrite = false
+    mat.useLogarithmicDepth = true
     // Bias toward camera so labels win over coplanar edge lines.
     mat.zOffset = -2
     plane.material = mat

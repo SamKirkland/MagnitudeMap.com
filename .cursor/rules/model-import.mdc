@@ -1,11 +1,11 @@
 ---
-description: Inspect, orient, crop, and commit 3D models when adding them
+description: Inspect, orient, crop, compress, and commit 3D models when adding them
 alwaysApply: true
 ---
 
 # Adding a 3D model
 
-Committed files under `public/models/{id}/` are the source of truth (`model.glb` + `license.json`). The site loads those at runtime. Drop the GLB in by hand; do not treat any download script as a build step.
+Committed files under `public/models/{id}/` are the source of truth (`model.glb` + `license.json`). The site loads those at runtime. Download the GLB with the Sketchfab API and `SKETCHFAB_API_TOKEN` from repo-root `.env` (see `.cursor/rules/sketchfab-source-preference.mdc`).
 
 ## After every add or replace
 
@@ -13,6 +13,7 @@ Committed files under `public/models/{id}/` are the source of truth (`model.glb`
 2. **Orient** in `src/data/catalog.ts`: `yawDegrees` / `pitchDegrees` / `rollDegrees` so after authoring pose **+Y up, +Z nose/length, +X width**. Check at Facing **0°**.
 3. **Crop / ground**: no dead AABB (lights, cameras, GBU helpers, shadow slabs). Wheels/gear should sit on y=0 — not floating on engines or a helper below the hull.
 4. **Scale** with the trusted axis (`length` / `width` / `height`) in real-world meters. Tags in `src/data/catalogTags.ts`.
-5. **Commit** `public/models/{id}/model.glb` and `license.json`. Runtime crop in `ComparisonScene` is a safety net, not a substitute for a clean asset.
+5. **Compress** with `npm run compress-models -- --only={id}`. Already-Draco/meshopt files are skipped. Do not commit an uncompressed GLB.
+6. **Commit** `public/models/{id}/model.glb` and `license.json`. Runtime crop in `ComparisonScene` is a safety net, not a substitute for a clean asset.
 
 Example: B-21 empty hangar was an autoplayed sim “hide” clip (nodes teleported to y≈−8192). 747 float was engine meshes hanging below the tires.

@@ -1,34 +1,58 @@
 ---
-description: Search Sketchfab (downloadable only) when adding 3D models
+description: Search and download Sketchfab models via the API token in .env
 alwaysApply: true
 ---
 
 # Sketchfab models
 
-When adding or replacing 3D models, **search Sketchfab first** — not generic web image/model sites.
+When adding or replacing 3D models, **use the Sketchfab Data API** — not the website, and not generic web image/model sites.
+
+## Auth
+
+Read `SKETCHFAB_API_TOKEN` from repo-root `.env`. Never commit `.env` or print the token.
+
+```
+Authorization: Token $SKETCHFAB_API_TOKEN
+```
 
 ## Search (downloadable only)
 
-Web: https://sketchfab.com/search?features=downloadable&q=Eiffel+Tower&type=models
+```
+GET https://api.sketchfab.com/v3/search?type=models&q=Eiffel+Tower&downloadable=true
+```
 
-A linked Sketchfab URL is **not** enough. Confirm `isDownloadable` and a redistributable license.
+A linked Sketchfab URL is **not** enough. Confirm `isDownloadable` and a redistributable `license.slug` on:
+
+```
+GET https://api.sketchfab.com/v3/models/{uid}
+```
+
+## Download
+
+```
+GET https://api.sketchfab.com/v3/models/{uid}/download
+```
+
+Write the short-lived `glb.url` to `public/models/{id}/model.glb` immediately. Do not cache that URL.
 
 ## License (must ship)
 
-OK: **CC0**, **CC-BY**, **CC-BY-SA**.  
-Not OK: Editorial (`ed`), Standard (`st`), NC, store-only, non-downloadable.
+OK: **CC0** (`cc0`), **CC-BY** (`by`), **CC-BY-SA** (`by-sa`).  
+Not OK: Editorial (`ed`), Standard (`st`), NC (`by-nc`, `by-nc-sa`), store-only, `isDownloadable: false`.
 
 If the requested model is Editorial/Standard, search for a downloadable CC stand-in and note the substitution in that model’s `license.json` `notes`.
 
 ## Creator preference
 
-1. Search https://sketchfab.com/nazidefenseforceofficial/models
+1. Search with `&user=nazidefenseforceofficial` first.
 2. Use that creator when a suitable downloadable CC model exists.
 3. Otherwise pick the best downloadable CC match (recognizable silhouette, prefer ≲200k tris, no huge terrain/ground plane).
 
 ## Wire-up
 
-1. Drop `public/models/{id}/model.glb` + `license.json` and **commit them**.
-2. Add the item to `src/data/catalog.ts` (meters + `yawDegrees` so +Z is nose) and tags in `src/data/catalogTags.ts`.
-3. Inspect in the viewer at Facing 0°: silhouette cropped, sitting on the ground, scale vs person-male (1.75 m).
-4. Run `npm run sync-attributions`.
+1. Download the GLB via the API into `public/models/{id}/model.glb` and write `license.json`.
+2. Run `npm run compress-models -- --only={id}` (no-ops if already Draco/meshopt).
+3. Add the item to `src/data/catalog.ts` (meters + `yawDegrees` so +Z is nose) and tags in `src/data/catalogTags.ts`.
+4. Inspect in the viewer at Facing 0°: silhouette cropped, sitting on the ground, scale vs person-male (1.75 m).
+5. Run `npm run sync-attributions`.
+6. **Commit** the compressed `model.glb` and `license.json`.

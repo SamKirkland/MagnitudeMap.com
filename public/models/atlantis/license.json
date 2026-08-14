@@ -3,10 +3,10 @@
   "file": "model.glb",
   "license": "CC-BY-4.0",
   "licenseLabel": "CC BY",
-  "author": "rossrobotics",
-  "source": "https://sketchfab.com/3d-models/stargate-atlantis-cc5e04fc277941b0b37ac7b066dcbb21",
-  "sourceAsset": "Stargate Atlantis",
-  "sketchfabUid": "cc5e04fc277941b0b37ac7b066dcbb21",
-  "notes": "Atlantis city-ship (CC-BY). Scaled to ~3 km span in-app.",
-  "attribution": "Stargate Atlantis by rossrobotics on Sketchfab (CC BY) — https://sketchfab.com/3d-models/stargate-atlantis-cc5e04fc277941b0b37ac7b066dcbb21"
+  "author": "3D-LAND",
+  "source": "https://sketchfab.com/3d-models/stargate-atlantis-city-lowpoly-c388111b4b1445ba94dbebad4d759dea",
+  "sourceAsset": "[STARGATE] Atlantis city lowpoly",
+  "sketchfabUid": "c388111b4b1445ba94dbebad4d759dea",
+  "notes": "Requested Ace_Fighter Atlantis City Ship (a4d4105890994f97b60632dcadb33875) is CC-BY-NC. Substituted 3D-LAND's downloadable CC-BY low-poly city-ship (similar snowflake silhouette). Scaled to ~3 km span in-app.",
+  "attribution": "[STARGATE] Atlantis city lowpoly by 3D-LAND on Sketchfab (CC BY) — https://sketchfab.com/3d-models/stargate-atlantis-city-lowpoly-c388111b4b1445ba94dbebad4d759dea"
 }

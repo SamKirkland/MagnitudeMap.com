@@ -1,0 +1,12 @@
+{
+  "id": "at-te",
+  "file": "model.glb",
+  "license": "CC-BY-4.0",
+  "licenseLabel": "CC BY",
+  "author": "R3negadeAidan",
+  "source": "https://sketchfab.com/3d-models/at-te-walker-animated-81ef81cf6c554055b741b43a1a08d69f",
+  "sourceAsset": "AT-TE Walker (Animated)",
+  "sketchfabUid": "81ef81cf6c554055b741b43a1a08d69f",
+  "notes": "Requested donizaki Republic AT-TE (c75e7767ca3b40a19cdce5c856a7ac4c) is CC-BY-NC. Substituted R3negadeAidan's downloadable CC-BY Battlefront-style walker. Walk clip is not played (it lifts the feet). Scaled to 22.02 m length in-app.",
+  "attribution": "AT-TE Walker (Animated) by R3negadeAidan on Sketchfab (CC BY) — https://sketchfab.com/3d-models/at-te-walker-animated-81ef81cf6c554055b741b43a1a08d69f"
+}

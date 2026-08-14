@@ -1,0 +1,12 @@
+{
+  "id": "ori-warship",
+  "file": "model.glb",
+  "license": "CC-BY-4.0",
+  "licenseLabel": "CC BY",
+  "author": "rossrobotics",
+  "source": "https://sketchfab.com/3d-models/sg-ori-dd113e1a161a4647a684fa5e81c2968e",
+  "sourceAsset": "SG Ori",
+  "sketchfabUid": "dd113e1a161a4647a684fa5e81c2968e",
+  "notes": "Ori warship (CC-BY). ~521k tris; no lower-poly downloadable CC match. Scaled to 1100 m length in-app.",
+  "attribution": "SG Ori by rossrobotics on Sketchfab (CC BY) — https://sketchfab.com/3d-models/sg-ori-dd113e1a161a4647a684fa5e81c2968e"
+}

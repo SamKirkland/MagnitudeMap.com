@@ -6,6 +6,7 @@ import {
   PaperAirplaneIcon,
   RocketLaunchIcon,
   SparklesIcon,
+  StarIcon,
 } from '@heroicons/react/24/outline'
 
 type IconProps = SVGProps<SVGSVGElement>
@@ -70,6 +71,20 @@ export function ShipIcon(props: IconProps) {
   )
 }
 
+/** Starfleet delta — used for the Star Trek lineup. */
+export function StarfleetIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <path
+        d="M12 3.25 4.75 20.5 12 16.4 19.25 20.5 12 3.25Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 /** Simple four-leg silhouette — used for the Animals lineup. */
 export function AnimalIcon(props: IconProps) {
   return (
@@ -105,6 +120,8 @@ const PRESET_ICONS: Record<string, ComponentType<IconProps>> = {
   helicopters: PaperAirplaneIcon,
   navy: ShipIcon,
   stargate: SparklesIcon,
+  starwars: StarIcon,
+  startrek: StarfleetIcon,
   rockets: RocketLaunchIcon,
   landmarks: BuildingLibraryIcon,
   money: BanknotesIcon,

@@ -1,0 +1,12 @@
+{
+  "id": "stormtrooper",
+  "file": "model.glb",
+  "license": "CC-BY-4.0",
+  "licenseLabel": "CC BY",
+  "author": "lampotstreams",
+  "source": "https://sketchfab.com/3d-models/stormtrooper-walk-45034f4262d8412faff8ba57a64786ad",
+  "sourceAsset": "Stormtrooper-walk",
+  "sketchfabUid": "45034f4262d8412faff8ba57a64786ad",
+  "notes": "Requested LostModels2025 Stormtrooper Walk (dc7237f92c824cd78abc0f5bb4cb6290) is CC-BY-NC. Substituted lampotstreams' downloadable CC-BY walk clip (same ~55k-face silhouette). Scaled to 1.83 m height in-app. Walks when focused.",
+  "attribution": "Stormtrooper-walk by lampotstreams on Sketchfab (CC BY) — https://sketchfab.com/3d-models/stormtrooper-walk-45034f4262d8412faff8ba57a64786ad"
+}

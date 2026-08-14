@@ -98,6 +98,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Airbus A320 (CC-BY-NC-SA). Scaled to 37.57 m length in-app. Non-commercial use only."
   },
   {
+    "id": "akira",
+    "catalogName": "Akira-class",
+    "author": "Wholock",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/star-trek-akira-class-84b459f462ec437b9e4a165ab98cee51",
+    "sourceAsset": "Star Trek - Akira Class",
+    "attribution": "Star Trek - Akira Class by Wholock on Sketchfab (CC BY) — https://sketchfab.com/3d-models/star-trek-akira-class-84b459f462ec437b9e4a165ab98cee51",
+    "requiresAttribution": true,
+    "notes": "Star Trek - Akira Class (CC-BY). Scaled to 464 m length (common TM figure)."
+  },
+  {
     "id": "ankylosaurus",
     "catalogName": "Ankylosaurus",
     "author": "kenchoo",
@@ -122,16 +134,28 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Stylized astronaut. Scaled in-app to 1.9 m height."
   },
   {
-    "id": "atlantis",
-    "catalogName": "Atlantis",
-    "author": "rossrobotics",
+    "id": "at-te",
+    "catalogName": "AT-TE",
+    "author": "R3negadeAidan",
     "license": "CC-BY-4.0",
     "licenseLabel": "CC BY",
-    "source": "https://sketchfab.com/3d-models/stargate-atlantis-cc5e04fc277941b0b37ac7b066dcbb21",
-    "sourceAsset": "Stargate Atlantis",
-    "attribution": "Stargate Atlantis by rossrobotics on Sketchfab (CC BY) — https://sketchfab.com/3d-models/stargate-atlantis-cc5e04fc277941b0b37ac7b066dcbb21",
+    "source": "https://sketchfab.com/3d-models/at-te-walker-animated-81ef81cf6c554055b741b43a1a08d69f",
+    "sourceAsset": "AT-TE Walker (Animated)",
+    "attribution": "AT-TE Walker (Animated) by R3negadeAidan on Sketchfab (CC BY) — https://sketchfab.com/3d-models/at-te-walker-animated-81ef81cf6c554055b741b43a1a08d69f",
     "requiresAttribution": true,
-    "notes": "Atlantis city-ship (CC-BY). Scaled to ~3 km span in-app."
+    "notes": "Requested donizaki Republic AT-TE (c75e7767ca3b40a19cdce5c856a7ac4c) is CC-BY-NC. Substituted R3negadeAidan's downloadable CC-BY Battlefront-style walker. Walk clip is not played (it lifts the feet). Scaled to 22.02 m length in-app."
+  },
+  {
+    "id": "atlantis",
+    "catalogName": "Atlantis",
+    "author": "3D-LAND",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/stargate-atlantis-city-lowpoly-c388111b4b1445ba94dbebad4d759dea",
+    "sourceAsset": "[STARGATE] Atlantis city lowpoly",
+    "attribution": "[STARGATE] Atlantis city lowpoly by 3D-LAND on Sketchfab (CC BY) — https://sketchfab.com/3d-models/stargate-atlantis-city-lowpoly-c388111b4b1445ba94dbebad4d759dea",
+    "requiresAttribution": true,
+    "notes": "Requested Ace_Fighter Atlantis City Ship (a4d4105890994f97b60632dcadb33875) is CC-BY-NC. Substituted 3D-LAND's downloadable CC-BY low-poly city-ship (similar snowflake silhouette). Scaled to ~3 km span in-app."
   },
   {
     "id": "b1",
@@ -216,6 +240,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "Air Force One - Boeing 747 VC-25A/B by bohmerang on Sketchfab (CC BY-NC-SA) — https://sketchfab.com/3d-models/air-force-one-boeing-747-vc-25ab-327154ad78154f8f9c0ec7169fd4820c",
     "requiresAttribution": true,
     "notes": "VC-25 Air Force One / Boeing 747 (CC-BY-NC-SA). Scaled to 70.66 m length in-app. Non-commercial use only."
+  },
+  {
+    "id": "borg-cube",
+    "catalogName": "Borg Cube",
+    "author": "s7ntech",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/borg-inspired-cube-5b9886afa1d24e8fbbf332879a33c1cb",
+    "sourceAsset": "Borg Inspired Cube",
+    "attribution": "Borg Inspired Cube by s7ntech on Sketchfab (CC BY) — https://sketchfab.com/3d-models/borg-inspired-cube-5b9886afa1d24e8fbbf332879a33c1cb",
+    "requiresAttribution": true,
+    "notes": "Borg Inspired Cube (CC-BY). Scaled to 3040 m edge (TNG volume / EAS). Sketchfab animation clips stripped."
   },
   {
     "id": "burj",
@@ -314,16 +350,64 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Colosseum reconstruction (CC-BY). Scaled to 189 m length in-app."
   },
   {
-    "id": "alkesh",
-    "catalogName": "Daedalus (BC-304)",
+    "id": "constitution-iii",
+    "catalogName": "Constitution III-class",
+    "author": "LoganRolphh",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/star-trek-online-constitution-class-iii-f1e1e4d8ade64d99bf96c5c984f85ec1",
+    "sourceAsset": "Star trek online | Constitution class III",
+    "attribution": "Star trek online | Constitution class III by LoganRolphh on Sketchfab (CC BY) — https://sketchfab.com/3d-models/star-trek-online-constitution-class-iii-f1e1e4d8ade64d99bf96c5c984f85ec1",
+    "requiresAttribution": true,
+    "notes": "Star trek online | Constitution class III (CC-BY). Scaled to 560.5 m length (Dave Blass / PIC S3)."
+  },
+  {
+    "id": "constitution-tos",
+    "catalogName": "Constitution-class (TOS)",
     "author": "Wholock",
     "license": "CC-BY-4.0",
     "licenseLabel": "CC BY",
-    "source": "https://sketchfab.com/3d-models/stargate-alkesh-3f949ac3f658421db2b102ceb1f9e172",
-    "sourceAsset": "Stargate - Al'kesh",
-    "attribution": "Stargate - Al'kesh by Wholock on Sketchfab (CC BY) — https://sketchfab.com/3d-models/stargate-alkesh-3f949ac3f658421db2b102ceb1f9e172",
+    "source": "https://sketchfab.com/3d-models/star-trek-constitution-class-tos-6089a6e12a934b1caf30b0a7659405cc",
+    "sourceAsset": "Star Trek - Constitution Class (TOS)",
+    "attribution": "Star Trek - Constitution Class (TOS) by Wholock on Sketchfab (CC BY) — https://sketchfab.com/3d-models/star-trek-constitution-class-tos-6089a6e12a934b1caf30b0a7659405cc",
     "requiresAttribution": true,
-    "notes": "Al'kesh (CC-BY). Scaled to 45 m length in-app."
+    "notes": "Star Trek - Constitution Class (TOS) (CC-BY). Scaled to 289 m length (Matt Jefferies / Encyclopedia)."
+  },
+  {
+    "id": "cr-90",
+    "catalogName": "CR-90 Corvette",
+    "author": "Daniel",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/star-wars-cr-90-60e26a508ca84126b30f01461f60086e",
+    "sourceAsset": "Star Wars: CR-90",
+    "attribution": "Star Wars: CR-90 by Daniel on Sketchfab (CC BY) — https://sketchfab.com/3d-models/star-wars-cr-90-60e26a508ca84126b30f01461f60086e",
+    "requiresAttribution": true,
+    "notes": "CR-90 corvette (CC-BY). Scaled to 150 m length in-app."
+  },
+  {
+    "id": "daedalus",
+    "catalogName": "Daedalus (BC-304)",
+    "author": "3D Sci-Fi",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/stargate-bc-304-39c143f7c4634f05830b6896e6a395a0",
+    "sourceAsset": "Stargate | BC-304",
+    "attribution": "Stargate | BC-304 by 3D Sci-Fi on Sketchfab (CC BY) — https://sketchfab.com/3d-models/stargate-bc-304-39c143f7c4634f05830b6896e6a395a0",
+    "requiresAttribution": true,
+    "notes": "BC-304 Daedalus (CC-BY). Scaled to 536 m length in-app."
+  },
+  {
+    "id": "death-star-ii",
+    "catalogName": "Death Star II",
+    "author": "nathanmlange",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/death-star-ii-17ccca0dbb6b4e338fa999202f9e6685",
+    "sourceAsset": "Death Star II",
+    "attribution": "Death Star II by nathanmlange on Sketchfab (CC BY) — https://sketchfab.com/3d-models/death-star-ii-17ccca0dbb6b4e338fa999202f9e6685",
+    "requiresAttribution": true,
+    "notes": "Requested nathanmlange Death Star II (17ccca0dbb6b4e338fa999202f9e6685), CC-BY. Scaled to 160 km diameter in-app (common official figure)."
   },
   {
     "id": "horse",
@@ -336,6 +420,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "Draft Horse Walk by Bazsi1986 on Sketchfab (CC BY) — https://sketchfab.com/3d-models/draft-horse-walk-0541f4f11cb44383bf32b906aac5288e",
     "requiresAttribution": true,
     "notes": "Draft horse walk (CC-BY, Bazsi1986). Linked GremorySaiyan run is Standard. Scaled to 1.73 m withers height in-app."
+  },
+  {
+    "id": "earth-spacedock",
+    "catalogName": "Earth Spacedock",
+    "author": "Crusty Bread",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/star-trek-earth-spacedock-1e37520c846c448a81ca70f1c82cd09e",
+    "sourceAsset": "Star Trek Earth Spacedock",
+    "attribution": "Star Trek Earth Spacedock by Crusty Bread on Sketchfab (CC BY) — https://sketchfab.com/3d-models/star-trek-earth-spacedock-1e37520c846c448a81ca70f1c82cd09e",
+    "requiresAttribution": true,
+    "notes": "Star Trek Earth Spacedock (CC-BY). Scaled to 3800 m diameter (EAS / ILM size chart)."
   },
   {
     "id": "eiffel",
@@ -554,6 +650,30 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Snake attack (CC-BY, Imagigoo). Linked GremorySaiyan white anaconda is Standard. Scaled to 5.5 m length in-app."
   },
   {
+    "id": "grogu",
+    "catalogName": "Grogu",
+    "author": "OSCAR CREATIVO",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/baby-yoda-free-3d-by-oscar-creativo-fa68b8701e1d446cb0341c9dbc21df14",
+    "sourceAsset": "BABY YODA FREE 3D BY OSCAR CREATIVO",
+    "attribution": "BABY YODA FREE 3D BY OSCAR CREATIVO by OSCAR CREATIVO on Sketchfab (CC BY) — https://sketchfab.com/3d-models/baby-yoda-free-3d-by-oscar-creativo-fa68b8701e1d446cb0341c9dbc21df14",
+    "requiresAttribution": true,
+    "notes": "Grogu / Baby Yoda (CC-BY). Scaled to 0.42 m height in-app."
+  },
+  {
+    "id": "isd-ii",
+    "catalogName": "Imperial II Star Destroyer",
+    "author": "Daniel",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/star-wars-imperial-ii-star-destroyer-b8bd2d35f7604670ab85242c06c6d280",
+    "sourceAsset": "Star Wars: Imperial II Star Destroyer",
+    "attribution": "Star Wars: Imperial II Star Destroyer by Daniel on Sketchfab (CC BY) — https://sketchfab.com/3d-models/star-wars-imperial-ii-star-destroyer-b8bd2d35f7604670ab85242c06c6d280",
+    "requiresAttribution": true,
+    "notes": "Imperial II-class Star Destroyer (CC-BY). Scaled to 1,600 m length in-app."
+  },
+  {
     "id": "independence",
     "catalogName": "Independence-class LCS",
     "author": "Muhamad Mirza Arrafi",
@@ -564,6 +684,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "USS INDEPENDENCE  LCS-2 by Muhamad Mirza Arrafi on Sketchfab (CC BY) — https://sketchfab.com/3d-models/uss-independence-lcs-2-7db04398d9524a36a6e08bead0050b76",
     "requiresAttribution": true,
     "notes": "USS Independence LCS-2 by nazidefenseforceofficial (CC-BY). Scaled to 127.4 m length in-app."
+  },
+  {
+    "id": "intrepid-type",
+    "catalogName": "Intrepid-type",
+    "author": "Wholock",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/star-trek-intrepid-type-554e931031264afca1b4c62ecbff2978",
+    "sourceAsset": "Star Trek - Intrepid Type",
+    "attribution": "Star Trek - Intrepid Type by Wholock on Sketchfab (CC BY) — https://sketchfab.com/3d-models/star-trek-intrepid-type-554e931031264afca1b4c62ecbff2978",
+    "requiresAttribution": true,
+    "notes": "Star Trek - Intrepid Type (CC-BY). Scaled to 165 m length (ENT Intrepid type, EAS)."
   },
   {
     "id": "iphone",
@@ -578,6 +710,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Apple iPhone based mobile phone by Rescue3D (CC-BY). Scaled to 0.147 m height in-app."
   },
   {
+    "id": "k2so",
+    "catalogName": "K-2SO",
+    "author": "OSCAR CREATIVO",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/free-droide-de-seguridad-k-2so-by-oscar-creativo-e4c65688ae1b47ec9e1dd6acec2dcadd",
+    "sourceAsset": "Free Droide De Seguridad K-2SO By Oscar Creativo",
+    "attribution": "Free Droide De Seguridad K-2SO By Oscar Creativo by OSCAR CREATIVO on Sketchfab (CC BY) — https://sketchfab.com/3d-models/free-droide-de-seguridad-k-2so-by-oscar-creativo-e4c65688ae1b47ec9e1dd6acec2dcadd",
+    "requiresAttribution": true,
+    "notes": "K-2SO security droid (CC-BY). Scaled to 2.16 m height in-app. Plays the imported motion clip when focused."
+  },
+  {
     "id": "kiev",
     "catalogName": "Kiev-class carrier",
     "author": "Muhamad Mirza Arrafi",
@@ -588,6 +732,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "KIEV CLASS AIRCRAFT CARRIER by Muhamad Mirza Arrafi on Sketchfab (CC BY) — https://sketchfab.com/3d-models/kiev-class-aircraft-carrier-f854eda1eab54a40aae8628e6456ae78",
     "requiresAttribution": true,
     "notes": "Kiev-class carrier by nazidefenseforceofficial (CC-BY). Scaled to 273 m length in-app."
+  },
+  {
+    "id": "klingon-d5",
+    "catalogName": "Klingon D5-class",
+    "author": "Wholock",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/star-trek-klingon-d5-class-eea68280064e41178a711c875a02c850",
+    "sourceAsset": "Star Trek - Klingon D5 Class",
+    "attribution": "Star Trek - Klingon D5 Class by Wholock on Sketchfab (CC BY) — https://sketchfab.com/3d-models/star-trek-klingon-d5-class-eea68280064e41178a711c875a02c850",
+    "requiresAttribution": true,
+    "notes": "Star Trek - Klingon D5 Class (CC-BY). Scaled to 250 m length (ENT D5, fan/EAS)."
   },
   {
     "id": "leopard",
@@ -636,6 +792,30 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "M4 Sherman Tank Challenger by sayedgamal655 on Sketchfab (CC BY) — https://sketchfab.com/3d-models/m4-sherman-tank-challenger-e5252c21cd624182862514de993d21f3",
     "requiresAttribution": true,
     "notes": "M4 Sherman Tank Challenger (CC-BY). Scaled to 5.89 m length in-app."
+  },
+  {
+    "id": "tealc",
+    "catalogName": "Milky Way Stargate",
+    "author": "ptibogvader",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/tealc-857e5c8f8db1474c99508ed5e2f0c08e",
+    "sourceAsset": "Teal'c",
+    "attribution": "Teal'c by ptibogvader on Sketchfab (CC BY) — https://sketchfab.com/3d-models/tealc-857e5c8f8db1474c99508ed5e2f0c08e",
+    "requiresAttribution": true,
+    "notes": "Teal'c (CC-BY). Scaled to 1.96 m height in-app."
+  },
+  {
+    "id": "millennium-falcon",
+    "catalogName": "Millennium Falcon",
+    "author": "fredbear1211",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/millennium-falcon-2c0783d083e44b959c691682b4cb1f16",
+    "sourceAsset": "Millennium Falcon",
+    "attribution": "Millennium Falcon by fredbear1211 on Sketchfab (CC BY) — https://sketchfab.com/3d-models/millennium-falcon-2c0783d083e44b959c691682b4cb1f16",
+    "requiresAttribution": true,
+    "notes": "Millennium Falcon (CC-BY). Scaled to 34.75 m length in-app."
   },
   {
     "id": "patriot",
@@ -734,6 +914,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Ohio-class SSBN by yakudami (CC-BY). Scaled to 170.7 m length in-app."
   },
   {
+    "id": "hatak",
+    "catalogName": "Ori Warship",
+    "author": "TaurWing",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/hatak-b8134aff08d645d8b72869f69d1989df",
+    "sourceAsset": "Ha'tak",
+    "attribution": "Ha'tak by TaurWing on Sketchfab (CC BY) — https://sketchfab.com/3d-models/hatak-b8134aff08d645d8b72869f69d1989df",
+    "requiresAttribution": true,
+    "notes": "Goa'uld Ha'tak mothership (CC-BY). Scaled to 700 m length in-app."
+  },
+  {
     "id": "owl",
     "catalogName": "Owl",
     "author": "po",
@@ -746,20 +938,20 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Owl (CC-BY, pothedev, fly/walk/idle clips). Linked GremorySaiyan fly is Standard. Scaled to 1.4 m wingspan in-app."
   },
   {
-    "id": "tealc",
-    "catalogName": "Puddle Jumper",
-    "author": "ptibogvader",
+    "id": "alkesh",
+    "catalogName": "Prometheus (BC-303)",
+    "author": "Wholock",
     "license": "CC-BY-4.0",
     "licenseLabel": "CC BY",
-    "source": "https://sketchfab.com/3d-models/tealc-857e5c8f8db1474c99508ed5e2f0c08e",
-    "sourceAsset": "Teal'c",
-    "attribution": "Teal'c by ptibogvader on Sketchfab (CC BY) — https://sketchfab.com/3d-models/tealc-857e5c8f8db1474c99508ed5e2f0c08e",
+    "source": "https://sketchfab.com/3d-models/stargate-alkesh-3f949ac3f658421db2b102ceb1f9e172",
+    "sourceAsset": "Stargate - Al'kesh",
+    "attribution": "Stargate - Al'kesh by Wholock on Sketchfab (CC BY) — https://sketchfab.com/3d-models/stargate-alkesh-3f949ac3f658421db2b102ceb1f9e172",
     "requiresAttribution": true,
-    "notes": "Teal'c (CC-BY). Scaled to 1.96 m height in-app."
+    "notes": "Al'kesh (CC-BY). Scaled to 45 m length in-app."
   },
   {
     "id": "puddle-jumper",
-    "catalogName": "Puddle Jumper - Stargate SG1",
+    "catalogName": "Puddle Jumper",
     "author": "rossrobotics",
     "license": "CC-BY-4.0",
     "licenseLabel": "CC BY",
@@ -780,6 +972,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "Low-poly animated rabbit by Pneshik on Sketchfab (CC BY) — https://sketchfab.com/3d-models/low-poly-animated-rabbit-dcf4d25f535347b1bfb859c659314bde",
     "requiresAttribution": true,
     "notes": "Low-poly rabbit (CC-BY, Pneshik, 5 clips). Linked GremorySaiyan pack is Standard. Scaled to 0.4 m length in-app."
+  },
+  {
+    "id": "dkyr",
+    "catalogName": "Romulan Valdore",
+    "author": "Wholock",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/star-trek-dkyr-class-81a01b719ec4437ea47342aa7c944cca",
+    "sourceAsset": "Star Trek - Dkyr Class",
+    "attribution": "Star Trek - Dkyr Class by Wholock on Sketchfab (CC BY) — https://sketchfab.com/3d-models/star-trek-dkyr-class-81a01b719ec4437ea47342aa7c944cca",
+    "requiresAttribution": true,
+    "notes": "Star Trek - Dkyr Class (CC-BY). Scaled to 600 m length (EAS / Drex)."
   },
   {
     "id": "saturn-v",
@@ -806,6 +1010,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Low-poly school bus by Macaroni (CC-BY). Scaled to 12 m length in-app."
   },
   {
+    "id": "ori-warship",
+    "catalogName": "SG Ori",
+    "author": "rossrobotics",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/sg-ori-dd113e1a161a4647a684fa5e81c2968e",
+    "sourceAsset": "SG Ori",
+    "attribution": "SG Ori by rossrobotics on Sketchfab (CC BY) — https://sketchfab.com/3d-models/sg-ori-dd113e1a161a4647a684fa5e81c2968e",
+    "requiresAttribution": true,
+    "notes": "Ori warship (CC-BY). ~521k tris; no lower-poly downloadable CC match. Scaled to 1100 m length in-app."
+  },
+  {
     "id": "sls",
     "catalogName": "SLS Block 1",
     "author": "OFFhead",
@@ -818,16 +1034,40 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Artemis II SLS low-poly (CC-BY, ~12k tris). Scaled to 98 m height in-app."
   },
   {
-    "id": "soyuz-2",
-    "catalogName": "Soyuz-2",
-    "author": "Paculino",
+    "id": "sovereign",
+    "catalogName": "Sovereign-class",
+    "author": "Wholock",
     "license": "CC-BY-4.0",
     "licenseLabel": "CC BY",
-    "source": "https://sketchfab.com/3d-models/soyuz-fg-1320bf0fd1b242cd8cfda77d381a147f",
-    "sourceAsset": "Soyuz-FG",
-    "attribution": "Soyuz-FG by Paculino on Sketchfab (CC BY) — https://sketchfab.com/3d-models/soyuz-fg-1320bf0fd1b242cd8cfda77d381a147f",
+    "source": "https://sketchfab.com/3d-models/star-trek-sovereign-class-e54ca13f5a3747c584dd304e4bb81826",
+    "sourceAsset": "Star Trek - Sovereign Class",
+    "attribution": "Star Trek - Sovereign Class by Wholock on Sketchfab (CC BY) — https://sketchfab.com/3d-models/star-trek-sovereign-class-e54ca13f5a3747c584dd304e4bb81826",
     "requiresAttribution": true,
-    "notes": "Soyuz-FG stand-in for Soyuz-2 (CC-BY, ~5k tris). Scaled to 46.1 m height in-app."
+    "notes": "Star Trek - Sovereign Class (CC-BY). Scaled to 685 m length (John Eaves / Drex)."
+  },
+  {
+    "id": "sto-sovereign",
+    "catalogName": "Sovereign-class (STO)",
+    "author": "LoganRolphh",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/star-trek-online-sovereign-class-d5f9c5ad5e9e44049af4a64a831d0ba2",
+    "sourceAsset": "Star Trek Online | Sovereign Class",
+    "attribution": "Star Trek Online | Sovereign Class by LoganRolphh on Sketchfab (CC BY) — https://sketchfab.com/3d-models/star-trek-online-sovereign-class-d5f9c5ad5e9e44049af4a64a831d0ba2",
+    "requiresAttribution": true,
+    "notes": "Star Trek Online | Sovereign Class (CC-BY). Scaled to 685 m length (Sovereign class)."
+  },
+  {
+    "id": "soyuz-tma",
+    "catalogName": "Soyuz TMA",
+    "author": "TwilightSparkleX",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/soyuz-tma-1ac2fad9da5242b9bf7c78872410c79e",
+    "sourceAsset": "Soyuz TMA",
+    "attribution": "Soyuz TMA by TwilightSparkleX on Sketchfab (CC BY) — https://sketchfab.com/3d-models/soyuz-tma-1ac2fad9da5242b9bf7c78872410c79e",
+    "requiresAttribution": true,
+    "notes": "Soyuz TMA spacecraft (CC-BY). Scaled to 7.48 m length in-app."
   },
   {
     "id": "spinosaurus",
@@ -842,16 +1082,40 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Walking Spinosaurus maroccanus (CC-BY, nobilishornet). Linked GremorySaiyan pack is Standard. Scaled to 14 m length in-app."
   },
   {
-    "id": "daedalus",
-    "catalogName": "Stargate | BC-304",
+    "id": "valdore",
+    "catalogName": "Star Trek Online | Romulan Valdore",
+    "author": "LoganRolphh",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/star-trek-online-romulan-valdore-b895da5d0f14435cb867407a21cb86df",
+    "sourceAsset": "Star Trek Online | Romulan Valdore",
+    "attribution": "Star Trek Online | Romulan Valdore by LoganRolphh on Sketchfab (CC BY) — https://sketchfab.com/3d-models/star-trek-online-romulan-valdore-b895da5d0f14435cb867407a21cb86df",
+    "requiresAttribution": true,
+    "notes": "Star Trek Online | Romulan Valdore (CC-BY). Scaled to 604 m length (EAS / OSC)."
+  },
+  {
+    "id": "milky-way-stargate",
+    "catalogName": "Stargate",
+    "author": "cubedreality",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/stargate-b92fd621e93f4b9eaa52b6c8423b452b",
+    "sourceAsset": "Stargate",
+    "attribution": "Stargate by cubedreality on Sketchfab (CC BY) — https://sketchfab.com/3d-models/stargate-b92fd621e93f4b9eaa52b6c8423b452b",
+    "requiresAttribution": true,
+    "notes": "Requested Anquietas System Milky Way Stargate (517b56e322a548ac81dd8454dbbd95bf) is CC-BY-NC. Substituted cubedreality's downloadable CC-BY Milky Way gate. Scaled to 6.7 m diameter in-app."
+  },
+  {
+    "id": "prometheus",
+    "catalogName": "Stargate | BC-303",
     "author": "3D Sci-Fi",
     "license": "CC-BY-4.0",
     "licenseLabel": "CC BY",
-    "source": "https://sketchfab.com/3d-models/stargate-bc-304-39c143f7c4634f05830b6896e6a395a0",
-    "sourceAsset": "Stargate | BC-304",
-    "attribution": "Stargate | BC-304 by 3D Sci-Fi on Sketchfab (CC BY) — https://sketchfab.com/3d-models/stargate-bc-304-39c143f7c4634f05830b6896e6a395a0",
+    "source": "https://sketchfab.com/3d-models/stargate-bc-303-b5b003619f1e4d018e44036286ab1168",
+    "sourceAsset": "Stargate | BC-303",
+    "attribution": "Stargate | BC-303 by 3D Sci-Fi on Sketchfab (CC BY) — https://sketchfab.com/3d-models/stargate-bc-303-b5b003619f1e4d018e44036286ab1168",
     "requiresAttribution": true,
-    "notes": "BC-304 Daedalus (CC-BY). Scaled to 536 m length in-app."
+    "notes": "BC-303 Prometheus (CC-BY). Scaled to 195 m length in-app."
   },
   {
     "id": "starship",
@@ -888,6 +1152,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "Stonehenge by Sereib on Sketchfab (CC BY) — https://sketchfab.com/3d-models/stonehenge-b43f5366560f48498a46812ebcabf3e6",
     "requiresAttribution": true,
     "notes": "Stonehenge (CC-BY). Scaled to 7.2 m lintel height in-app."
+  },
+  {
+    "id": "stormtrooper",
+    "catalogName": "Stormtrooper",
+    "author": "lampotstreams",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/stormtrooper-walk-45034f4262d8412faff8ba57a64786ad",
+    "sourceAsset": "Stormtrooper-walk",
+    "attribution": "Stormtrooper-walk by lampotstreams on Sketchfab (CC BY) — https://sketchfab.com/3d-models/stormtrooper-walk-45034f4262d8412faff8ba57a64786ad",
+    "requiresAttribution": true,
+    "notes": "Requested LostModels2025 Stormtrooper Walk (dc7237f92c824cd78abc0f5bb4cb6290) is CC-BY-NC. Substituted lampotstreams' downloadable CC-BY walk clip (same ~55k-face silhouette). Scaled to 1.83 m height in-app. Walks when focused."
   },
   {
     "id": "sydney-opera-house",
@@ -950,6 +1226,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Tu-22M3 by nazidefenseforceofficial (CC-BY). Scaled to 42.46 m length in-app."
   },
   {
+    "id": "type-15-shuttle",
+    "catalogName": "Type 15 Shuttlepod",
+    "author": "riker446",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/shuttle-typ-15-e545dfea34e94844bc59064b1ce2186e",
+    "sourceAsset": "Shuttle Typ 15",
+    "attribution": "Shuttle Typ 15 by riker446 on Sketchfab (CC BY) — https://sketchfab.com/3d-models/shuttle-typ-15-e545dfea34e94844bc59064b1ce2186e",
+    "requiresAttribution": true,
+    "notes": "Shuttle Typ 15 (CC-BY). Scaled to 3.6 m length (TNG Technical Manual)."
+  },
+  {
     "id": "type45",
     "catalogName": "Type 45 destroyer",
     "author": "Muhamad Mirza Arrafi",
@@ -974,6 +1262,42 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "UH-60M Black Hawk by nazidefenseforceofficial (CC-BY). Scaled to 19.76 m length in-app."
   },
   {
+    "id": "uss-discovery",
+    "catalogName": "USS Discovery",
+    "author": "Wholock",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/star-trek-uss-discovery-af03b42eb0ac4213b634f7e951e1a5ad",
+    "sourceAsset": "Star Trek - USS Discovery",
+    "attribution": "Star Trek - USS Discovery by Wholock on Sketchfab (CC BY) — https://sketchfab.com/3d-models/star-trek-uss-discovery-af03b42eb0ac4213b634f7e951e1a5ad",
+    "requiresAttribution": true,
+    "notes": "Star Trek - USS Discovery (CC-BY). Scaled to 750.5 m length (Crossfield, OSC)."
+  },
+  {
+    "id": "dsc-enterprise",
+    "catalogName": "USS Enterprise (DSC)",
+    "author": "Wholock",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/star-trek-dsc-enterprise-98cdebaa7fae4752bcaa5a35453d224c",
+    "sourceAsset": "Star Trek - DSC Enterprise",
+    "attribution": "Star Trek - DSC Enterprise by Wholock on Sketchfab (CC BY) — https://sketchfab.com/3d-models/star-trek-dsc-enterprise-98cdebaa7fae4752bcaa5a35453d224c",
+    "requiresAttribution": true,
+    "notes": "Star Trek - DSC Enterprise (CC-BY). Scaled to 442 m length (Discovery OSC)."
+  },
+  {
+    "id": "enterprise-d",
+    "catalogName": "USS Enterprise-D",
+    "author": "LoganRolphh",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/star-trek-online-uss-enterprise-d-595123c3348646a4a7e6871ebf0e9fae",
+    "sourceAsset": "Star Trek Online | USS Enterprise D",
+    "attribution": "Star Trek Online | USS Enterprise D by LoganRolphh on Sketchfab (CC BY) — https://sketchfab.com/3d-models/star-trek-online-uss-enterprise-d-595123c3348646a4a7e6871ebf0e9fae",
+    "requiresAttribution": true,
+    "notes": "Star Trek Online | USS Enterprise D (CC-BY). Scaled to 642.5 m length (Galaxy class)."
+  },
+  {
     "id": "v22",
     "catalogName": "V-22 Osprey",
     "author": "Muhamad Mirza Arrafi",
@@ -986,6 +1310,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "V-22 Osprey by nazidefenseforceofficial (CC-BY). Scaled to 17.5 m length in-app."
   },
   {
+    "id": "venator",
+    "catalogName": "Venator-class Star Destroyer",
+    "author": "ForkyForklift",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/venator-class-star-destroyer-ff65cd3c27234615a3b68088f67e99e4",
+    "sourceAsset": "Venator Class Star Destroyer",
+    "attribution": "Venator Class Star Destroyer by ForkyForklift on Sketchfab (CC BY) — https://sketchfab.com/3d-models/venator-class-star-destroyer-ff65cd3c27234615a3b68088f67e99e4",
+    "requiresAttribution": true,
+    "notes": "Venator-class Star Destroyer (CC-BY). Scaled to 1,137 m length in-app."
+  },
+  {
     "id": "virginia",
     "catalogName": "Virginia-class submarine",
     "author": "Muhamad Mirza Arrafi",
@@ -996,6 +1332,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "VIRGINIA CLASS USS SAN FRANCISCO SSN-810 SUBMARI by Muhamad Mirza Arrafi on Sketchfab (CC BY) — https://sketchfab.com/3d-models/virginia-class-uss-san-francisco-ssn-810-submari-6b0b602041d145698ad44a6d00f35cb6",
     "requiresAttribution": true,
     "notes": "Virginia-class SSN (USS San Francisco SSN-810) by nazidefenseforceofficial (CC-BY). Scaled to 115 m length in-app."
+  },
+  {
+    "id": "walker-shenzhou",
+    "catalogName": "Walker-class (USS Shenzhou)",
+    "author": "Flowrellik",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/walker-class-uss-shenzhou-968c48ec21034d52afaad9c65de97eae",
+    "sourceAsset": "WALKER CLASS: USS SHENZHOU",
+    "attribution": "WALKER CLASS: USS SHENZHOU by Flowrellik on Sketchfab (CC BY) — https://sketchfab.com/3d-models/walker-class-uss-shenzhou-968c48ec21034d52afaad9c65de97eae",
+    "requiresAttribution": true,
+    "notes": "WALKER CLASS: USS SHENZHOU (CC-BY). Scaled to 423 m length (Walker class, OSC)."
   },
   {
     "id": "washington-monument",
@@ -1080,6 +1428,30 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "WW2 US Army Ranger by Tactical_Beard on Sketchfab (CC BY) — https://sketchfab.com/3d-models/ww2-us-army-ranger-dcbe89cd5de243af8e4677b769a831c6",
     "requiresAttribution": true,
     "notes": "WW2 US Army Ranger (CC-BY). Linked alpen soldier is not downloadable. Scaled to 1.75 m height in-app."
+  },
+  {
+    "id": "yoda",
+    "catalogName": "Yoda",
+    "author": "Mind Mulch for The Masses",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/yoda-04face8041ab4b108649093172c49af2",
+    "sourceAsset": "Yoda",
+    "attribution": "Yoda by Mind Mulch for The Masses on Sketchfab (CC BY) — https://sketchfab.com/3d-models/yoda-04face8041ab4b108649093172c49af2",
+    "requiresAttribution": true,
+    "notes": "Requested blazer003 Master Yoda (2fb5a943b7b24ac0b195a74d1a3c6c8d) is CC-BY-NC. Substituted Mind Mulch for The Masses' downloadable CC-BY full-body Yoda. Scaled to 0.66 m height in-app."
+  },
+  {
+    "id": "zpm",
+    "catalogName": "ZPM",
+    "author": "fraeric123",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/stargate-zpm-a52823e71c2146949ab59a222b72467c",
+    "sourceAsset": "Stargate ZPM",
+    "attribution": "Stargate ZPM by fraeric123 on Sketchfab (CC BY) — https://sketchfab.com/3d-models/stargate-zpm-a52823e71c2146949ab59a222b72467c",
+    "requiresAttribution": true,
+    "notes": "Requested fraeric123 Stargate ZPM (a52823e71c2146949ab59a222b72467c), CC-BY. Scaled to 0.36 m height in-app (licensed replica / screen-prop height)."
   },
   {
     "id": "zumwalt",

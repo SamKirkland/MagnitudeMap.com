@@ -16,15 +16,17 @@ The app requests files like `/models/sedan/model.glb` (Vite copies `public/` to 
 
 ## Adding a model
 
-**Default source is Sketchfab (downloadable only).**
+**Default source is the Sketchfab Data API** (token in repo-root `.env` as `SKETCHFAB_API_TOKEN`).
 
-1. Search downloadable models: https://sketchfab.com/search?features=downloadable&q=Eiffel+Tower&type=models  
-   Prefer [nazidefenseforceofficial](https://sketchfab.com/nazidefenseforceofficial/models) when they have a match. Skip Editorial / Standard / NC.
-2. Download the GLB from the model page into `public/models/{id}/model.glb` and add `license.json`. Commit both.
-3. Catalog: real-world meters, `scaleAxis`, and `yawDegrees` so **+Z is nose / length** (Facing 0°). Tags in `src/data/catalogTags.ts`.
-4. In the viewer, confirm the silhouette is cropped (no empty hangar), it sits on the ground, and scale matches person-male (1.75 m).
-5. Run `npm run sync-attributions`.
-6. `npm run compress-models` Draco-compresses new GLBs in place and no-ops files that already have Draco/meshopt. The production build runs this automatically.
+1. Search downloadable models:
+   `GET https://api.sketchfab.com/v3/search?type=models&q=Eiffel+Tower&downloadable=true`  
+   Header: `Authorization: Token $SKETCHFAB_API_TOKEN`  
+   Prefer `&user=nazidefenseforceofficial` when they have a match. Skip Editorial / Standard / NC.
+2. Confirm `isDownloadable` on `GET /v3/models/{uid}`, then `GET /v3/models/{uid}/download` and save `glb.url` to `public/models/{id}/model.glb`. Add `license.json`.
+3. Run `npm run compress-models -- --only={id}` (skips files that already have Draco/meshopt).
+4. Catalog: real-world meters, `scaleAxis`, and `yawDegrees` so **+Z is nose / length** (Facing 0°). Tags in `src/data/catalogTags.ts`.
+5. In the viewer, confirm the silhouette is cropped (no empty hangar), it sits on the ground, and scale matches person-male (1.75 m).
+6. Run `npm run sync-attributions` and commit the compressed GLB + `license.json`.
 
 Prefer exterior-only GLBs. Skip studio floors, terrain, and MSFS/sim kits that hide lights by teleporting them thousands of meters away.
 
@@ -37,8 +39,7 @@ Manual drop-in (if you already have a redistributable GLB):
 3. If the GLB references external textures, put them at the URI path the GLB asks for (use lowercase `textures/` so Vite case-matching works).
 4. Add `license.json` with `author`, `license`, `source`, `sourceAsset` (and `attribution` for CC-BY).
    **Only permissive redistributable licenses** (CC0, CC-BY, MIT, Apache-2.0, BSD, NASA media, etc.).
-5. Register the item in `src/data/catalog.ts` and run `npm run sync-attributions`.
-6. Run `npm run compress-models` (or let the next production build do it).
+5. Register the item in `src/data/catalog.ts`, run `npm run compress-models -- --only={id}`, then `npm run sync-attributions`.
 
 ## Scale rules
 
