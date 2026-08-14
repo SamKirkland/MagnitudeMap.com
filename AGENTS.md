@@ -2,23 +2,16 @@
 
 ## 3D models: Sketchfab by default
 
-When searching for or replacing 3D models in this repo, use **Sketchfab** and the API token in repo-root `.env` (`SKETCHFAB_API_TOKEN`). Do not commit `.env`.
+When searching for or replacing 3D models in this repo, use **Sketchfab**. Filter to **downloadable** models:
 
-Filter to **downloadable** models:
-
-- Helper: `npm run search-sketchfab -- "Eiffel Tower"`
 - Web: https://sketchfab.com/search?features=downloadable&q=Eiffel+Tower&type=models
-- API: `GET https://api.sketchfab.com/v3/search?type=models&q=Eiffel+Tower&downloadable=true` with `Authorization: Token $SKETCHFAB_API_TOKEN`
+- Prefer [nazidefenseforceofficial](https://sketchfab.com/nazidefenseforceofficial/models) when they have a suitable CC-licensed match.
 
-Prefer [nazidefenseforceofficial](https://sketchfab.com/nazidefenseforceofficial/models) when they have a suitable CC-licensed match.
+**Ship only** CC0 / CC-BY / CC-BY-SA. Skip Editorial, Standard, NonCommercial, and anything that is not downloadable. If a requested Sketchfab link is not redistributable, find a downloadable CC stand-in and record the substitution in that model’s `license.json` `notes`.
 
-**Ship only** CC0 / CC-BY / CC-BY-SA. Skip Editorial, Standard, NonCommercial, and anything that is not downloadable. If a requested Sketchfab link is not redistributable, find a downloadable CC stand-in and record the substitution in `scripts/fetch-sketchfab.mjs`.
+## Commit the GLB
 
-## Commit the GLB — fetch is optional
-
-`public/models/{id}/model.glb` and `license.json` are the runtime source of truth. **Commit them.** A clone / Pages deploy must work without running any fetch script.
-
-`npm run fetch-sketchfab` is only a helper to download a Sketchfab GLB and write `license.json`. You can also drop a redistributable GLB in by hand and run `npm run sync-attributions`.
+`public/models/{id}/model.glb` and `license.json` are the runtime source of truth. **Commit them.** A clone / Pages deploy must work from those files alone. Drop a redistributable GLB in by hand and run `npm run sync-attributions`.
 
 ## Every new or replaced model
 

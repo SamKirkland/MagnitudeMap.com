@@ -27,8 +27,4 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 
-# downloaded source packs (curated copies live in public/models)
-.tmp-models/
-
-.tmp-models/
 

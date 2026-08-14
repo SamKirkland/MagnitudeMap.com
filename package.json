@@ -5,20 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build && node scripts/generate-og.mjs",
-    "build:static": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && node scripts/compress-models.mjs && vite build && node scripts/generate-og.mjs",
+    "build:static": "tsc --noEmit && node scripts/compress-models.mjs && vite build",
+    "compress-models": "node scripts/compress-models.mjs",
     "preview": "vite preview",
     "generate-og": "node scripts/generate-og.mjs",
     "generate-og:ui": "vite --open og-capture.html",
     "lint": "eslint .",
-    "fetch-models": "node scripts/fetch-models.mjs",
-    "fetch-open-models": "node scripts/fetch-open-models.mjs",
-    "fetch-sketchfab": "node scripts/fetch-sketchfab.mjs",
-    "postfetch-sketchfab": "node scripts/sync-attributions.mjs",
-    "search-sketchfab": "node scripts/search-sketchfab.mjs",
-    "sync-attributions": "node scripts/sync-attributions.mjs",
-    "generate-rockets": "node scripts/generate-rockets.mjs",
-    "generate-props": "node scripts/generate-props.mjs && node scripts/sync-attributions.mjs"
+    "sync-attributions": "node scripts/sync-attributions.mjs"
   },
   "dependencies": {
     "@babylonjs/addons": "^9.20.0",
@@ -36,10 +30,14 @@
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@gltf-transform/core": "^4.4.2",
+    "@gltf-transform/extensions": "^4.4.2",
+    "@gltf-transform/functions": "^4.4.2",
     "@types/react": "^18.0.28",
     "@types/react-dom": "^18.0.11",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.14",
+    "draco3dgltf": "^1.5.7",
     "eslint": "^8.35.0",
     "eslint-plugin-react-hooks": "^4.6.2",
     "eslint-plugin-react-refresh": "^0.4.19",

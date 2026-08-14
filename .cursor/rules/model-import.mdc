@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Adding a 3D model
 
-Committed files under `public/models/{id}/` are the source of truth (`model.glb` + `license.json`). The site loads those at runtime. `npm run fetch-sketchfab` is optional (download + license.json). Do not treat fetch as a build step.
+Committed files under `public/models/{id}/` are the source of truth (`model.glb` + `license.json`). The site loads those at runtime. Drop the GLB in by hand; do not treat any download script as a build step.
 
 ## After every add or replace
 

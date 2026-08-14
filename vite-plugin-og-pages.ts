@@ -1,6 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { dirname, resolve } from 'node:path'
+import { setTimeout as sleep } from 'node:timers/promises'
 import { fileURLToPath } from 'node:url'
 import type { Plugin } from 'vite'
 import { COMPARISON_PRESETS } from './src/data/catalog'
@@ -94,33 +95,72 @@ function readBody(req: IncomingMessage): Promise<Uint8Array> {
   })
 }
 
+const RETRYABLE_FS_CODES = new Set([
+  'UNKNOWN',
+  'EBUSY',
+  'EPERM',
+  'EACCES',
+  'EAGAIN',
+])
+
+function isRetryableFsError(error: unknown): boolean {
+  if (!error || typeof error !== 'object' || !('code' in error)) return false
+  return RETRYABLE_FS_CODES.has(String((error as { code: unknown }).code))
+}
+
+/** Windows often reports a brief lock (Watcher / Defender) as UNKNOWN. */
+async function writeFileWithRetry(path: string, data: Uint8Array): Promise<void> {
+  let lastError: unknown
+  for (let attempt = 0; attempt < 8; attempt++) {
+    try {
+      writeFileSync(path, data)
+      return
+    } catch (error) {
+      lastError = error
+      if (!isRetryableFsError(error)) throw error
+      await sleep(50 * 2 ** Math.min(attempt, 4))
+    }
+  }
+  throw lastError
+}
+
+function sendError(res: ServerResponse, status: number, message: string) {
+  res.statusCode = status
+  res.setHeader('content-type', 'text/plain')
+  res.end(message)
+}
+
 /** Dev-only: capture page POSTs JPEGs into `public/og/`. */
 export function ogWritePlugin(): Plugin {
   return {
     name: 'og-write',
     configureServer(server) {
-      server.middlewares.use(
-        async (req: IncomingMessage, res: ServerResponse, next) => {
-          const path = req.url?.split('?')[0]
-          if (path !== '/__og-write' || req.method !== 'POST') {
-            next()
-            return
+      server.middlewares.use((req: IncomingMessage, res: ServerResponse, next) => {
+        const path = req.url?.split('?')[0]
+        if (path !== '/__og-write' || req.method !== 'POST') {
+          next()
+          return
+        }
+        void (async () => {
+          try {
+            const slug = String(req.headers['x-og-slug'] ?? '')
+            if (!/^[a-z0-9-]+$/.test(slug)) {
+              sendError(res, 400, 'bad slug')
+              return
+            }
+            const body = await readBody(req)
+            const dir = resolve(rootDir, 'public/og')
+            mkdirSync(dir, { recursive: true })
+            await writeFileWithRetry(resolve(dir, `${slug}.jpg`), body)
+            res.statusCode = 200
+            res.setHeader('content-type', 'text/plain')
+            res.end('ok')
+          } catch (error) {
+            const message = error instanceof Error ? error.message : 'write failed'
+            sendError(res, 500, message)
           }
-          const slug = String(req.headers['x-og-slug'] ?? '')
-          if (!/^[a-z0-9-]+$/.test(slug)) {
-            res.statusCode = 400
-            res.end('bad slug')
-            return
-          }
-          const body = await readBody(req)
-          const dir = resolve(rootDir, 'public/og')
-          mkdirSync(dir, { recursive: true })
-          writeFileSync(resolve(dir, `${slug}.jpg`), body)
-          res.statusCode = 200
-          res.setHeader('content-type', 'text/plain')
-          res.end('ok')
-        },
-      )
+        })()
+      })
     },
   }
 }

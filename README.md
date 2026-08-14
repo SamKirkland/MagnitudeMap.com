@@ -52,7 +52,7 @@ Ship a curated library of default 3D models (OBJ and similar formats). Also let 
 ### Attribution workflow
 
 1. Every model folder needs `public/models/{id}/license.json` with at least `author`, `license`, `source`, and `sourceAsset`.
-2. Run `npm run sync-attributions` (also runs after `fetch-sketchfab` / `generate-props`) to refresh `src/data/attributions.ts`.
+2. Run `npm run sync-attributions` to refresh `src/data/attributions.ts`.
 3. In the Library, the info icon toggles author/license under each model.
 
 ## Target comparisons
@@ -92,10 +92,8 @@ Examples of what users will want to line up:
 - **Vite** + **React** + **TypeScript** → static SPA
 - **Babylon.js** for the 3D comparison viewer (React UI shells the canvas; scene is non-reactive)
 - **Tailwind CSS** + custom panel styles for UI
-- Colored GLB models live under `public/models/{id}/` (static-hosted; see `public/models/README.md`)
-- `npm run fetch-models` refreshes curated Kenney CC0 samples into that folder
-- `npm run search-sketchfab -- "Eiffel Tower"` searches downloadable Sketchfab models (`SKETCHFAB_API_TOKEN` in `.env`)
-- `npm run fetch-sketchfab` downloads curated Sketchfab GLBs (needs `SKETCHFAB_API_TOKEN` in `.env`) and syncs Credits
+- Colored GLB models live under `public/models/{id}/` (committed + static-hosted; see `public/models/README.md`)
+- `npm run compress-models` Draco-compresses those GLBs in place; already-compressed files are skipped. `build` / `build:static` run this first.
 
 ## Architecture notes
 
@@ -108,7 +106,6 @@ Examples of what users will want to line up:
 
 ```bash
 npm install
-# Optional: copy .env.example → .env and add SKETCHFAB_API_TOKEN to search/download Sketchfab models
 npm run dev
 ```
 

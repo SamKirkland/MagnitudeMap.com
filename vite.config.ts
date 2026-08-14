@@ -11,6 +11,12 @@ const rootDir = dirname(fileURLToPath(import.meta.url))
 export default defineConfig({
   plugins: [react(), ogWritePlugin(), ogPagesPlugin()],
   base: './',
+  server: {
+    watch: {
+      // Writing capture JPEGs must not lock or reload the dev server.
+      ignored: ['**/public/og/**'],
+    },
+  },
   build: {
     outDir: 'dist',
     assetsDir: 'assets',

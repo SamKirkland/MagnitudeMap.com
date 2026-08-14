@@ -904,16 +904,16 @@ const CATALOG_SEED: CatalogSeed[] = [
   },
   {
     id: 'starship',
-    name: 'Starship (full stack)',
+    name: 'Starship Block 3',
     category: 'spacecraft',
     length: 9.0,
     width: 9.0,
-    height: 121,
+    height: 124.4,
     shape: 'cylinder',
     orientation: 'vertical',
     color: '#cbd5e1',
     blurb:
-      'SpaceX Super Heavy + Starship (~121 m). Clarence365 CC-BY on Sketchfab (Ship S25 & Booster 9).',
+      'SpaceX Super Heavy + Starship Block 3 (~124.4 m). Clarence365 CC-BY on Sketchfab.',
     model: {
       path: 'models/starship/model.glb',
       scaleAxis: 'height',

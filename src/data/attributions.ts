@@ -855,15 +855,15 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
   },
   {
     "id": "starship",
-    "catalogName": "Starship (full stack)",
+    "catalogName": "Starship Block 3",
     "author": "Clarence365",
     "license": "CC-BY-4.0",
     "licenseLabel": "CC BY",
-    "source": "https://sketchfab.com/3d-models/spacex-starship-ship-s25-booster-9-f76be07d358f454b8396d4e8f1cc5329",
-    "sourceAsset": "SpaceX Starship Ship S25 & Booster 9",
-    "attribution": "SpaceX Starship Ship S25 & Booster 9 by Clarence365 on Sketchfab (CC BY) — https://sketchfab.com/3d-models/spacex-starship-ship-s25-booster-9-f76be07d358f454b8396d4e8f1cc5329",
+    "source": "https://sketchfab.com/3d-models/spacex-starship-block-3-6f6c6f88a3eb4b4d822fdca66733fbb2",
+    "sourceAsset": "SpaceX Starship Block 3",
+    "attribution": "SpaceX Starship Block 3 by Clarence365 on Sketchfab (CC BY) — https://sketchfab.com/3d-models/spacex-starship-block-3-6f6c6f88a3eb4b4d822fdca66733fbb2",
     "requiresAttribution": true,
-    "notes": "SpaceX Starship Ship S25 & Booster 9. Scaled to 121 m height in-app."
+    "notes": "SpaceX Starship Block 3. Draco-compressed re-export. Scaled to 124.4 m height in-app."
   },
   {
     "id": "statue-liberty",
