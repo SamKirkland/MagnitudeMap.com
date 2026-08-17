@@ -1,0 +1,12 @@
+{
+  "id": "super-tanker",
+  "file": "model.glb",
+  "license": "CC-BY-4.0",
+  "licenseLabel": "CC BY",
+  "author": "Art Blender",
+  "source": "https://sketchfab.com/3d-models/tanker-ship-96ebf61af42b4062ae98a6ad848e1a25",
+  "sourceAsset": "Tanker Ship",
+  "sketchfabUid": "96ebf61af42b4062ae98a6ad848e1a25",
+  "notes": "Tanker Ship by Art Blender (CC-BY), authored as Suezmax 322 m × 47 m. Scaled to 322 m length; beam follows the GLB (~40 m).",
+  "attribution": "Tanker Ship by Art Blender on Sketchfab (CC BY) — https://sketchfab.com/3d-models/tanker-ship-96ebf61af42b4062ae98a6ad848e1a25"
+}

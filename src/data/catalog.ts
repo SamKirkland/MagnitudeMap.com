@@ -1159,23 +1159,6 @@ const CATALOG_SEED: CatalogSeed[] = [
     },
   },
   {
-    id: 'cvn-65',
-    name: 'Enterprise-class carrier',
-    category: 'military',
-    length: 342,
-    width: 78.4,
-    height: 41,
-    shape: 'box',
-    color: '#57534e',
-    blurb: 'Enterprise-class aircraft carrier (~342 m long).',
-    model: {
-      path: 'models/cvn-65/model.glb',
-      scaleAxis: 'length',
-      // Native length on X. 270° puts length on +Z, facing right.
-      yawDegrees: 270,
-    },
-  },
-  {
     id: 'nimitz',
     name: 'Nimitz-class carrier',
     category: 'military',
@@ -1190,6 +1173,40 @@ const CATALOG_SEED: CatalogSeed[] = [
       scaleAxis: 'length',
       // Native length on X (island aft of +X bow). 270° puts length on +Z, matching Enterprise facing.
       yawDegrees: 270,
+    },
+  },
+  {
+    id: 'container-ship',
+    name: 'Container ship',
+    category: 'vehicle',
+    length: 397.7,
+    width: 56.4,
+    height: 73.7,
+    shape: 'box',
+    color: '#b45309',
+    blurb: 'E-class container ship (~398 m long).',
+    model: {
+      path: 'models/container-ship/model.glb',
+      scaleAxis: 'length',
+      // Native length on X, bridge aft toward +X. 90° puts bow on +Z.
+      yawDegrees: 90,
+    },
+  },
+  {
+    id: 'super-tanker',
+    name: 'Super tanker',
+    category: 'vehicle',
+    length: 322,
+    width: 40,
+    height: 53.9,
+    shape: 'box',
+    color: '#78716c',
+    blurb: 'Suezmax crude oil tanker (~322 m long).',
+    model: {
+      path: 'models/super-tanker/model.glb',
+      scaleAxis: 'length',
+      // Native length on Z, house aft toward +Z. 180° puts bow on +Z.
+      yawDegrees: 180,
     },
   },
   {
@@ -2272,7 +2289,7 @@ export const COMPARISON_PRESETS: ComparisonPreset[] = [
   {
     id: 'navy',
     name: 'Navy',
-    description: 'Sub through supercarriers.',
+    description: 'Sub through supercarriers, plus cargo ships.',
     tags: [
       'navy',
       'ships',
@@ -2281,6 +2298,8 @@ export const COMPARISON_PRESETS: ComparisonPreset[] = [
       'destroyer',
       'lcs',
       'amphibious',
+      'cargo',
+      'tanker',
     ],
     itemIds: [
       'person-male',
@@ -2294,9 +2313,10 @@ export const COMPARISON_PRESETS: ComparisonPreset[] = [
       'wasp',
       'iowa',
       'kiev',
-      'cvn-65',
+      'super-tanker',
       'nimitz',
       'ford-carrier',
+      'container-ship',
     ],
   },
   {

@@ -398,6 +398,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Star Trek - Constitution Class (TOS) (CC-BY). Scaled to 289 m length (Matt Jefferies / Encyclopedia)."
   },
   {
+    "id": "container-ship",
+    "catalogName": "Container ship",
+    "author": "RM02",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/container-ship-aaa41cca946b4a08bc08cf692b7757be",
+    "sourceAsset": "Container Ship",
+    "attribution": "Container Ship by RM02 on Sketchfab (CC BY) — https://sketchfab.com/3d-models/container-ship-aaa41cca946b4a08bc08cf692b7757be",
+    "requiresAttribution": true,
+    "notes": "Container Ship by RM02 (CC-BY). Scaled to 397.7 m length (E-class / Emma Maersk)."
+  },
+  {
     "id": "cr-90",
     "catalogName": "CR-90 Corvette",
     "author": "Daniel",
@@ -480,18 +492,6 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "Electron - Rocket Lab by Stanley Creative on Sketchfab (CC BY) — https://sketchfab.com/3d-models/electron-rocket-lab-0376dfab27574a909cb8714841379894",
     "requiresAttribution": true,
     "notes": "Rocket Lab Electron (CC-BY, ~53k tris). Scaled to 18 m height in-app."
-  },
-  {
-    "id": "cvn-65",
-    "catalogName": "Enterprise-class carrier",
-    "author": "Muhamad Mirza Arrafi",
-    "license": "CC-BY-4.0",
-    "licenseLabel": "CC BY",
-    "source": "https://sketchfab.com/3d-models/uss-enterprise-cvn-65-aircraft-carrier-f1b46fa2de8f409cbbe693f7f10dc3b8",
-    "sourceAsset": "USS Enterprise CVN-65 Aircraft Carrier",
-    "attribution": "USS Enterprise CVN-65 Aircraft Carrier by Muhamad Mirza Arrafi on Sketchfab (CC BY) — https://sketchfab.com/3d-models/uss-enterprise-cvn-65-aircraft-carrier-f1b46fa2de8f409cbbe693f7f10dc3b8",
-    "requiresAttribution": true,
-    "notes": "USS Enterprise CVN-65 by nazidefenseforceofficial (CC-BY). Scaled to 342 m length in-app."
   },
   {
     "id": "nuclear-explosion",
@@ -1236,6 +1236,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "Stormtrooper-walk by lampotstreams on Sketchfab (CC BY) — https://sketchfab.com/3d-models/stormtrooper-walk-45034f4262d8412faff8ba57a64786ad",
     "requiresAttribution": true,
     "notes": "Requested LostModels2025 Stormtrooper Walk (dc7237f92c824cd78abc0f5bb4cb6290) is CC-BY-NC. Substituted lampotstreams' downloadable CC-BY walk clip (same ~55k-face silhouette). Scaled to 1.83 m height in-app. Walks when focused."
+  },
+  {
+    "id": "super-tanker",
+    "catalogName": "Super tanker",
+    "author": "Art Blender",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/tanker-ship-96ebf61af42b4062ae98a6ad848e1a25",
+    "sourceAsset": "Tanker Ship",
+    "attribution": "Tanker Ship by Art Blender on Sketchfab (CC BY) — https://sketchfab.com/3d-models/tanker-ship-96ebf61af42b4062ae98a6ad848e1a25",
+    "requiresAttribution": true,
+    "notes": "Tanker Ship by Art Blender (CC-BY), authored as Suezmax 322 m × 47 m. Scaled to 322 m length; beam follows the GLB (~40 m)."
   },
   {
     "id": "sydney-opera-house",
