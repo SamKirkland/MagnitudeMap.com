@@ -4,6 +4,7 @@ import {
   type ComparisonPreset,
 } from './data/catalog'
 import { siteBaseUrl } from './site'
+import { SITE_ORIGIN } from './siteMeta'
 
 export type SelectionFromUrl = {
   itemIds: string[]
@@ -138,4 +139,20 @@ export function replaceSelectionUrl(itemIds: string[], presetId: string | null) 
   const current = `${window.location.pathname}${window.location.search}${window.location.hash}`
   if (sameLocation(next, current)) return
   window.history.replaceState(null, '', next)
+}
+
+/** Canonical URL for the current lineup (PNG metadata / poster footer). */
+export function selectionShareUrl(
+  itemIds: string[],
+  presetId: string | null,
+): string {
+  const encoded = serializeSelection(itemIds, presetId)
+  const preset = encoded ? findPresetBySlug(encoded) : undefined
+  const homepagePreset = COMPARISON_PRESETS[0]
+  if (preset && preset.id !== homepagePreset?.id) {
+    return `${SITE_ORIGIN}/c/${presetSlug(preset)}/`
+  }
+  if (preset) return `${SITE_ORIGIN}/`
+  if (encoded) return `${SITE_ORIGIN}/#${encoded}`
+  return `${SITE_ORIGIN}/`
 }

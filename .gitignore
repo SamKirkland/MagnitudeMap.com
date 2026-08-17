@@ -27,4 +27,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 
+# Vendor source dumps — convert, don't commit
+/every download option/
+/tmp/
+
 

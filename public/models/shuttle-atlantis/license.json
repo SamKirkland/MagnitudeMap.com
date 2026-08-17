@@ -1,0 +1,12 @@
+{
+  "id": "shuttle-atlantis",
+  "file": "model.glb",
+  "license": "CC-BY-4.0",
+  "licenseLabel": "CC BY",
+  "author": "AF267",
+  "source": "https://sketchfab.com/3d-models/geofs-official-space-shuttle-atlantis-ov-104-729715b5365d468391b2fa5b98b63c5b",
+  "sourceAsset": "GeoFS Official Space Shuttle Atlantis (OV-104)",
+  "sketchfabUid": "729715b5365d468391b2fa5b98b63c5b",
+  "notes": "GeoFS Official Space Shuttle Atlantis (OV-104) full stack with ET and SRBs (CC-BY, ~24k tris). Scaled to 56.1 m stack height in-app.",
+  "attribution": "GeoFS Official Space Shuttle Atlantis (OV-104) by AF267 on Sketchfab (CC BY) — https://sketchfab.com/3d-models/geofs-official-space-shuttle-atlantis-ov-104-729715b5365d468391b2fa5b98b63c5b"
+}

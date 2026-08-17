@@ -4,19 +4,19 @@ import {
   InformationCircleIcon,
   MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline'
-import Fuse, { type IFuseOptions } from 'fuse.js'
 import {
   CATALOG,
   CATEGORY_LABELS,
   COMPARISON_PRESETS,
   type CatalogCategory,
   type CatalogItem,
-  type ComparisonPreset,
 } from '../data/catalog'
-import { MODEL_ATTRIBUTIONS } from '../data/attributions'
+import { MODEL_ATTRIBUTIONS, type ModelAttribution } from '../data/attributions'
 import { licenseDeedUrl, shortLicenseLabel } from '../data/licenseDisplay'
+import { searchItems } from '../librarySearch'
 import type { UnitSystem } from '../units'
 import { SPREAD_MAX, SPREAD_MIN, type TourSettings } from '../tourSettings'
+import { UNOFFICIAL_DISCLAIMER } from '../siteMeta'
 import { PresetIcon } from './PresetIcons'
 import { FacingControls } from './FacingControls'
 
@@ -48,31 +48,6 @@ const CATEGORY_ORDER: CatalogCategory[] = [
   'landmark',
 ]
 
-const FUSE_OPTIONS: IFuseOptions<CatalogItem> = {
-  keys: [
-    { name: 'name', weight: 0.45 },
-    { name: 'tags', weight: 0.35 },
-    { name: 'category', weight: 0.1 },
-    { name: 'blurb', weight: 0.1 },
-  ],
-  threshold: 0.35,
-  ignoreLocation: true,
-  includeScore: true,
-  minMatchCharLength: 1,
-}
-
-const PRESET_FUSE_OPTIONS: IFuseOptions<ComparisonPreset> = {
-  keys: [
-    { name: 'name', weight: 0.5 },
-    { name: 'tags', weight: 0.35 },
-    { name: 'description', weight: 0.15 },
-  ],
-  threshold: 0.35,
-  ignoreLocation: true,
-  includeScore: true,
-  minMatchCharLength: 1,
-}
-
 function groupByCategory(items: CatalogItem[]) {
   const groups = new Map<CatalogCategory, CatalogItem[]>()
   for (const category of CATEGORY_ORDER) groups.set(category, [])
@@ -80,6 +55,67 @@ function groupByCategory(items: CatalogItem[]) {
     groups.get(item.category)?.push(item)
   }
   return groups
+}
+
+function LibraryRow({
+  item,
+  checked,
+  showCredits,
+  credit,
+  onToggle,
+}: {
+  item: CatalogItem
+  checked: boolean
+  showCredits: boolean
+  credit: ModelAttribution | undefined
+  onToggle: (itemId: string) => void
+}) {
+  const licenseText = credit ? shortLicenseLabel(credit.license) : ''
+  const licenseHref = credit ? licenseDeedUrl(credit.license) : null
+  return (
+    <li>
+      <label className={`item-row ${checked ? 'is-active' : ''}`}>
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={() => onToggle(item.id)}
+        />
+        <span className="swatch" style={{ background: item.color }} />
+        <span className="item-text">
+          <span className="item-name">{item.name}</span>
+          {showCredits && credit && (
+            <span className="item-credit">
+              {credit.source ? (
+                <a
+                  href={credit.source}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  {credit.author}
+                </a>
+              ) : (
+                credit.author
+              )}
+              <span aria-hidden="true"> · </span>
+              {licenseHref ? (
+                <a
+                  href={licenseHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  {licenseText}
+                </a>
+              ) : (
+                licenseText
+              )}
+            </span>
+          )}
+        </span>
+      </label>
+    </li>
+  )
 }
 
 export function Sidebar({
@@ -123,23 +159,20 @@ export function Sidebar({
     return () => mq.removeEventListener('change', sync)
   }, [])
 
-  const fuse = useMemo(() => new Fuse(CATALOG, FUSE_OPTIONS), [])
-  const presetFuse = useMemo(
-    () => new Fuse(COMPARISON_PRESETS, PRESET_FUSE_OPTIONS),
-    [],
+  const filteredCatalog = useMemo(
+    () => searchItems(CATALOG, deferredQuery),
+    [deferredQuery],
   )
 
-  const filteredCatalog = useMemo(() => {
-    if (!deferredQuery) return CATALOG
-    return fuse.search(deferredQuery).map((result) => result.item)
-  }, [deferredQuery, fuse])
+  const filteredPresets = useMemo(
+    () => searchItems(COMPARISON_PRESETS, deferredLineupQuery),
+    [deferredLineupQuery],
+  )
 
-  const filteredPresets = useMemo(() => {
-    if (!deferredLineupQuery) return COMPARISON_PRESETS
-    return presetFuse.search(deferredLineupQuery).map((result) => result.item)
-  }, [deferredLineupQuery, presetFuse])
-
-  const grouped = useMemo(() => groupByCategory(filteredCatalog), [filteredCatalog])
+  const grouped = useMemo(
+    () => (deferredQuery ? null : groupByCategory(filteredCatalog)),
+    [deferredQuery, filteredCatalog],
+  )
   const hasResults = filteredCatalog.length > 0
   const hasPresetResults = filteredPresets.length > 0
 
@@ -391,73 +424,46 @@ export function Sidebar({
             {!hasResults && (
               <p className="library-empty">No models match “{deferredQuery}”.</p>
             )}
-            {[...grouped.entries()].map(([category, items]) => {
-              if (!items.length) return null
-              return (
-                <div key={category} className="category-block">
-                  <h3>{CATEGORY_LABELS[category]}</h3>
-                  <ul className="item-list">
-                    {items.map((item) => {
-                      const checked = activeSet.has(item.id)
-                      const credit = creditsById.get(item.id)
-                      const licenseText = credit
-                        ? shortLicenseLabel(credit.license)
-                        : ''
-                      const licenseHref = credit
-                        ? licenseDeedUrl(credit.license)
-                        : null
-                      return (
-                        <li key={item.id}>
-                          <label className={`item-row ${checked ? 'is-active' : ''}`}>
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={() => onToggleItem(item.id)}
-                            />
-                            <span className="swatch" style={{ background: item.color }} />
-                            <span className="item-text">
-                              <span className="item-name">{item.name}</span>
-                              {showCredits && credit && (
-                                <span className="item-credit">
-                                  {credit.source ? (
-                                    <a
-                                      href={credit.source}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      onClick={(event) => event.stopPropagation()}
-                                    >
-                                      {credit.author}
-                                    </a>
-                                  ) : (
-                                    credit.author
-                                  )}
-                                  <span aria-hidden="true"> · </span>
-                                  {licenseHref ? (
-                                    <a
-                                      href={licenseHref}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      onClick={(event) => event.stopPropagation()}
-                                    >
-                                      {licenseText}
-                                    </a>
-                                  ) : (
-                                    licenseText
-                                  )}
-                                </span>
-                              )}
-                            </span>
-                          </label>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                </div>
-              )
-            })}
+            {deferredQuery ? (
+              <ul className="item-list">
+                {filteredCatalog.map((item) => (
+                  <LibraryRow
+                    key={item.id}
+                    item={item}
+                    checked={activeSet.has(item.id)}
+                    showCredits={showCredits}
+                    credit={creditsById.get(item.id)}
+                    onToggle={onToggleItem}
+                  />
+                ))}
+              </ul>
+            ) : (
+              grouped &&
+              [...grouped.entries()].map(([category, items]) => {
+                if (!items.length) return null
+                return (
+                  <div key={category} className="category-block">
+                    <h3>{CATEGORY_LABELS[category]}</h3>
+                    <ul className="item-list">
+                      {items.map((item) => (
+                        <LibraryRow
+                          key={item.id}
+                          item={item}
+                          checked={activeSet.has(item.id)}
+                          showCredits={showCredits}
+                          credit={creditsById.get(item.id)}
+                          onToggle={onToggleItem}
+                        />
+                      ))}
+                    </ul>
+                  </div>
+                )
+              })
+            )}
           </div>
         </div>
       </section>
+      <p className="sidebar-disclaimer">{UNOFFICIAL_DISCLAIMER}</p>
     </aside>
   )
 }

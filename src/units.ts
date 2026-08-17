@@ -38,6 +38,21 @@ export function saveUnitSystem(units: UnitSystem) {
   }
 }
 
+/** 1 / 2 / 5 × 10^n closest to `value` (for scale bars). */
+export function niceNumber(value: number): number {
+  if (!Number.isFinite(value) || value <= 0) return 1
+  const exp = 10 ** Math.floor(Math.log10(value))
+  const fraction = value / exp
+  const nice = fraction >= 5 ? 5 : fraction >= 2 ? 2 : 1
+  return nice * exp
+}
+
+/** Metres that format as a round number in the current unit system. */
+export function niceScaleMeters(targetMeters: number, units: UnitSystem): number {
+  if (units === 'imperial') return niceNumber(targetMeters * M_TO_FT) / M_TO_FT
+  return niceNumber(targetMeters)
+}
+
 /** Format a real-world length stored in meters. */
 export function formatLength(meters: number, units: UnitSystem): string {
   if (!Number.isFinite(meters)) return '—'

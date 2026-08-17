@@ -1,5 +1,10 @@
 /**
- * Draco-compress public/models/{id}/model.glb in place.
+ * Optimize + Draco-compress public/models/{id}/model.glb in place.
+ *
+ * Pipeline matches glTF Transform "basic" defaults (same as
+ * https://glb.babylonpress.org/): dedup → flatten → weld → resample → prune,
+ * then Draco last. Simplify, quantize, and meshopt reorder stay off.
+ *
  * Already-compressed files (KHR_draco_mesh_compression or EXT_meshopt_compression)
  * are left untouched so builds no-op after the first pass.
  *
@@ -15,7 +20,10 @@ import { pipeline } from 'node:stream/promises'
 import { Readable } from 'node:stream'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const modelsDir = join(__dirname, '..', 'public', 'models')
+const modelRoots = [
+  join(__dirname, '..', 'public', 'models'),
+  join(__dirname, '..', 'public', 'grounds'),
+]
 
 const MESH_COMPRESSION = new Set(['KHR_draco_mesh_compression', 'EXT_meshopt_compression'])
 
@@ -35,11 +43,13 @@ const onlyIds = onlyArg
 
 function listModelGlbs() {
   const out = []
-  if (!existsSync(modelsDir)) return out
-  for (const id of readdirSync(modelsDir)) {
-    if (onlyIds && !onlyIds.has(id)) continue
-    const glb = join(modelsDir, id, 'model.glb')
-    if (existsSync(glb) && statSync(glb).isFile()) out.push({ id, glb })
+  for (const root of modelRoots) {
+    if (!existsSync(root)) continue
+    for (const id of readdirSync(root)) {
+      if (onlyIds && !onlyIds.has(id)) continue
+      const glb = join(root, id, 'model.glb')
+      if (existsSync(glb) && statSync(glb).isFile()) out.push({ id, glb })
+    }
   }
   return out.sort((a, b) => a.id.localeCompare(b.id))
 }
@@ -88,10 +98,19 @@ async function getIO() {
 }
 
 async function compressGlb(path) {
-  const { draco } = await import('@gltf-transform/functions')
+  const { dedup, flatten, weld, resample, prune, draco } = await import('@gltf-transform/functions')
   const io = await getIO()
   const document = await io.read(path)
-  await document.transform(draco({ method: 'edgebreaker' }))
+  // Same order as `gltf-transform optimize` (basic steps only). Weld in v4 is
+  // bitwise-identical vertices — no fuzzy tolerance / toleranceNormal.
+  await document.transform(
+    dedup(),
+    flatten(),
+    weld(),
+    resample(),
+    prune(),
+    draco({ method: 'edgebreaker' }),
+  )
   const bytes = await io.writeBinary(document)
   const tmp = `${path}.tmp`
   await pipeline(Readable.from(Buffer.from(bytes)), createWriteStream(tmp))

@@ -456,7 +456,7 @@ input {
   padding: 0.38rem 0.4rem;
 }
 
-.facing-dock {
+.viewer-docks {
   position: absolute;
   left: max(0.85rem, env(safe-area-inset-left, 0px));
   bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
@@ -464,7 +464,20 @@ input {
   pointer-events: auto;
   display: flex;
   flex-direction: column;
+  gap: 0.55rem;
+}
+
+.facing-dock,
+.ground-plate-dock {
+  display: flex;
+  flex-direction: column;
   gap: 0.28rem;
+}
+
+.ground-plate-seg button.is-active {
+  background: var(--accent-soft);
+  color: var(--ink);
+  font-weight: 600;
 }
 
 .facing-overlay-label {
@@ -477,12 +490,12 @@ input {
   padding-left: 0.15rem;
 }
 
-.facing-dock .facing-seg {
+.viewer-docks .facing-seg {
   width: auto;
   box-shadow: 0 1px 8px rgba(15, 23, 32, 0.18);
 }
 
-.facing-dock .facing-seg button {
+.viewer-docks .facing-seg button {
   padding: 0.45rem 0.55rem;
   font-size: 0.8rem;
   color: var(--ink);
@@ -638,6 +651,17 @@ input {
   color: var(--accent);
 }
 
+.sidebar-disclaimer {
+  flex: 0 0 auto;
+  margin: 0.1rem 0.35rem 0;
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--panel-border);
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.35;
+  opacity: 0.8;
+}
+
 .viewer-pane {
   position: relative;
   min-width: 0;
@@ -679,6 +703,186 @@ input {
   display: block;
   width: min(200px, 48vw);
   height: auto;
+}
+
+.export-capture-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.export-overlay-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.viewer-stack.is-poster-preview .map-brand,
+.viewer-stack.is-poster-preview .detonate-dock,
+.viewer-stack.is-poster-preview .ground-plate-dock {
+  display: none;
+}
+
+.viewer-stack.is-poster-preview .facing-overlay-label {
+  color: var(--ink);
+  text-shadow: none;
+}
+
+.export-dock {
+  position: absolute;
+  top: max(0.85rem, env(safe-area-inset-top, 0px));
+  right: max(0.85rem, env(safe-area-inset-right, 0px));
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  max-width: min(320px, calc(100% - 1.5rem));
+  pointer-events: auto;
+}
+
+.export-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid rgba(28, 36, 48, 0.28);
+  background: rgba(250, 248, 244, 0.94);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 0.48rem 0.85rem 0.48rem 0.7rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 22px rgba(20, 28, 36, 0.16);
+}
+
+.export-toggle svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+.export-toggle:hover,
+.export-toggle.is-open {
+  background: #fff;
+}
+
+.export-panel {
+  width: min(280px, calc(100vw - 2rem));
+  max-height: min(82vh, 860px);
+  overflow: auto;
+  padding: 0.75rem 0.8rem 0.9rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  background: #faf8f4;
+  box-shadow: 0 14px 36px rgba(20, 28, 36, 0.18);
+}
+
+.export-field {
+  border: 0;
+  padding: 0;
+  margin: 0 0 0.65rem;
+}
+
+.export-field legend {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.28rem;
+}
+
+.export-seg {
+  display: flex;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.export-seg button {
+  flex: 1 1 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  padding: 0.38rem 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.export-seg button + button {
+  border-left: 1px solid var(--panel-border);
+}
+
+.export-seg button.is-active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.export-field-download {
+  margin-bottom: 0;
+}
+
+.export-downloads {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.export-download {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0.42rem 0.3rem;
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.export-download:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.export-download:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.export-hint,
+.export-error {
+  margin-top: 0.45rem;
+  font-size: 0.7rem;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.export-error {
+  color: #b42318;
+}
+
+@media (max-width: 860px) {
+  .export-dock {
+    max-width: min(280px, calc(100% - 1rem));
+  }
+
+  .export-panel {
+    width: min(260px, calc(100vw - 1.25rem));
+  }
+
+  .export-toggle {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.7rem 0.4rem 0.58rem;
+  }
 }
 
 /* —— Detonate overlay (bomb lineups) —— */
@@ -861,7 +1065,9 @@ input {
 }
 
 html:has(#og-capture),
-html:has(#og-capture) body {
+html:has(#model-verify),
+html:has(#og-capture) body,
+html:has(#model-verify) body {
   height: auto;
   min-height: 100%;
   overflow: auto;

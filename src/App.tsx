@@ -8,6 +8,7 @@ import { Viewer, type DebugToggle, type TourToggle } from './components/Viewer'
 import {
   parseSelectionFromLocation,
   replaceSelectionUrl,
+  selectionShareUrl,
 } from './selectionUrl'
 import { loadUnitSystem, saveUnitSystem, type UnitSystem } from './units'
 import {
@@ -21,6 +22,9 @@ import {
   normalizeYawTurns,
   saveDisplayYawTurns,
 } from './modelOrientation'
+import { loadGroundPlate, saveGroundPlate } from './groundPlate'
+import { loadShadowsEnabled, saveShadowsEnabled } from './shadows'
+import type { GroundPlateId } from './data/groundPlates'
 
 const DEFAULT_PRESET = COMPARISON_PRESETS[0]
 
@@ -41,6 +45,8 @@ export default function App() {
   const [units, setUnits] = useState<UnitSystem>(() => loadUnitSystem())
   const [tourSettings, setTourSettings] = useState<TourSettings>(() => loadTourSettings())
   const [displayYawTurns, setDisplayYawTurns] = useState(() => loadDisplayYawTurns())
+  const [groundPlateId, setGroundPlateId] = useState<GroundPlateId>(() => loadGroundPlate())
+  const [shadowsEnabled, setShadowsEnabled] = useState(() => loadShadowsEnabled())
   const [detonationMode, setDetonationMode] = useState<DetonationMode>('casing')
   const [cameraMode, setCameraMode] = useState<'overview' | 'preserve'>('overview')
   const tourToggleRef = useRef<TourToggle | null>(null)
@@ -55,6 +61,19 @@ export default function App() {
   }, [activeItemIds])
 
   const shownPresetId = activePresetId ?? presetMatchId
+
+  const exportTitle = useMemo(() => {
+    if (!shownPresetId) return 'Custom comparison'
+    return (
+      COMPARISON_PRESETS.find((preset) => preset.id === shownPresetId)?.name ??
+      'Custom comparison'
+    )
+  }, [shownPresetId])
+
+  const shareUrl = useMemo(
+    () => selectionShareUrl(activeItemIds, shownPresetId),
+    [activeItemIds, shownPresetId],
+  )
 
   const showDetonationControls = useMemo(
     () => activeItemIds.some((id) => hasBlastEffect(id)),
@@ -120,6 +139,16 @@ export default function App() {
     saveDisplayYawTurns(next)
   }
 
+  function handleGroundPlate(id: GroundPlateId) {
+    setGroundPlateId(id)
+    saveGroundPlate(id)
+  }
+
+  function handleShadowsEnabled(enabled: boolean) {
+    setShadowsEnabled(enabled)
+    saveShadowsEnabled(enabled)
+  }
+
   return (
     <div className="app-shell">
       <Sidebar
@@ -148,10 +177,16 @@ export default function App() {
           tourSettings={tourSettings}
           displayYawTurns={displayYawTurns}
           onDisplayYawTurns={handleDisplayYawTurns}
+          groundPlateId={groundPlateId}
+          onGroundPlateChange={handleGroundPlate}
+          shadowsEnabled={shadowsEnabled}
+          onShadowsEnabledChange={handleShadowsEnabled}
           onTourState={handleTourState}
           tourToggleRef={tourToggleRef}
           debugToggleRef={debugToggleRef}
           onSecretDebugToggle={() => debugToggleRef.current?.()}
+          exportTitle={exportTitle}
+          shareUrl={shareUrl}
         />
       </main>
     </div>

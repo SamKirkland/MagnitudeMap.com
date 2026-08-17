@@ -12,7 +12,8 @@
     "generate-og": "node scripts/generate-og.mjs",
     "generate-og:ui": "vite --open og-capture.html",
     "lint": "eslint .",
-    "sync-attributions": "node scripts/sync-attributions.mjs"
+    "sync-attributions": "node scripts/sync-attributions.mjs",
+    "verify-models": "node scripts/verify-models.mjs"
   },
   "dependencies": {
     "@babylonjs/addons": "^9.20.0",
@@ -25,7 +26,6 @@
     "@babylonjs/serializers": "^9.20.0",
     "@headlessui/react": "^1.7.13",
     "@heroicons/react": "^2.0.16",
-    "fuse.js": "^7.5.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

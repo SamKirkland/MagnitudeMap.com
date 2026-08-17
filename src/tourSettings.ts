@@ -3,7 +3,7 @@ export type TourFrameMode = 'pair' | 'all'
 export type TourSettings = {
   /** pair = current + previous (default). all = every object revealed so far. */
   frameMode: TourFrameMode
-  /** 0.5 = AABBs nearly touching, 2.5 = isolated (head-on PLAY won't show the neighbor). */
+  /** 0.5 = mesh AABBs nearly touching (~1% pad), 2.5 = isolated (head-on PLAY won't show the neighbor). */
   spread: number
   /** -1 = look from the left, 0 = default 3/4, 1 = look from the right. */
   yaw: number

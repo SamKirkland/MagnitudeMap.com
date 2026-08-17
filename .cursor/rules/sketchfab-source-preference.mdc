@@ -53,6 +53,6 @@ If the requested model is Editorial/Standard, search for a downloadable CC stand
 1. Download the GLB via the API into `public/models/{id}/model.glb` and write `license.json`.
 2. Run `npm run compress-models -- --only={id}` (no-ops if already Draco/meshopt).
 3. Add the item to `src/data/catalog.ts` (meters + `yawDegrees` so +Z is nose) and tags in `src/data/catalogTags.ts`.
-4. Inspect in the viewer at Facing 0°: silhouette cropped, sitting on the ground, scale vs person-male (1.75 m).
+4. Run `npm run verify-models -- --only={id}` and inspect the PNGs in `tmp/verify-models/` (Facing 0°, vs 1.75 m adult).
 5. Run `npm run sync-attributions`.
 6. **Commit** the compressed `model.glb` and `license.json`.

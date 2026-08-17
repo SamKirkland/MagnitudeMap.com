@@ -1,0 +1,11 @@
+{
+  "id": "manhattan",
+  "file": "model.glb",
+  "license": "Royalty-Free",
+  "licenseLabel": "CGTrader Royalty Free",
+  "author": "CGTrader listing NewYork City Manhattan",
+  "source": "https://www.cgtrader.com/free-3d-models/exterior/skyscraper/newyork-city-manhattan",
+  "sourceAsset": "NewYork City Manhattan",
+  "notes": "Google Earth photogrammetry from CGTrader (OBJ + textures; Blend/FBX/Max/C4D are the same mesh without a better look). Converted to Draco GLB with native 4096px JPEG textures. Optional true-scale ground plate, not a catalog item. CGTrader Royalty Free — incorporated into the viewer, not offered as a standalone download.",
+  "attribution": "NewYork City Manhattan on CGTrader (Royalty Free) — https://www.cgtrader.com/free-3d-models/exterior/skyscraper/newyork-city-manhattan"
+}

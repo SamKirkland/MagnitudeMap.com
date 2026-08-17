@@ -27,11 +27,11 @@ Ship a curated library of default 3D models (OBJ and similar formats). Also let 
 | **No paid usage APIs** | Avoid Mapbox, paid geocoders, or anything that charges per user/request for core features. |
 | **Self-host maps & assets** | Host tilemaps, textures, and model files yourself (or use free/static alternatives). |
 | **No required server** | Core compare flows must work with zero API routes / serverless functions. |
-| **Permissive model licenses only** | See [Asset licensing](#asset-licensing) below. |
+| **Permissive catalog licenses** | Catalog GLBs must be redistributable CC/MIT/etc. Ground plates may use CGTrader Royalty Free when incorporated. See [Asset licensing](#asset-licensing). |
 
 ## Asset licensing
 
-**Only ship 3D models under a redistributable permissive license**, for example:
+**Catalog models** (anything under `public/models/`) must use a **redistributable permissive license**, for example:
 
 - **CC0** / public domain
 - **CC-BY** (3.0 / 4.0) — attribution required
@@ -39,21 +39,22 @@ Ship a curated library of default 3D models (OBJ and similar formats). Also let 
 - **MIT**, **Apache-2.0**, **BSD**
 - **NASA media** (and similar government works) when redistribution is allowed — follow the agency guidelines and credit the source
 
+**Ground plates** (optional scene backdrops under `public/grounds/`) may also use **CGTrader Royalty Free** when the mesh is incorporated into the viewer and not offered as a standalone download. Credit the listing in that folder’s `license.json`.
+
 **Do not** add models that are:
 
 - Sketchfab **Editorial** (news/public-interest only — not OK to redistribute on a general site)
 - Sketchfab **Standard** / non-downloadable store licenses
 - **CC-BY-NC** / NonCommercial licenses (site redistributes assets publicly)
 - “Free to use” but **non-redistributable** / personal-use only
-- Royalty-free store assets without an explicit redistributable license
 - All-rights-reserved Sketchfab uploads (even if viewable in the viewer)
 - Scraped / cracked packs
 
 ### Attribution workflow
 
-1. Every model folder needs `public/models/{id}/license.json` with at least `author`, `license`, `source`, and `sourceAsset`.
+1. Every model or ground folder needs `license.json` with at least `author`, `license`, `source`, and `sourceAsset` (`public/models/{id}/` or `public/grounds/{id}/`).
 2. Run `npm run sync-attributions` to refresh `src/data/attributions.ts`.
-3. In the Library, the info icon toggles author/license under each model.
+3. In the Library, the info icon toggles author/license under each catalog model.
 
 ## Target comparisons
 
@@ -75,9 +76,9 @@ Examples of what users will want to line up:
 - [x] Static `public/models/` hosting + GLB load/scale-to-meters pipeline
 - [ ] Drag-and-drop (or file picker) for custom OBJ / similar models
 - [x] Basic camera controls (orbit, pan, zoom)
-- [x] More CC landmark GLBs (Eiffel, Burj, Big Ben, Colosseum, Giza, Golden Gate, …)
-- [ ] Landmark stage packs (NYC / Dubai / Paris) with real meshes
-- [ ] Cheap, self-hosted map / ground reference if a map plane is used (no paid tile APIs)
+- [x] More CC landmark GLBs (Eiffel, Burj, Big Ben, Colosseum, Giza, …)
+- [x] Optional true-scale Manhattan ground plate (Ground: Neighborhood / New York)
+- [ ] More landmark stage packs (Dubai / Paris) with real meshes
 
 ### Later
 
@@ -93,7 +94,9 @@ Examples of what users will want to line up:
 - **Babylon.js** for the 3D comparison viewer (React UI shells the canvas; scene is non-reactive)
 - **Tailwind CSS** + custom panel styles for UI
 - Colored GLB models live under `public/models/{id}/` (committed + static-hosted; see `public/models/README.md`)
-- `npm run compress-models` Draco-compresses those GLBs in place; already-compressed files are skipped. `build` / `build:static` run this first.
+- Optional ground plates live under `public/grounds/{id}/` (same `model.glb` + `license.json` layout). The New York plate is CGTrader Royalty Free photogrammetry, converted from OBJ + textures.
+- `npm run compress-models` runs glTF Transform basics (dedup, flatten, weld, resample, prune) then Draco-compresses those GLBs in place; already-compressed files are skipped. `build` / `build:static` run this first. It scans both `public/models/` and `public/grounds/`.
+- `npm run verify-models -- --only={id}` checks that a catalog GLB renders at the listed meters (wrong rotation, extra plates, empty AABB) and writes shots next to the 1.75 m adult.
 
 ## Architecture notes
 
@@ -111,6 +114,12 @@ npm run dev
 
 Open the local Vite URL (usually [http://localhost:5173](http://localhost:5173)).
 
+```bash
+npm run verify-models -- --only=f22
+```
+
+Checks that a catalog model renders at the listed meters and writes elevation + 3/4 shots next to the 1.75 m adult in `tmp/verify-models/`.
+
 ### Production build
 
 ```bash
@@ -122,4 +131,4 @@ npm run preview
 
 ## Project status
 
-Early prototype. Vite static SPA + Babylon.js viewer with sample true-scale comparisons (stand-in primitives). Next: real GLB/OBJ assets, custom uploads, and landmark stage packs.
+Vite static SPA + Babylon.js viewer with true-scale GLB comparisons, optional Manhattan ground, and URL-shareable lineups. Next: custom uploads and more stage packs.

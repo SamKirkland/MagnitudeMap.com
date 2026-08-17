@@ -36,6 +36,7 @@ import {
   TransformNode,
   Vector3,
   VertexBuffer,
+  Viewport,
 } from '@babylonjs/core'
 import { CreateScreenshotUsingRenderTargetAsync } from '@babylonjs/core/Misc/screenshotTools'
 import '@babylonjs/loaders/glTF'
@@ -57,6 +58,7 @@ import {
 import { createMoneyTiledPile } from './moneyTiledMesh'
 import { formatLength, type UnitSystem } from '../units'
 import {
+  facingExtentAlongX,
   itemMagnitude,
   layoutRevealPositions,
   poseForItems,
@@ -70,13 +72,13 @@ import {
 import {
   clampTourSettings,
   DEFAULT_TOUR_SETTINGS,
+  SPREAD_MIN,
   tourSettingsEqual,
   type TourSettings,
 } from '../tourSettings'
 import {
   axisSizeAfterAuthoringYaw,
   displayYawRadians,
-  itemExtentAlongX,
   itemExtentAlongZ,
   normalizeYawTurns,
 } from '../modelOrientation'
@@ -86,7 +88,36 @@ import {
   createUndersideCutawayTexture,
   NEIGHBORHOOD_TILE_METERS,
 } from './neighborhoodTexture'
+import {
+  createWaterSideTexture,
+  createWaterSurfaceTexture,
+  createWaterUndersideTexture,
+  WATER_TILE_METERS,
+} from './waterTexture'
+import {
+  DEFAULT_GROUND_PLATE,
+  GROUND_PLATE_BY_ID,
+  type GroundPlate,
+  type GroundPlateId,
+} from '../data/groundPlates'
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, publicAssetUrl } from '../site'
+import { aabbCorners, posterViewAngles } from '../poster/ortho'
+import {
+  headlineSizeMeters,
+  type PosterCaptureRequest,
+  type PosterCaptureResult,
+  type PosterItemProjection,
+  type PosterLayout,
+  type PosterOverlayState,
+  type PosterPreviewSettings,
+} from '../poster/types'
+import {
+  distantHelperCutoff,
+  isHelperLabel,
+  isNeedleSize,
+  isPaperSize,
+  type MeasuredMeters,
+} from '../modelVerify'
 
 export type ComparisonSceneOptions = {
   /** OG capture: perspective screenshot, no plaques or camera controls. */
@@ -121,12 +152,32 @@ export type TourUiState = {
 
 type TourListener = (state: TourUiState) => void
 
+type PosterInteractiveSnapshot = {
+  mode: number
+  alpha: number
+  beta: number
+  radius: number
+  target: Vector3
+  fov: number
+  minZ: number
+  maxZ: number
+  orthoLeft: number | null
+  orthoRight: number | null
+  orthoTop: number | null
+  orthoBottom: number | null
+  clearColor: Color4
+  autoClear: boolean
+  positions: Map<string, Vector3>
+}
+
 const TOUR_HOLD_MS = 2200
 const CAMERA_ANIM_FRAMES = 75
 const CAMERA_FOCUS_FRAMES = 96
 const CAMERA_ANIM_FPS = 60
 /** Cap backing-store DPR so retina + MSAA does not 4x fill rate. */
 const MAX_DEVICE_PIXEL_RATIO = 1.5
+/** Live poster preview: cheaper than interactive; 4K capture still supersamples. */
+const MAX_POSTER_PREVIEW_PIXEL_RATIO = 1.25
 /** After the camera/scene stop changing, pause clips and skip GPU submits. */
 const IDLE_SETTLE_MS = 300
 /**
@@ -137,8 +188,12 @@ const CAMERA_NAV_REFERENCE_RADIUS = 40
 /**
  * Directional sun + contact shadows. Off restores the original unlit comparison
  * look (no shadow maps, no extra lights). Flip true to ship lighting later.
+ * Temporarily enabled for local preview.
  */
-const ENABLE_SCENE_LIGHTING = false
+const ENABLE_SCENE_LIGHTING = true
+/** In-shadow light mix. 0.22 = visible contact shadows; 1 = none. */
+const SHADOW_DARKNESS = 0.22
+const SHADOW_DARKNESS_OFF = 1
 
 export class ComparisonScene {
   readonly engine: Engine
@@ -147,11 +202,15 @@ export class ComparisonScene {
 
   private readonly placements = new Map<string, PlacedObject>()
   private ground: Mesh
+  private skybox: Mesh
   private sun!: DirectionalLight
   private shadows: ShadowGenerator | null = null
   private neighborhoodTex: DynamicTexture | null = null
   private dirtSideTex: DynamicTexture | null = null
   private undersideTex: DynamicTexture | null = null
+  private waterSurfaceTex: DynamicTexture | null = null
+  private waterSideTex: DynamicTexture | null = null
+  private waterUndersideTex: DynamicTexture | null = null
   private disposed = false
   private loadGeneration = 0
 
@@ -165,6 +224,11 @@ export class ComparisonScene {
   private listeners = new Set<TourListener>()
   private pointerDownPos: { x: number; y: number } | null = null
   private units: UnitSystem = 'metric'
+  private groundPlateId: GroundPlateId = DEFAULT_GROUND_PLATE
+  private shadowsWanted = true
+  private cityRoot: TransformNode | null = null
+  private cityLoadGen = 0
+  private cityFootprint = { width: 0, depth: 0 }
   private detonationMode: DetonationMode = 'casing'
   private activeItemIds: string[] = []
   private hoverItemId: string | null = null
@@ -185,6 +249,13 @@ export class ComparisonScene {
   /** User-facing yaw for every model, in 90° turns (0–3). */
   private displayYawTurns = 0
   private readonly captureMode: boolean
+  private posterPreview: {
+    settings: PosterPreviewSettings
+    saved: PosterInteractiveSnapshot
+  } | null = null
+  private readonly posterOverlayListeners = new Set<
+    (state: PosterOverlayState | null) => void
+  >()
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -255,11 +326,14 @@ export class ComparisonScene {
 
     this.installLights()
 
-    this.createGradientSkybox()
+    this.skybox = this.createGradientSkybox()
 
     this.neighborhoodTex = createNeighborhoodTexture(this.scene)
     this.dirtSideTex = createDirtSideTexture(this.scene)
     this.undersideTex = createUndersideCutawayTexture(this.scene)
+    this.waterSurfaceTex = createWaterSurfaceTexture(this.scene)
+    this.waterSideTex = createWaterSideTexture(this.scene)
+    this.waterUndersideTex = createWaterUndersideTexture(this.scene)
 
     this.ground = this.buildEarthSlab(0, 0, 60, 60)
     this.scene.blockMaterialDirtyMechanism = true
@@ -291,7 +365,7 @@ export class ComparisonScene {
   }
 
   playTour() {
-    if (this.sortedItems.length === 0) return
+    if (this.posterPreview || this.sortedItems.length === 0) return
     this.focusItemId = null
     this.playing = true
     this.mode = 'tour'
@@ -330,7 +404,7 @@ export class ComparisonScene {
   }
 
   nextStep() {
-    if (this.sortedItems.length === 0) return
+    if (this.posterPreview || this.sortedItems.length === 0) return
     this.playing = false
     this.clearTourTimer()
     this.focusItemId = null
@@ -341,7 +415,7 @@ export class ComparisonScene {
   }
 
   prevStep() {
-    if (this.sortedItems.length === 0) return
+    if (this.posterPreview || this.sortedItems.length === 0) return
     this.playing = false
     this.clearTourTimer()
     this.focusItemId = null
@@ -359,7 +433,13 @@ export class ComparisonScene {
 
     const visible = this.tourVisibleItems(this.stepIndex)
     const xs = visible.map((item) => this.itemXs.get(item.id) ?? 0)
-    const pose = poseForTourStep(visible, xs, this.tourAngles(), this.displayYawTurns)
+    const pose = poseForTourStep(
+      visible,
+      xs,
+      this.tourAngles(),
+      this.displayYawTurns,
+      this.measuredFacingExtents(),
+    )
     const itemId = this.sortedItems[this.stepIndex]?.id
     this.playFocusMotion(itemId)
     this.applyPose(pose, animate, CAMERA_ANIM_FRAMES, () => this.waveIfPerson(itemId))
@@ -380,6 +460,7 @@ export class ComparisonScene {
       xs,
       this.tourAngles(),
       this.displayYawTurns,
+      this.measuredFacingExtents(),
     )
     this.applyPose(pose, animate)
     this.emitTour()
@@ -417,6 +498,7 @@ export class ComparisonScene {
   }
 
   focusItem(itemId: string, animate = true) {
+    if (this.posterPreview) return
     const placement = [...this.placements.values()].find((p) => p.itemId === itemId)
     if (!placement) return
 
@@ -456,6 +538,36 @@ export class ComparisonScene {
 
   resetFocus(animate = true) {
     this.showOverview(animate)
+  }
+
+  /** World AABB of each loaded body after crop/scale/ground, in meters. */
+  measureLoadedItemBounds(): Array<
+    { itemId: string } & MeasuredMeters & {
+      min: { x: number; y: number; z: number }
+      max: { x: number; y: number; z: number }
+    }
+  > {
+    const out: Array<
+      { itemId: string } & MeasuredMeters & {
+        min: { x: number; y: number; z: number }
+        max: { x: number; y: number; z: number }
+      }
+    > = []
+    for (const placement of this.placements.values()) {
+      this.thawPlacement(placement)
+      placement.body.computeWorldMatrix(true)
+      const box = this.visualBounds(placement.body)
+      out.push({
+        itemId: placement.itemId,
+        width: box.max.x - box.min.x,
+        height: box.max.y - box.min.y,
+        length: box.max.z - box.min.z,
+        min: { x: box.min.x, y: box.min.y, z: box.min.z },
+        max: { x: box.max.x, y: box.max.y, z: box.max.z },
+      })
+    }
+    this.freezeStaticScene()
+    return out
   }
 
   async setActiveItems(
@@ -558,6 +670,10 @@ export class ComparisonScene {
       placement.root.setEnabled(true)
     }
 
+    // Catalog width is body diameter; pack again from real mesh AABBs so
+    // Tight never overlaps fins / legs / wings.
+    this.relayoutLineup()
+
     // Re-seat plaques in root-local space (fixes offsets from lineup moves /
     // older world-space placement bugs).
     for (const placement of this.placements.values()) {
@@ -567,6 +683,14 @@ export class ComparisonScene {
     this.resizeGroundToContent()
     this.freezeStaticScene()
     this.stepIndex = Math.max(0, this.sortedItems.length - 1)
+
+    if (this.posterPreview) {
+      this.posterPreview.saved.positions = this.snapshotItemPositions()
+      this.applyPosterLook(this.posterPreview.settings)
+      this.emitTour()
+      this.markDirty()
+      return
+    }
 
     if (cameraMode === 'overview') {
       // Ease on preset/content swaps; snap on first populate or when asked
@@ -611,11 +735,627 @@ export class ComparisonScene {
         true,
         0.86,
       )
-      return dataUrlToJpegBlob(dataUrl)
+      return dataUrlToBlob(dataUrl, 'image/jpeg')
     } finally {
       this.scene.renderTargetsEnabled = prevRt
       this.markDirty()
     }
+  }
+
+  /**
+   * Locked top-down or side poster of the current lineup on a white background.
+   * Restores the live camera, ground, and item positions afterward.
+   */
+  async capturePosterRender(
+    request: PosterCaptureRequest,
+  ): Promise<PosterCaptureResult> {
+    if (this.sortedItems.length === 0) {
+      throw new Error('Select at least one object to export.')
+    }
+
+    this.pauseTour()
+    this.scene.stopAnimation(this.camera)
+    this.camera.animations = []
+    this.cameraMoveGen += 1
+    this.clearHover()
+
+    const camera = this.camera
+    const saved = {
+      mode: camera.mode,
+      alpha: camera.alpha,
+      beta: camera.beta,
+      radius: camera.radius,
+      target: camera.target.clone(),
+      fov: camera.fov,
+      minZ: camera.minZ,
+      maxZ: camera.maxZ,
+      orthoLeft: camera.orthoLeft,
+      orthoRight: camera.orthoRight,
+      orthoTop: camera.orthoTop,
+      orthoBottom: camera.orthoBottom,
+      clearColor: this.scene.clearColor.clone(),
+      autoClear: this.scene.autoClear,
+      scaling: this.engine.getHardwareScalingLevel(),
+    }
+    const savedPositions = new Map<string, Vector3>()
+    for (const placement of this.placements.values()) {
+      savedPositions.set(placement.instanceId, placement.root.position.clone())
+    }
+
+    try {
+      this.setPosterStageEnabled(false)
+      this.scene.clearColor = new Color4(1, 1, 1, 1)
+      this.scene.autoClear = true
+      this.applyPosterItemLayout(request.layout)
+
+      const maxTex = this.engine.getCaps().maxTextureSize ?? 8192
+      const sized = this.clampPosterPixelSize(
+        request.width,
+        request.height,
+        maxTex,
+      )
+      const captureRequest = { ...request, ...sized }
+
+      this.engine.setHardwareScalingLevel(1)
+      this.setPosterCaptureBackbuffer(captureRequest.width, captureRequest.height)
+      this.setMaterialsLogarithmicDepth(false)
+      this.framePosterCamera(captureRequest)
+
+      this.heldIdle = false
+      this.renderNeeded = true
+      this.camera.unfreezeProjectionMatrix()
+      await this.whenSceneReady()
+      await nextFrame()
+      await nextFrame()
+
+      const items = this.projectPosterItems(
+        captureRequest.width,
+        captureRequest.height,
+      )
+      const pixelsPerMeter = this.measurePixelsPerMeter(
+        captureRequest.width,
+        captureRequest.height,
+      )
+
+      const long = Math.max(captureRequest.width, captureRequest.height)
+      const maxSamples = Math.max(1, this.engine.getCaps().maxMSAASamples ?? 4)
+      const wantSamples = long > 8000 ? 2 : long > 4000 ? 4 : 8
+      const samples = Math.min(wantSamples, maxSamples)
+      // 4K still 2× SSAA. 8K/16K already have the pixels — don't allocate a 32K RT.
+      const wantSuper = long <= 3840 ? 2 : 1
+      const superScale = Math.min(wantSuper, maxTex / long)
+      const prevRt = this.scene.renderTargetsEnabled
+      this.scene.renderTargetsEnabled = true
+      this.camera.unfreezeProjectionMatrix()
+      let dataUrl: string
+      try {
+        dataUrl = await this.screenshotPosterPng(
+          captureRequest.width,
+          captureRequest.height,
+          superScale,
+          samples,
+        )
+      } finally {
+        this.scene.renderTargetsEnabled = prevRt
+      }
+
+      return {
+        image: dataUrlToBlob(dataUrl, 'image/png'),
+        width: captureRequest.width,
+        height: captureRequest.height,
+        pixelsPerMeter,
+        items,
+      }
+    } finally {
+      this.engine.setHardwareScalingLevel(saved.scaling)
+      this.setMaterialsLogarithmicDepth(true)
+      this.applyResolutionCap()
+      this.engine.resize()
+      if (this.posterPreview) {
+        this.restoreItemPositions(this.posterPreview.saved.positions)
+        this.applyPosterLook(this.posterPreview.settings)
+      } else {
+        for (const placement of this.placements.values()) {
+          const pos = savedPositions.get(placement.instanceId)
+          if (!pos) continue
+          this.thawPlacement(placement)
+          placement.root.position.copyFrom(pos)
+        }
+        this.setPosterStageEnabled(true)
+        this.scene.clearColor.copyFrom(saved.clearColor)
+        this.scene.autoClear = saved.autoClear
+        camera.mode = saved.mode
+        camera.fov = saved.fov
+        this.applyCameraOrbit(saved.target, saved.alpha, saved.beta, saved.radius)
+        camera.minZ = saved.minZ
+        camera.maxZ = saved.maxZ
+        camera.orthoLeft = saved.orthoLeft
+        camera.orthoRight = saved.orthoRight
+        camera.orthoTop = saved.orthoTop
+        camera.orthoBottom = saved.orthoBottom
+        this.freezeStaticScene()
+      }
+      this.camera.unfreezeProjectionMatrix()
+      this.markDirty()
+    }
+  }
+
+  /**
+   * Put the live viewer into the poster look, or restore the interactive scene.
+   */
+  setPosterPreview(settings: PosterPreviewSettings | null) {
+    if (!settings || this.sortedItems.length === 0) {
+      this.exitPosterPreview()
+      return
+    }
+    if (!this.posterPreview) this.enterPosterPreview(settings)
+    else this.updatePosterPreview(settings)
+  }
+
+  subscribePosterOverlay(
+    listener: (state: PosterOverlayState | null) => void,
+  ) {
+    this.posterOverlayListeners.add(listener)
+    listener(this.readPosterOverlay())
+    return () => {
+      this.posterOverlayListeners.delete(listener)
+    }
+  }
+
+  private enterPosterPreview(settings: PosterPreviewSettings) {
+    this.pauseTour()
+    this.scene.stopAnimation(this.camera)
+    this.camera.animations = []
+    this.cameraMoveGen += 1
+    this.haltCameraMotion()
+    this.clearHover()
+    if (!this.captureMode) this.camera.detachControl()
+    this.posterPreview = {
+      settings,
+      saved: this.snapshotInteractive(),
+    }
+    this.applyPosterLook(settings)
+  }
+
+  private updatePosterPreview(settings: PosterPreviewSettings) {
+    if (!this.posterPreview) return
+    this.posterPreview.settings = settings
+    this.applyPosterLook(settings)
+  }
+
+  private exitPosterPreview() {
+    if (!this.posterPreview) return
+    const saved = this.posterPreview.saved
+    this.posterPreview = null
+    this.restoreInteractive(saved)
+    this.emitPosterOverlay()
+  }
+
+  private applyPosterLook(settings: PosterPreviewSettings) {
+    this.setPosterStageEnabled(false)
+    this.scene.clearColor = new Color4(1, 1, 1, 1)
+    this.scene.autoClear = true
+    this.applyPosterPreviewResolution()
+    this.engine.resize()
+    this.applyPosterItemLayout(settings.layout)
+    const size = this.canvasCssSize()
+    this.framePosterCamera({ ...settings, ...size })
+    this.freezeStaticScene()
+    this.markDirty()
+    this.emitPosterOverlay()
+  }
+
+  private snapshotInteractive(): PosterInteractiveSnapshot {
+    return {
+      mode: this.camera.mode,
+      alpha: this.camera.alpha,
+      beta: this.camera.beta,
+      radius: this.camera.radius,
+      target: this.camera.target.clone(),
+      fov: this.camera.fov,
+      minZ: this.camera.minZ,
+      maxZ: this.camera.maxZ,
+      orthoLeft: this.camera.orthoLeft,
+      orthoRight: this.camera.orthoRight,
+      orthoTop: this.camera.orthoTop,
+      orthoBottom: this.camera.orthoBottom,
+      clearColor: this.scene.clearColor.clone(),
+      autoClear: this.scene.autoClear,
+      positions: this.snapshotItemPositions(),
+    }
+  }
+
+  private snapshotItemPositions() {
+    const positions = new Map<string, Vector3>()
+    for (const placement of this.placements.values()) {
+      positions.set(placement.instanceId, placement.root.position.clone())
+    }
+    return positions
+  }
+
+  private restoreItemPositions(positions: Map<string, Vector3>) {
+    for (const placement of this.placements.values()) {
+      const pos = positions.get(placement.instanceId)
+      if (!pos) continue
+      this.thawPlacement(placement)
+      placement.root.position.copyFrom(pos)
+    }
+  }
+
+  private syncPlacementWorldMatrices() {
+    for (const placement of this.placements.values()) {
+      this.thawPlacement(placement)
+      placement.root.computeWorldMatrix(true)
+      placement.display.computeWorldMatrix(true)
+      placement.body.computeWorldMatrix(true)
+      for (const mesh of placement.root.getChildMeshes(false)) {
+        mesh.computeWorldMatrix(true)
+      }
+    }
+  }
+
+  private restoreInteractive(saved: PosterInteractiveSnapshot) {
+    this.setMaterialsLogarithmicDepth(true)
+    this.applyResolutionCap()
+    this.engine.resize()
+    this.restoreItemPositions(saved.positions)
+    this.syncPlacementWorldMatrices()
+    this.setPosterStageEnabled(true)
+    this.ground.unfreezeWorldMatrix()
+    this.ground.computeWorldMatrix(true)
+    this.ground.freezeWorldMatrix()
+    this.scene.clearColor.copyFrom(saved.clearColor)
+    this.scene.autoClear = saved.autoClear
+    this.camera.upVector.copyFrom(Vector3.Up())
+    this.camera.mode = saved.mode
+    this.camera.fov = saved.fov
+    this.applyCameraOrbit(saved.target, saved.alpha, saved.beta, saved.radius)
+    this.camera.minZ = saved.minZ
+    this.camera.maxZ = saved.maxZ
+    this.camera.orthoLeft = saved.orthoLeft
+    this.camera.orthoRight = saved.orthoRight
+    this.camera.orthoTop = saved.orthoTop
+    this.camera.orthoBottom = saved.orthoBottom
+    const canvas = this.engine.getRenderingCanvas()
+    if (!this.captureMode && canvas) this.camera.attachControl(canvas, true)
+    this.freezeStaticScene()
+    this.camera.unfreezeProjectionMatrix()
+    this.heldIdle = false
+    this.markDirty()
+  }
+
+  private canvasCssSize() {
+    const canvas = this.engine.getRenderingCanvas()
+    return {
+      width: Math.max(canvas?.clientWidth ?? 1, 1),
+      height: Math.max(canvas?.clientHeight ?? 1, 1),
+    }
+  }
+
+  private readPosterOverlay(): PosterOverlayState | null {
+    if (!this.posterPreview) return null
+    const { width, height } = this.canvasCssSize()
+    return {
+      width,
+      height,
+      items: this.projectPosterItems(width, height),
+      pixelsPerMeter: this.measurePixelsPerMeter(width, height),
+    }
+  }
+
+  private emitPosterOverlay() {
+    const state = this.readPosterOverlay()
+    for (const listener of this.posterOverlayListeners) listener(state)
+  }
+
+  private setPosterStageEnabled(enabled: boolean) {
+    this.ground.setEnabled(enabled)
+    this.skybox.setEnabled(enabled)
+    this.cityRoot?.setEnabled(enabled && this.groundPlateId !== 'neighborhood')
+    for (const mesh of this.scene.meshes) {
+      if (mesh.name.startsWith('label-')) mesh.setEnabled(enabled)
+    }
+  }
+
+  /** Pack the lineup at Tight so the poster reads as a comparison, not a tour. */
+  private applyPosterItemLayout(layout: PosterLayout) {
+    const xs = layoutRevealPositions(this.sortedItems, {
+      spread: SPREAD_MIN,
+      yawTurns: this.displayYawTurns,
+      facingExtents: this.measuredFacingExtents(),
+    })
+    for (const item of this.sortedItems) {
+      const placement = this.placementForItem(item.id)
+      if (!placement) continue
+      this.thawPlacement(placement)
+      placement.root.position.set(xs.get(item.id) ?? 0, 0, 0)
+    }
+    if (layout === 'stacked') this.applyStackedPosterLayout()
+  }
+
+  private applyStackedPosterLayout() {
+    const rows = [...this.sortedItems]
+      .reverse()
+      .map((item) => {
+        const placement = [...this.placements.values()].find(
+          (entry) => entry.itemId === item.id,
+        )
+        if (!placement) return null
+        this.thawPlacement(placement)
+        placement.body.computeWorldMatrix(true)
+        const box = this.visualBounds(placement.body)
+        return {
+          placement,
+          box,
+          h: Math.max(box.max.y - box.min.y, 0.01),
+        }
+      })
+      .filter((row): row is NonNullable<typeof row> => Boolean(row))
+
+    const gaps = rows.map((row, index) => {
+      const next = rows[index + 1]
+      if (!next) return 0
+      return Math.max(row.h, next.h) * 0.12
+    })
+
+    let top = 0
+    for (let i = rows.length - 1; i >= 0; i--) {
+      top += rows[i].h
+      if (i > 0) top += gaps[i - 1]
+    }
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i]
+      const targetMinY = top - row.h
+      const dx = -row.box.min.x
+      const dy = targetMinY - row.box.min.y
+      const dz = -((row.box.min.z + row.box.max.z) / 2)
+      row.placement.root.position.addInPlace(new Vector3(dx, dy, dz))
+      row.placement.root.computeWorldMatrix(true)
+      top = targetMinY - gaps[i]
+    }
+  }
+
+  private posterVisualBounds(): { min: Vector3; max: Vector3 } | null {
+    const min = new Vector3(Infinity, Infinity, Infinity)
+    const max = new Vector3(-Infinity, -Infinity, -Infinity)
+    let found = false
+    for (const placement of this.placements.values()) {
+      this.thawPlacement(placement)
+      placement.body.computeWorldMatrix(true)
+      const box = this.visualBounds(placement.body)
+      Vector3.CheckExtends(box.min, min, max)
+      Vector3.CheckExtends(box.max, min, max)
+      found = true
+    }
+    if (!found || !Number.isFinite(min.x)) return null
+    return { min, max }
+  }
+
+  private framePosterCamera(request: PosterCaptureRequest) {
+    const bounds = this.posterVisualBounds()
+    if (!bounds) return
+
+    const angles = posterViewAngles(request.view)
+    const target = new Vector3(
+      (bounds.min.x + bounds.max.x) * 0.5,
+      (bounds.min.y + bounds.max.y) * 0.5,
+      (bounds.min.z + bounds.max.z) * 0.5,
+    )
+    const corners = aabbCorners(bounds.min, bounds.max)
+    const radius = Math.max(Vector3.Distance(bounds.min, bounds.max) * 1.5, 2)
+
+    this.haltCameraMotion()
+    this.camera.mode = Camera.ORTHOGRAPHIC_CAMERA
+    this.applyCameraOrbit(target, angles.alpha, angles.beta, radius)
+    this.seedPosterOrtho(request, bounds)
+
+    for (let i = 0; i < 4; i++) {
+      this.fitPosterOrthoToContent(request, corners)
+      this.centerPosterInContentRect(request, corners)
+    }
+
+    this.syncCameraClipPlanes()
+    this.refreshPosterCameraMatrices()
+  }
+
+  /**
+   * ArcRotateCamera.setTarget() rebuilds alpha/beta/radius from the current
+   * world position. Always write the orbit after the target so poster views
+   * snap to a fixed pose instead of drifting from the last camera.
+   */
+  private applyCameraOrbit(
+    target: Vector3,
+    alpha: number,
+    beta: number,
+    radius: number,
+  ) {
+    this.camera.unfreezeProjectionMatrix()
+    this.camera.setTarget(target)
+    this.camera.alpha = alpha
+    this.camera.beta = beta
+    this.camera.radius = Math.max(radius, 0.5)
+    this.refreshPosterCameraMatrices()
+  }
+
+  private haltCameraMotion() {
+    this.camera.inertialAlphaOffset = 0
+    this.camera.inertialBetaOffset = 0
+    this.camera.inertialRadiusOffset = 0
+    this.camera.inertialPanningX = 0
+    this.camera.inertialPanningY = 0
+  }
+
+  private refreshPosterCameraMatrices() {
+    this.camera.unfreezeProjectionMatrix()
+    this.camera.getViewMatrix(true)
+    this.camera.getProjectionMatrix(true)
+  }
+
+  private projectPosterCorners(
+    corners: Vector3[],
+    width: number,
+    height: number,
+  ) {
+    this.refreshPosterCameraMatrices()
+    const viewport = new Viewport(0, 0, width, height)
+    const transform = this.camera.getTransformationMatrix()
+    let minX = Infinity
+    let minY = Infinity
+    let maxX = -Infinity
+    let maxY = -Infinity
+    for (const corner of corners) {
+      const projected = Vector3.Project(
+        corner,
+        Matrix.Identity(),
+        transform,
+        viewport,
+      )
+      minX = Math.min(minX, projected.x)
+      maxX = Math.max(maxX, projected.x)
+      minY = Math.min(minY, projected.y)
+      maxY = Math.max(maxY, projected.y)
+    }
+    return { minX, minY, maxX, maxY }
+  }
+
+  private seedPosterOrtho(
+    request: PosterCaptureRequest,
+    bounds: { min: Vector3; max: Vector3 },
+  ) {
+    const aspect = request.width / Math.max(request.height, 1)
+    const halfH = Math.max(Vector3.Distance(bounds.min, bounds.max) * 0.75, 1)
+    this.setPosterOrthoWindow(halfH * aspect, halfH)
+  }
+
+  /** Zoom so the AABB fills the layout's content rect (not a bounding sphere). */
+  private fitPosterOrthoToContent(
+    request: PosterCaptureRequest,
+    corners: Vector3[],
+  ) {
+    const { width, height, contentRect } = request
+    const inset = 0.015
+    const boxW = Math.max((contentRect.right - contentRect.left - inset * 2) * width, 1)
+    const boxH = Math.max((contentRect.bottom - contentRect.top - inset * 2) * height, 1)
+    const box = this.projectPosterCorners(corners, width, height)
+    const projW = Math.max(box.maxX - box.minX, 1)
+    const projH = Math.max(box.maxY - box.minY, 1)
+    const scale = Math.max(projW / boxW, projH / boxH)
+    const { halfW, halfH } = this.posterOrthoHalfSize()
+    this.setPosterOrthoWindow(
+      Math.max(halfW * scale, 0.05),
+      Math.max(halfH * scale, 0.05),
+    )
+  }
+
+  /** Pan so the lineup sits in the content rect, leaving room for labels. */
+  private centerPosterInContentRect(
+    request: PosterCaptureRequest,
+    corners: Vector3[],
+  ) {
+    const { width, height, contentRect } = request
+    const wantX = ((contentRect.left + contentRect.right) / 2) * width
+    const wantY = ((contentRect.top + contentRect.bottom) / 2) * height
+    const box = this.projectPosterCorners(corners, width, height)
+    const gotX = (box.minX + box.maxX) / 2
+    const gotY = (box.minY + box.maxY) / 2
+    const dxPx = wantX - gotX
+    const dyPx = wantY - gotY
+    if (Math.abs(dxPx) < 0.5 && Math.abs(dyPx) < 0.5) return
+
+    const { halfW, halfH } = this.posterOrthoHalfSize()
+    const worldRight = (dxPx / (width / 2)) * halfW
+    const worldUp = -(dyPx / (height / 2)) * halfH
+    const right = this.camera.getDirection(Vector3.Right())
+    const up = this.camera.getDirection(Vector3.Up())
+    const target = this.camera.target.clone()
+    target.addInPlace(right.scale(-worldRight))
+    target.addInPlace(up.scale(-worldUp))
+    this.applyCameraOrbit(target, this.camera.alpha, this.camera.beta, this.camera.radius)
+  }
+
+  private posterOrthoHalfSize() {
+    const left = this.camera.orthoLeft ?? -1
+    const right = this.camera.orthoRight ?? 1
+    const top = this.camera.orthoTop ?? 1
+    const bottom = this.camera.orthoBottom ?? -1
+    return {
+      halfW: Math.max((right - left) * 0.5, 0.05),
+      halfH: Math.max((top - bottom) * 0.5, 0.05),
+    }
+  }
+
+  private setPosterOrthoWindow(halfW: number, halfH: number) {
+    this.camera.orthoLeft = -halfW
+    this.camera.orthoRight = halfW
+    this.camera.orthoTop = halfH
+    this.camera.orthoBottom = -halfH
+    this.refreshPosterCameraMatrices()
+  }
+
+  private projectPosterItems(
+    width: number,
+    height: number,
+  ): PosterItemProjection[] {
+    const viewport = new Viewport(0, 0, width, height)
+    this.camera.unfreezeProjectionMatrix()
+    const transform = this.camera.getTransformationMatrix()
+    const items: PosterItemProjection[] = []
+    for (const item of this.sortedItems) {
+      const placement = [...this.placements.values()].find(
+        (entry) => entry.itemId === item.id,
+      )
+      if (!placement) continue
+      const box = this.visualBounds(placement.body)
+      let minX = Infinity
+      let minY = Infinity
+      let maxX = -Infinity
+      let maxY = -Infinity
+      for (const corner of aabbCorners(box.min, box.max)) {
+        const projected = Vector3.Project(
+          corner,
+          Matrix.Identity(),
+          transform,
+          viewport,
+        )
+        minX = Math.min(minX, projected.x)
+        maxX = Math.max(maxX, projected.x)
+        minY = Math.min(minY, projected.y)
+        maxY = Math.max(maxY, projected.y)
+      }
+      items.push({
+        itemId: item.id,
+        name: item.name,
+        sizeMeters: headlineSizeMeters(item),
+        minX,
+        minY,
+        maxX,
+        maxY,
+      })
+    }
+    return items
+  }
+
+  private measurePixelsPerMeter(width: number, height: number): number {
+    const bounds = this.posterVisualBounds()
+    const origin = bounds
+      ? new Vector3(
+          (bounds.min.x + bounds.max.x) / 2,
+          0,
+          (bounds.min.z + bounds.max.z) / 2,
+        )
+      : Vector3.Zero()
+    const viewport = new Viewport(0, 0, width, height)
+    this.camera.unfreezeProjectionMatrix()
+    const transform = this.camera.getTransformationMatrix()
+    const a = Vector3.Project(origin, Matrix.Identity(), transform, viewport)
+    const b = Vector3.Project(
+      origin.add(new Vector3(1, 0, 0)),
+      Matrix.Identity(),
+      transform,
+      viewport,
+    )
+    return Math.hypot(b.x - a.x, b.y - a.y)
   }
 
   private whenSceneReady(): Promise<void> {
@@ -681,13 +1421,14 @@ export class ComparisonScene {
   private lineupWorldBounds(): { min: Vector3; max: Vector3 } | null {
     if (this.sortedItems.length === 0) return null
     const yaw = this.displayYawTurns
+    const facing = this.measuredFacingExtents()
     let minX = Infinity
     let maxX = -Infinity
     let maxH = 0
     let maxZ = 0
     for (const item of this.sortedItems) {
       const x = this.itemXs.get(item.id) ?? 0
-      const halfX = itemExtentAlongX(item, yaw) / 2
+      const halfX = facingExtentAlongX(item, yaw, facing) / 2
       const halfZ = itemExtentAlongZ(item, yaw) / 2
       minX = Math.min(minX, x - halfX)
       maxX = Math.max(maxX, x + halfX)
@@ -713,6 +1454,249 @@ export class ComparisonScene {
     }
   }
 
+  setGroundPlate(id: GroundPlateId) {
+    if (this.groundPlateId === id) return
+    this.groundPlateId = id
+    void this.syncGroundPlate()
+  }
+
+  setShadowsEnabled(enabled: boolean) {
+    if (this.shadowsWanted === enabled) return
+    this.shadowsWanted = enabled
+    this.applyShadowState()
+  }
+
+  private shadowsActive() {
+    return ENABLE_SCENE_LIGHTING && this.shadowsWanted
+  }
+
+  private applyShadowState() {
+    if (!this.shadows) return
+    this.shadows.darkness = this.shadowsActive() ? SHADOW_DARKNESS : SHADOW_DARKNESS_OFF
+    if (this.shadowsActive()) {
+      this.syncShadowCasters()
+      this.fitSunShadows()
+    }
+    this.markDirty()
+  }
+
+  private async syncGroundPlate() {
+    const gen = ++this.cityLoadGen
+    const plate = GROUND_PLATE_BY_ID[this.groundPlateId]
+    if (!plate.modelPath) {
+      if (this.cityRoot) {
+        this.cityRoot.dispose()
+        this.cityRoot = null
+        this.cityFootprint = { width: 0, depth: 0 }
+      }
+      this.resizeGroundToContent()
+      this.syncCameraClipPlanes()
+      this.markDirty()
+      return
+    }
+    if (this.captureMode) return
+    try {
+      if (!this.cityRoot) await this.loadCityPlate(plate)
+      if (this.disposed || gen !== this.cityLoadGen) return
+      this.cityRoot?.setEnabled(true)
+      this.resizeGroundToContent()
+      this.syncCameraClipPlanes()
+      this.markDirty()
+    } catch (error) {
+      console.warn('Failed to load ground plate', plate.id, error)
+    }
+  }
+
+  private async loadCityPlate(plate: GroundPlate) {
+    const { rootUrl, filename } = this.resolveModelUrl(plate.modelPath!)
+    const result = await SceneLoader.ImportMeshAsync('', rootUrl, filename, this.scene)
+    const root = new TransformNode('ground-city', this.scene)
+    for (const mesh of result.meshes) {
+      if (!mesh.parent) mesh.parent = root
+      mesh.isPickable = false
+      mesh.metadata = { kind: 'ground-city' }
+    }
+    this.prepareImportedMaterials(root)
+    for (const mesh of root.getChildMeshes(false)) {
+      mesh.receiveShadows = ENABLE_SCENE_LIGHTING
+      const mat = mesh.material
+      if (!(mat instanceof PBRMaterial)) continue
+      if (mat.albedoTexture) mat.albedoTexture.anisotropicFilteringLevel = 8
+      // Unlit skips the shadow term. Keep the baked look only when lighting is off.
+      if (!ENABLE_SCENE_LIGHTING) {
+        mat.unlit = true
+        if (mat.albedoTexture) {
+          mat.emissiveTexture = mat.albedoTexture
+          mat.emissiveColor = Color3.White()
+        }
+      }
+    }
+
+    const pitch = ((plate.pitchDegrees ?? 0) * Math.PI) / 180
+    const roll = ((plate.rollDegrees ?? 0) * Math.PI) / 180
+    const yaw = ((plate.yawDegrees ?? 0) * Math.PI) / 180
+    if (pitch || roll || yaw) {
+      root.rotationQuaternion = Quaternion.FromEulerAngles(pitch, yaw, roll)
+    }
+    root.computeWorldMatrix(true)
+    for (const mesh of root.getChildMeshes(false)) mesh.computeWorldMatrix(true)
+    const bounds = this.visualBounds(root)
+    const size = bounds.max.subtract(bounds.min)
+    const horiz = Math.max(size.x, size.z, 1e-4)
+    const scale = (plate.lengthMeters ?? horiz) / horiz
+    root.scaling.setAll(scale)
+    // Scale includes the square harbor tile; drop it so it does not read as a gray slab.
+    this.stripCityWaterPlanes(root)
+    root.computeWorldMatrix(true)
+    for (const mesh of root.getChildMeshes(false)) mesh.computeWorldMatrix(true)
+    const groundY = this.cityGroundLevelY(root)
+    // Seat streets on the model ground plane (AABB min hangs below the city).
+    root.position.y -= groundY
+    root.computeWorldMatrix(true)
+    for (const mesh of root.getChildMeshes(false)) mesh.computeWorldMatrix(true)
+
+    const land = this.cityLandBounds(root) ?? this.visualBounds(root)
+    let clearing: { x: number; z: number } | null = null
+    try {
+      clearing = this.findCityClearing(root, land)
+    } catch (error) {
+      console.warn('City clearing search failed', error)
+    }
+    const centerX = clearing?.x ?? (land.min.x + land.max.x) * 0.5
+    const centerZ = clearing?.z ?? (land.min.z + land.max.z) * 0.5
+    root.position.x += (plate.originX ?? 0) - centerX
+    root.position.z += (plate.originZ ?? 0) - centerZ
+    root.computeWorldMatrix(true)
+    for (const mesh of root.getChildMeshes(false)) mesh.computeWorldMatrix(true)
+    const final = this.visualBounds(root)
+    // Square from origin so later yaw around the lineup does not clip the harbor.
+    const radius = Math.max(
+      Math.abs(final.min.x),
+      Math.abs(final.max.x),
+      Math.abs(final.min.z),
+      Math.abs(final.max.z),
+      1,
+    )
+    this.cityFootprint = { width: radius * 2, depth: radius * 2 }
+    const pivot = new TransformNode('ground-city-yaw', this.scene)
+    root.parent = pivot
+    pivot.rotation.y = ((plate.spinDegrees ?? 0) * Math.PI) / 180
+    this.cityRoot = pivot
+    for (const mesh of root.getChildMeshes(false)) {
+      this.freezeMaterialTree(mesh.material)
+    }
+  }
+
+  private stripCityWaterPlanes(root: TransformNode) {
+    for (const mesh of root.getChildMeshes(false)) {
+      if (/watter|water/i.test(mesh.name)) mesh.dispose()
+    }
+  }
+
+  private cityLandBounds(root: TransformNode): { min: Vector3; max: Vector3 } | null {
+    const min = new Vector3(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY)
+    const max = new Vector3(Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY)
+    let found = false
+    for (const mesh of root.getChildMeshes(false)) {
+      if (!this.isVisualMesh(mesh)) continue
+      if (/watter|water/i.test(mesh.name)) continue
+      mesh.computeWorldMatrix(true)
+      const box = mesh.getBoundingInfo().boundingBox
+      Vector3.CheckExtends(box.minimumWorld, min, max)
+      Vector3.CheckExtends(box.maximumWorld, min, max)
+      found = true
+    }
+    if (!found || !Number.isFinite(min.x) || min.x > max.x) return null
+    return { min, max }
+  }
+
+  /**
+   * Street / harbor height in world Y. Photogrammetry often has junk below
+   * the real ground; sitting on AABB min leaves the city hovering.
+   */
+  private cityGroundLevelY(root: TransformNode): number {
+    const samples: number[] = []
+    const tmp = new Vector3()
+    for (const mesh of root.getChildMeshes(false)) {
+      if (!this.isVisualMesh(mesh)) continue
+      if (/watter|water/i.test(mesh.name)) continue
+      const data = mesh.getVerticesData(VertexBuffer.PositionKind)
+      if (!data) continue
+      const wm = mesh.getWorldMatrix()
+      for (let i = 0; i + 2 < data.length; i += 24) {
+        Vector3.TransformCoordinatesFromFloatsToRef(data[i], data[i + 1], data[i + 2], wm, tmp)
+        samples.push(tmp.y)
+      }
+    }
+    if (samples.length > 20) {
+      samples.sort((a, b) => a - b)
+      return samples[Math.floor(samples.length * 0.15)]
+    }
+
+    for (const mesh of root.getChildMeshes(false)) {
+      if (!this.isVisualMesh(mesh)) continue
+      if (!/watter|water/i.test(mesh.name)) continue
+      mesh.computeWorldMatrix(true)
+      const box = mesh.getBoundingInfo().boundingBox
+      return (box.minimumWorld.y + box.maximumWorld.y) * 0.5
+    }
+    return this.visualBounds(root).min.y
+  }
+
+  /** Street / park cell with the most near-ground verts, biased toward the land center. */
+  private findCityClearing(
+    root: TransformNode,
+    land: { min: Vector3; max: Vector3 },
+  ): { x: number; z: number } | null {
+    const bins = 28
+    const spanX = land.max.x - land.min.x
+    const spanZ = land.max.z - land.min.z
+    if (spanX < 1 || spanZ < 1) return null
+    const counts = new Float64Array(bins * bins)
+    const tmp = new Vector3()
+    const groundY = 12
+
+    for (const mesh of root.getChildMeshes(false)) {
+      if (!this.isVisualMesh(mesh)) continue
+      if (/watter|water/i.test(mesh.name)) continue
+      const data = mesh.getVerticesData(VertexBuffer.PositionKind)
+      if (!data) continue
+      const wm = mesh.getWorldMatrix()
+      for (let i = 0; i + 2 < data.length; i += 9) {
+        Vector3.TransformCoordinatesFromFloatsToRef(data[i], data[i + 1], data[i + 2], wm, tmp)
+        if (tmp.y > groundY) continue
+        const ix = Math.floor(((tmp.x - land.min.x) / spanX) * bins)
+        const iz = Math.floor(((tmp.z - land.min.z) / spanZ) * bins)
+        if (ix < 0 || iz < 0 || ix >= bins || iz >= bins) continue
+        counts[iz * bins + ix] += 1
+      }
+    }
+
+    const cx = (bins - 1) / 2
+    const cz = (bins - 1) / 2
+    let bestI = -1
+    let bestScore = -1
+    for (let iz = 0; iz < bins; iz++) {
+      for (let ix = 0; ix < bins; ix++) {
+        const n = counts[iz * bins + ix]
+        if (n < 12) continue
+        const dist = (ix - cx) * (ix - cx) + (iz - cz) * (iz - cz)
+        const score = n / (1 + dist * 0.12)
+        if (score > bestScore) {
+          bestScore = score
+          bestI = iz * bins + ix
+        }
+      }
+    }
+    if (bestI < 0) return null
+    const ix = bestI % bins
+    const iz = Math.floor(bestI / bins)
+    return {
+      x: land.min.x + ((ix + 0.5) / bins) * spanX,
+      z: land.min.z + ((iz + 0.5) / bins) * spanZ,
+    }
+  }
+
   setDetonationMode(mode: DetonationMode) {
     if (this.detonationMode === mode) return
     this.detonationMode = mode
@@ -731,6 +1715,9 @@ export class ComparisonScene {
   dispose() {
     this.disposed = true
     this.loadGeneration += 1
+    this.cityLoadGen += 1
+    this.posterPreview = null
+    this.posterOverlayListeners.clear()
     this.clearHover()
     this.clearTourTimer()
     this.listeners.clear()
@@ -760,7 +1747,21 @@ export class ComparisonScene {
     return {
       spread: this.tourSettings.spread,
       yawTurns: this.displayYawTurns,
+      facingExtents: this.measuredFacingExtents(),
     }
+  }
+
+  /** World-X AABB of each loaded body (excludes plaques). */
+  private measuredFacingExtents(): Map<string, number> {
+    const extents = new Map<string, number>()
+    for (const item of this.sortedItems) {
+      const placement = this.placementForItem(item.id)
+      if (!placement) continue
+      const box = this.visualBounds(placement.body)
+      const width = box.max.x - box.min.x
+      if (Number.isFinite(width) && width > 1e-6) extents.set(item.id, width)
+    }
+    return extents
   }
 
   private tourVisibleItems(stepIndex: number) {
@@ -775,6 +1776,10 @@ export class ComparisonScene {
     if (this.sortedItems.length === 0) return
     const xs = layoutRevealPositions(this.sortedItems, this.layoutView())
     this.itemXs = xs
+    if (this.posterPreview) {
+      this.posterPreview.saved.positions = this.positionsFromLineupXs(xs)
+      return
+    }
     for (const item of this.sortedItems) {
       const placement = this.placementForItem(item.id)
       if (!placement) continue
@@ -786,6 +1791,17 @@ export class ComparisonScene {
     this.markDirty()
   }
 
+  private positionsFromLineupXs(xs: Map<string, number>) {
+    const positions = new Map<string, Vector3>()
+    for (const placement of this.placements.values()) {
+      positions.set(
+        placement.instanceId,
+        new Vector3(xs.get(placement.itemId) ?? 0, 0, 0),
+      )
+    }
+    return positions
+  }
+
   private placementForItem(itemId: string) {
     for (const placement of this.placements.values()) {
       if (placement.itemId === itemId) return placement
@@ -794,6 +1810,10 @@ export class ComparisonScene {
   }
 
   private reframeAfterSettingsChange(layoutChanged: boolean) {
+    if (this.posterPreview) {
+      this.applyPosterLook(this.posterPreview.settings)
+      return
+    }
     if (this.sortedItems.length === 0) return
     if (this.mode === 'tour') {
       this.goToStep(this.stepIndex, true)
@@ -807,6 +1827,7 @@ export class ComparisonScene {
         xs,
         this.tourAngles(),
         this.displayYawTurns,
+        this.measuredFacingExtents(),
       )
       this.applyPose(pose, true)
       return
@@ -934,6 +1955,7 @@ export class ComparisonScene {
   }
 
   private onPointer = (info: PointerInfo) => {
+    if (this.posterPreview) return
     const event = info.event as PointerEvent
 
     if (info.type === PointerEventTypes.POINTERMOVE) {
@@ -990,7 +2012,8 @@ export class ComparisonScene {
    * Centered on content; grows/shrinks as items are added/removed.
    */
   private resizeGroundToContent() {
-    if (this.placements.size === 0) {
+    const cityOn = Boolean(this.cityRoot?.isEnabled())
+    if (this.placements.size === 0 && !cityOn) {
       this.rebuildGround(0, 0, 60, 60)
       return
     }
@@ -1016,14 +2039,22 @@ export class ComparisonScene {
       }
     }
 
-    const spanX = Math.max(maxX - minX, 1)
-    const spanZ = Math.max(maxZ - minZ, 1)
+    const hasItems = Number.isFinite(minX)
+    const spanX = hasItems ? Math.max(maxX - minX, 1) : 1
+    const spanZ = hasItems ? Math.max(maxZ - minZ, 1) : 1
     const pad = Math.max(spanX * 0.35, spanZ * 0.35, maxMag * 0.45, 28)
 
-    const width = spanX + pad * 2
-    const depth = spanZ + pad * 2
-    const centerX = (minX + maxX) / 2
-    const centerZ = (minZ + maxZ) / 2
+    let width = hasItems ? spanX + pad * 2 : 60
+    let depth = hasItems ? spanZ + pad * 2 : 60
+    let centerX = hasItems ? (minX + maxX) / 2 : 0
+    let centerZ = hasItems ? (minZ + maxZ) / 2 : 0
+
+    if (cityOn && this.cityFootprint.width > 1) {
+      width = Math.max(width, this.cityFootprint.width * 1.22)
+      depth = Math.max(depth, this.cityFootprint.depth * 1.22)
+      centerX = 0
+      centerZ = 0
+    }
 
     this.rebuildGround(centerX, centerZ, width, depth)
   }
@@ -1085,19 +2116,24 @@ export class ComparisonScene {
   }
 
   /**
-   * Minecraft-style dirt slab: neighborhood on top, dirt sides, ghost-dirt
-   * underside with a thin cutaway rim (see-through, but clearly intentional).
+   * Minecraft-style slab: neighborhood dirt, or a thick harbor volume under
+   * the New York photogrammetry.
    */
   private buildEarthSlab(centerX: number, centerZ: number, width: number, depth: number): Mesh {
+    const harbor = this.groundPlateId !== 'neighborhood'
     const span = Math.max(width, depth)
-    const thickness = Math.max(8, Math.min(span * 0.0025, Math.sqrt(span) * 0.8))
+    const thickness = harbor
+      ? Math.max(28, Math.min(span * 0.006, 72))
+      : Math.max(8, Math.min(span * 0.0025, Math.sqrt(span) * 0.8))
+    // Sit the harbor a few meters below streets so the city shoreline reads above water.
+    const surfaceY = harbor ? -3 : 0
 
     const slab = MeshBuilder.CreateBox(
       'ground',
       { width, depth, height: thickness, wrap: true },
       this.scene,
     )
-    slab.position.set(centerX, -thickness / 2, centerZ)
+    slab.position.set(centerX, surfaceY - thickness / 2, centerZ)
     slab.receiveShadows = ENABLE_SCENE_LIGHTING
     slab.isPickable = true
     slab.metadata = { kind: 'ground' }
@@ -1116,7 +2152,15 @@ export class ComparisonScene {
       topMat.emissiveColor = Color3.White()
     }
 
-    if (this.neighborhoodTex && span < 8_000) {
+    if (harbor && this.waterSurfaceTex) {
+      const topTex = this.waterSurfaceTex
+      topTex.uScale = Math.min(width / WATER_TILE_METERS, 36)
+      topTex.vScale = Math.min(depth / WATER_TILE_METERS, 36)
+      topTex.wrapU = Texture.WRAP_ADDRESSMODE
+      topTex.wrapV = Texture.WRAP_ADDRESSMODE
+      topMat.diffuseTexture = topTex
+      if (!ENABLE_SCENE_LIGHTING) topMat.emissiveTexture = topTex
+    } else if (this.neighborhoodTex && span < 8_000) {
       // Clone so each rebuild can set its own UV scale without fighting prior mats.
       const topTex = this.neighborhoodTex
       // Cap tiling: huge quads with uScale in the thousands swim and alias.
@@ -1139,22 +2183,22 @@ export class ComparisonScene {
     sideMat.backFaceCulling = true
     if (ENABLE_SCENE_LIGHTING) {
       sideMat.emissiveColor = Color3.Black()
-      sideMat.ambientColor = new Color3(0.34, 0.28, 0.2)
+      sideMat.ambientColor = harbor ? new Color3(0.22, 0.34, 0.38) : new Color3(0.34, 0.28, 0.2)
     } else {
       sideMat.disableLighting = true
       sideMat.emissiveColor = Color3.White()
     }
-    if (this.dirtSideTex) {
-      const sideTex = this.dirtSideTex
-      // Tile dirt horizontally with world size; V stays 0–1 so grass rim stays on top.
-      sideTex.uScale = Math.min(Math.max(width, depth) / 16, 48)
+    const sideTex = harbor ? this.waterSideTex : this.dirtSideTex
+    if (sideTex) {
+      // Tile horizontally with world size; V stays 0–1 so the rim stays on top.
+      sideTex.uScale = Math.min(Math.max(width, depth) / (harbor ? WATER_TILE_METERS : 16), 48)
       sideTex.vScale = 1
       sideMat.diffuseTexture = sideTex
       if (!ENABLE_SCENE_LIGHTING) sideMat.emissiveTexture = sideTex
     } else if (ENABLE_SCENE_LIGHTING) {
-      sideMat.diffuseColor = new Color3(0.42, 0.28, 0.16)
+      sideMat.diffuseColor = harbor ? new Color3(0.18, 0.38, 0.42) : new Color3(0.42, 0.28, 0.16)
     } else {
-      sideMat.emissiveColor = new Color3(0.42, 0.28, 0.16)
+      sideMat.emissiveColor = harbor ? new Color3(0.18, 0.38, 0.42) : new Color3(0.42, 0.28, 0.16)
     }
 
     const bottomMat = new StandardMaterial('groundBottomMat', this.scene)
@@ -1166,13 +2210,14 @@ export class ComparisonScene {
     bottomMat.specularColor = Color3.Black()
     bottomMat.diffuseColor = Color3.White()
     bottomMat.emissiveColor = Color3.White()
-    if (this.undersideTex) {
-      bottomMat.diffuseTexture = this.undersideTex
-      bottomMat.emissiveTexture = this.undersideTex
-      bottomMat.opacityTexture = this.undersideTex
+    const bottomTex = harbor ? this.waterUndersideTex : this.undersideTex
+    if (bottomTex) {
+      bottomMat.diffuseTexture = bottomTex
+      bottomMat.emissiveTexture = bottomTex
+      bottomMat.opacityTexture = bottomTex
     } else {
       bottomMat.alpha = 0.22
-      bottomMat.emissiveColor = new Color3(0.42, 0.28, 0.16)
+      bottomMat.emissiveColor = harbor ? new Color3(0.18, 0.38, 0.42) : new Color3(0.42, 0.28, 0.16)
     }
 
     // CreateBox face order: front, back, right, left, top, bottom
@@ -1247,8 +2292,16 @@ export class ComparisonScene {
 
   private onResize = () => {
     this.camera.unfreezeProjectionMatrix()
-    this.applyResolutionCap()
+    if (this.posterPreview) this.applyPosterPreviewResolution()
+    else this.applyResolutionCap()
     this.engine.resize()
+    if (this.posterPreview) {
+      this.framePosterCamera({
+        ...this.posterPreview.settings,
+        ...this.canvasCssSize(),
+      })
+      this.emitPosterOverlay()
+    }
     this.markDirty()
   }
 
@@ -1296,7 +2349,10 @@ export class ComparisonScene {
     // Keep far/near ≈ 10k. Capping minZ at 2m (old) made km-scale views
     // z-fight: hulls vanish, ground/plaques wiggle.
     const minZ = Math.max(r / 500, 0.05)
-    const maxZ = Math.max(r * 20, 200)
+    const cityFar = this.cityRoot?.isEnabled()
+      ? Math.max(this.cityFootprint.width, this.cityFootprint.depth)
+      : 0
+    const maxZ = Math.max(r * 20, cityFar, 200)
     if (this.camera.minZ !== minZ || this.camera.maxZ !== maxZ) {
       this.camera.unfreezeProjectionMatrix()
       this.camera.minZ = minZ
@@ -1371,6 +2427,117 @@ export class ComparisonScene {
     this.engine.setHardwareScalingLevel(1 / dpr)
   }
 
+  /** Live preview only — no 2× SSAA; download path supersamples separately. */
+  private applyPosterPreviewResolution() {
+    if (this.captureMode) {
+      this.engine.setHardwareScalingLevel(1)
+      return
+    }
+    const dpr = Math.min(window.devicePixelRatio || 1, MAX_POSTER_PREVIEW_PIXEL_RATIO)
+    this.engine.setHardwareScalingLevel(1 / dpr)
+  }
+
+  /**
+   * Log depth writes gl_FragDepth, which disables MSAA coverage. Poster shots
+   * frame a tight near/far, so linear depth is enough and edges can anti-alias.
+   */
+  private setMaterialsLogarithmicDepth(enabled: boolean) {
+    const blocked = this.scene.blockMaterialDirtyMechanism
+    this.scene.blockMaterialDirtyMechanism = false
+    try {
+      for (const material of this.scene.materials) {
+        this.setMaterialLogarithmicDepth(material, enabled)
+      }
+    } finally {
+      this.scene.blockMaterialDirtyMechanism = blocked
+    }
+  }
+
+  private setMaterialLogarithmicDepth(
+    material: Material | null | undefined,
+    enabled: boolean,
+  ) {
+    if (!material) return
+    if (material instanceof MultiMaterial) {
+      for (const sub of material.subMaterials) {
+        this.setMaterialLogarithmicDepth(sub, enabled)
+      }
+      return
+    }
+    if (material.useLogarithmicDepth === enabled) return
+    const blocked = this.scene.blockMaterialDirtyMechanism
+    this.scene.blockMaterialDirtyMechanism = false
+    const frozen = material.isFrozen
+    if (frozen) material.unfreeze()
+    material.useLogarithmicDepth = enabled
+    material.markDirty?.()
+    if (frozen) material.freeze()
+    this.scene.blockMaterialDirtyMechanism = blocked
+  }
+
+  private clampPosterPixelSize(
+    width: number,
+    height: number,
+    maxEdge: number,
+  ) {
+    const long = Math.max(width, height)
+    if (long <= maxEdge) return { width, height }
+    const scale = maxEdge / long
+    return {
+      width: Math.max(1, Math.round(width * scale)),
+      height: Math.max(1, Math.round(height * scale)),
+    }
+  }
+
+  /** Keep the on-screen canvas modest; the screenshot render target is full-res. */
+  private setPosterCaptureBackbuffer(width: number, height: number) {
+    const aspect = width / Math.max(height, 1)
+    const cap = 2048
+    let w: number
+    let h: number
+    if (aspect >= 1) {
+      w = Math.min(width, cap)
+      h = Math.max(1, Math.round(w / aspect))
+    } else {
+      h = Math.min(height, cap)
+      w = Math.max(1, Math.round(h * aspect))
+    }
+    this.engine.setSize(w, h)
+  }
+
+  private async screenshotPosterPng(
+    width: number,
+    height: number,
+    superScale: number,
+    samples: number,
+  ) {
+    const capture = (scale: number, msaa: number) =>
+      CreateScreenshotUsingRenderTargetAsync(
+        this.engine,
+        this.camera,
+        {
+          width: Math.max(1, Math.round(width * scale)),
+          height: Math.max(1, Math.round(height * scale)),
+        },
+        'image/png',
+        msaa,
+        false,
+        undefined,
+        false,
+        false,
+        true,
+      )
+    const scale = Math.max(superScale, 1)
+    try {
+      return await capture(scale, samples)
+    } catch (error) {
+      if (scale > 1 || samples > 1) {
+        return await capture(1, 1)
+      }
+      throw error
+    }
+  }
+
   private isAnimatedPlacement(placement: PlacedObject): boolean {
     const item = CATALOG_BY_ID[placement.itemId]
     return Boolean(item && (item.playClips || item.shape === 'person'))
@@ -1403,11 +2570,11 @@ export class ComparisonScene {
   }
 
   private freezeStaticScene() {
-    if (ENABLE_SCENE_LIGHTING) this.syncShadowCasters()
+    if (this.shadowsActive()) this.syncShadowCasters()
     for (const placement of this.placements.values()) {
       this.freezeStaticPlacement(placement)
     }
-    if (ENABLE_SCENE_LIGHTING) this.fitSunShadows()
+    if (this.shadowsActive()) this.fitSunShadows()
   }
 
   private installLights() {
@@ -1433,6 +2600,7 @@ export class ComparisonScene {
 
       this.shadows = this.createSunShadows(this.sun)
       this.scene.environmentIntensity = 0.28
+      this.applyShadowState()
     } else {
       const hemi = new HemisphericLight('hemi', new Vector3(0, 1, 0), this.scene)
       hemi.intensity = 0.8
@@ -1486,7 +2654,7 @@ export class ComparisonScene {
     shadows.filteringQuality = ShadowGenerator.QUALITY_MEDIUM
     shadows.bias = 0.0004
     shadows.normalBias = 0.015
-    shadows.darkness = 0.22
+    shadows.darkness = SHADOW_DARKNESS
     return shadows
   }
 
@@ -1494,6 +2662,13 @@ export class ComparisonScene {
     if (!this.shadows) return
     const map = this.shadows.getShadowMap()
     if (map?.renderList) map.renderList.length = 0
+
+    if (this.cityRoot) {
+      for (const mesh of this.cityRoot.getChildMeshes(false)) {
+        if (!mesh.isVisible || mesh.getTotalVertices() < 3) continue
+        mesh.receiveShadows = true
+      }
+    }
 
     for (const placement of this.placements.values()) {
       const item = CATALOG_BY_ID[placement.itemId]
@@ -1520,8 +2695,9 @@ export class ComparisonScene {
       return
     }
     // Linear 24-bit depth falls apart for 160 km subjects; log depth keeps
-    // hulls and the ground from z-fighting. Must be on every depth-tested mat.
-    if (!material.useLogarithmicDepth) material.useLogarithmicDepth = true
+    // hulls and the ground from z-fighting. Off during poster preview so
+    // MSAA can actually anti-alias silhouettes (gl_FragDepth kills coverage).
+    this.setMaterialLogarithmicDepth(material, !this.posterPreview)
     if (!material.isFrozen) material.freeze()
   }
 
@@ -2477,8 +3653,7 @@ export class ComparisonScene {
         return Math.hypot(center.x - cx, center.y - cy, center.z - cz)
       })
       .sort((a, b) => a - b)
-    const typical = Math.max(distances[Math.floor(distances.length / 2)] ?? 1, 0.25)
-    const cutoff = typical * 12 + 4
+    const cutoff = distantHelperCutoff(distances)
 
     for (const mesh of meshes) {
       const center = mesh.getBoundingInfo().boundingBox.centerWorld
@@ -2501,19 +3676,15 @@ export class ComparisonScene {
     this.cropDistantHelperMeshes(root)
     if (item.playClips) return
 
-    const helperName = /gbu_helper|\bhelper\b|collision|gizmo|^dummy|^empty/i
     for (const mesh of root.getChildMeshes(false)) {
       if (typeof mesh.getTotalVertices !== 'function' || mesh.getTotalVertices() === 0) continue
       mesh.computeWorldMatrix(true)
       const box = mesh.getBoundingInfo().boundingBox
       const size = box.maximumWorld.subtract(box.minimumWorld)
-      const dims = [size.x, size.y, size.z].sort((a, b) => a - b)
-      const span = dims[2]
-      const needle = span > 50 && span > 25 * Math.max(dims[1], 1e-8)
+      const needle = isNeedleSize(size)
       // Zero-thickness cards (Death Star II equator planes) z-fight into noise at km scale.
-      const paper = span > 1 && dims[0] < Math.max(span * 1e-5, 1e-4)
-      const label = `${mesh.name} ${mesh.parent?.name ?? ''}`
-      if (needle || paper || helperName.test(label)) {
+      const paper = isPaperSize(size)
+      if (needle || paper || isHelperLabel(mesh.name, mesh.parent?.name ?? '')) {
         mesh.setEnabled(false)
         mesh.isVisible = false
         mesh.isPickable = false
@@ -2955,11 +4126,13 @@ function nextFrame(): Promise<void> {
   return new Promise((resolve) => requestAnimationFrame(() => resolve()))
 }
 
-function dataUrlToJpegBlob(dataUrl: string): Blob {
+function dataUrlToBlob(dataUrl: string, fallbackType = 'image/jpeg'): Blob {
   const comma = dataUrl.indexOf(',')
+  const header = comma >= 0 ? dataUrl.slice(0, comma) : ''
   const b64 = comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl
+  const mime = /data:([^;]+)/.exec(header)?.[1] ?? fallbackType
   const binary = atob(b64)
   const bytes = new Uint8Array(binary.length)
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
-  return new Blob([bytes], { type: 'image/jpeg' })
+  return new Blob([bytes], { type: mime })
 }

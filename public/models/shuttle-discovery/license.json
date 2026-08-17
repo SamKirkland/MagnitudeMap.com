@@ -1,0 +1,12 @@
+{
+  "id": "shuttle-discovery",
+  "file": "model.glb",
+  "license": "CC-BY-4.0",
+  "licenseLabel": "CC BY",
+  "author": "rsatenza",
+  "source": "https://sketchfab.com/3d-models/discovery-space-shuttle-23c579b845e841c9b6c6d59bd5725bb6",
+  "sourceAsset": "Discovery Space Shuttle",
+  "sketchfabUid": "23c579b845e841c9b6c6d59bd5725bb6",
+  "notes": "Discovery Space Shuttle orbiter (CC-BY, ~11k tris). Scaled to 37.24 m length in-app.",
+  "attribution": "Discovery Space Shuttle by rsatenza on Sketchfab (CC BY) — https://sketchfab.com/3d-models/discovery-space-shuttle-23c579b845e841c9b6c6d59bd5725bb6"
+}

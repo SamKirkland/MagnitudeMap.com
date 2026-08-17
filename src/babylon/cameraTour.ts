@@ -103,8 +103,9 @@ export function poseForTourStep(
   xs: number[],
   angles: CameraAngles = DEFAULT_TOUR_ANGLES,
   yawTurns = 0,
+  facingExtents?: ReadonlyMap<string, number>,
 ): CameraPose {
-  return poseForItems(items, xs, angles, yawTurns)
+  return poseForItems(items, xs, angles, yawTurns, facingExtents)
 }
 
 export function poseForItems(
@@ -112,6 +113,7 @@ export function poseForItems(
   xs: number[],
   angles: CameraAngles = DEFAULT_TOUR_ANGLES,
   yawTurns = 0,
+  facingExtents?: ReadonlyMap<string, number>,
 ): CameraPose {
   if (items.length === 0) {
     return { target: { x: 0, y: 2, z: 0 }, radius: 40, alpha: angles.alpha, beta: angles.beta }
@@ -124,7 +126,7 @@ export function poseForItems(
   for (let i = 0; i < items.length; i++) {
     const item = items[i]
     const x = xs[i]
-    const half = itemExtentAlongX(item, yawTurns) / 2
+    const half = facingExtentAlongX(item, yawTurns, facingExtents) / 2
     minX = Math.min(minX, x - half)
     maxX = Math.max(maxX, x + half)
     maxH = Math.max(maxH, item.height, itemExtentAlongZ(item, yawTurns))
@@ -155,21 +157,41 @@ export type RevealLayoutParams = {
   spread?: number
   /** User display yaw in 90° turns (0–3). Swaps length/width along the lineup. */
   yawTurns?: number
+  /**
+   * World-X AABB sizes from loaded meshes. Catalog width/length is only a
+   * fallback — height-scaled rockets are much wider than their body diameter.
+   */
+  facingExtents?: ReadonlyMap<string, number>
 }
 
 /** AABB gap at Tight, as a fraction of the pair's larger facing extent. */
-const TIGHT_GAP_FRACTION = 0.05
+const TIGHT_GAP_FRACTION = 0.01
 /** Wide floor: padding at least this fraction of the larger facing extent. */
 const WIDE_GAP_MIN_FRACTION = 1.5
 /** Extra frustum padding so a neighbor isn't a sliver on the frame edge. */
 const ISOLATION_EDGE_FRACTION = 0.08
 
+/** Lineup-axis size: measured mesh AABB when known, else catalog width/length. */
+export function facingExtentAlongX(
+  item: CatalogItem,
+  yawTurns: number,
+  facingExtents?: ReadonlyMap<string, number>,
+): number {
+  const measured = facingExtents?.get(item.id)
+  if (measured != null && Number.isFinite(measured) && measured > 0) return measured
+  return itemExtentAlongX(item, yawTurns)
+}
+
 /**
  * Gap past an item's facing AABB so a head-on 16:9 frame of that item
  * does not include a neighbor's near face.
  */
-function headOnIsolationGap(item: CatalogItem, yawTurns: number): number {
-  const facing = itemExtentAlongX(item, yawTurns)
+function headOnIsolationGap(
+  item: CatalogItem,
+  yawTurns: number,
+  facingExtents?: ReadonlyMap<string, number>,
+): number {
+  const facing = facingExtentAlongX(item, yawTurns, facingExtents)
   const hx = Math.max(facing * 0.5, 0.05)
   const hy = Math.max(item.height * 0.5, 0.05)
   const halfV = Math.max(DEFAULT_VIEW.fov * 0.5, 0.05)
@@ -186,14 +208,15 @@ export function pairSpacingGap(
   next: CatalogItem,
   spread: number,
   yawTurns: number,
+  facingExtents?: ReadonlyMap<string, number>,
 ): number {
-  const facingPrev = itemExtentAlongX(prev, yawTurns)
-  const facingNext = itemExtentAlongX(next, yawTurns)
+  const facingPrev = facingExtentAlongX(prev, yawTurns, facingExtents)
+  const facingNext = facingExtentAlongX(next, yawTurns, facingExtents)
   const largerFacing = Math.max(facingPrev, facingNext)
   const tight = largerFacing * TIGHT_GAP_FRACTION
   const wide = Math.max(
-    headOnIsolationGap(prev, yawTurns),
-    headOnIsolationGap(next, yawTurns),
+    headOnIsolationGap(prev, yawTurns, facingExtents),
+    headOnIsolationGap(next, yawTurns, facingExtents),
     largerFacing * WIDE_GAP_MIN_FRACTION,
   )
   const t = spreadAmount(spread)
@@ -201,8 +224,8 @@ export function pairSpacingGap(
 }
 
 /**
- * Pack items along +X with per-pair gaps from facing size (width at yaw 0,
- * length at 90°/270°) and the Tight–Wide slider.
+ * Pack items along +X with per-pair gaps from facing AABB (mesh when known,
+ * else catalog width at yaw 0 / length at 90°/270°) and the Tight–Wide slider.
  */
 export function layoutRevealPositions(
   items: CatalogItem[],
@@ -213,18 +236,19 @@ export function layoutRevealPositions(
 
   const spread = view.spread ?? 1
   const yawTurns = view.yawTurns ?? 0
-  xs.set(items[0].id, itemExtentAlongX(items[0], yawTurns) / 2)
+  const facingExtents = view.facingExtents
+  xs.set(items[0].id, facingExtentAlongX(items[0], yawTurns, facingExtents) / 2)
 
   for (let i = 1; i < items.length; i++) {
     const prev = items[i - 1]
     const next = items[i]
     const prevX = xs.get(prev.id)!
-    const gap = pairSpacingGap(prev, next, spread, yawTurns)
+    const gap = pairSpacingGap(prev, next, spread, yawTurns, facingExtents)
     const nextX =
       prevX +
-      itemExtentAlongX(prev, yawTurns) / 2 +
+      facingExtentAlongX(prev, yawTurns, facingExtents) / 2 +
       gap +
-      itemExtentAlongX(next, yawTurns) / 2
+      facingExtentAlongX(next, yawTurns, facingExtents) / 2
     xs.set(next.id, nextX)
   }
 

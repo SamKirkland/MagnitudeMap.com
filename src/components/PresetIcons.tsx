@@ -71,15 +71,21 @@ export function ShipIcon(props: IconProps) {
   )
 }
 
-/** Starfleet delta — used for the Star Trek lineup. */
-export function StarfleetIcon(props: IconProps) {
+/** Generic spacecraft dart — used for the Star Trek lineup. */
+export function SpaceshipIcon(props: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
       <path
-        d="M12 3.25 4.75 20.5 12 16.4 19.25 20.5 12 3.25Z"
+        d="M4.25 12 19.5 7.25v9.5L4.25 12Z"
         stroke="currentColor"
         strokeWidth="1.5"
         strokeLinejoin="round"
+      />
+      <path
+        d="M8.5 12h7"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
       />
     </svg>
   )
@@ -121,7 +127,7 @@ const PRESET_ICONS: Record<string, ComponentType<IconProps>> = {
   navy: ShipIcon,
   stargate: SparklesIcon,
   starwars: StarIcon,
-  startrek: StarfleetIcon,
+  startrek: SpaceshipIcon,
   rockets: RocketLaunchIcon,
   landmarks: BuildingLibraryIcon,
   money: BanknotesIcon,

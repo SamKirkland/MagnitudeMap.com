@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = join(__dirname, '..')
 const modelsDir = join(root, 'public', 'models')
+const groundsDir = join(root, 'public', 'grounds')
 const outPath = join(root, 'src', 'data', 'attributions.ts')
 const catalogPath = join(root, 'src', 'data', 'catalog.ts')
 
@@ -35,11 +36,11 @@ function catalogNames() {
   return names
 }
 
-function loadLicenses() {
-  const names = catalogNames()
+function readLicenseDir(dirRoot, names) {
+  if (!existsSync(dirRoot)) return []
   const entries = []
-  for (const id of readdirSync(modelsDir)) {
-    const dir = join(modelsDir, id)
+  for (const id of readdirSync(dirRoot)) {
+    const dir = join(dirRoot, id)
     if (!statSync(dir).isDirectory()) continue
     const licPath = join(dir, 'license.json')
     if (!existsSync(licPath)) continue
@@ -67,6 +68,15 @@ function loadLicenses() {
       notes: raw.notes || '',
     })
   }
+  return entries
+}
+
+function loadLicenses() {
+  const names = catalogNames()
+  const entries = [
+    ...readLicenseDir(modelsDir, names),
+    ...readLicenseDir(groundsDir, names),
+  ]
   entries.sort((a, b) => a.catalogName.localeCompare(b.catalogName))
   return entries
 }

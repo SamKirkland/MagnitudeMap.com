@@ -122,6 +122,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Ankylosaurus (CC-BY, kenchoo). Linked GremorySaiyan pack is Standard. Scaled to 7.5 m length in-app."
   },
   {
+    "id": "arleigh-burke",
+    "catalogName": "Arleigh Burke-class destroyer",
+    "author": "Yi Tsung Lee",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/11-low-poly-us-navy-ddg-51-uss-arleigh-burke-17be09c31c6047e4a5969b68c29eba03",
+    "sourceAsset": "1:1 Low poly US NAVY DDG-51 USS Arleigh Burke.",
+    "attribution": "1:1 Low poly US NAVY DDG-51 USS Arleigh Burke. by Yi Tsung Lee on Sketchfab (CC BY) — https://sketchfab.com/3d-models/11-low-poly-us-navy-ddg-51-uss-arleigh-burke-17be09c31c6047e4a5969b68c29eba03",
+    "requiresAttribution": true,
+    "notes": "USS Arleigh Burke DDG-51 by Yi Tsung Lee (CC-BY). Scaled to 153.9 m length in-app."
+  },
+  {
     "id": "astronaut",
     "catalogName": "Astronaut",
     "author": "Kenney",
@@ -251,7 +263,7 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "sourceAsset": "Borg Inspired Cube",
     "attribution": "Borg Inspired Cube by s7ntech on Sketchfab (CC BY) — https://sketchfab.com/3d-models/borg-inspired-cube-5b9886afa1d24e8fbbf332879a33c1cb",
     "requiresAttribution": true,
-    "notes": "Borg Inspired Cube (CC-BY). Scaled to 3040 m edge (TNG volume / EAS). Sketchfab animation clips stripped."
+    "notes": "Borg Inspired Cube (CC-BY). Scaled to 3040 m edge (TNG volume / EAS). Sketchfab animation clips stripped. Mesh was authored isometric (vertex-down); vertices baked axis-aligned, sitting on a face."
   },
   {
     "id": "burj",
@@ -264,6 +276,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "( FREE ) Burj Khalifa Dubai by SDC PERFORMANCE™️ on Sketchfab (CC BY) — https://sketchfab.com/3d-models/free-burj-khalifa-dubai-c1d6f5884c9c4a56b8d8f9c5555f1902",
     "requiresAttribution": true,
     "notes": "Burj Khalifa Dubai (CC-BY). Scaled to 828 m height in-app."
+  },
+  {
+    "id": "c17a",
+    "catalogName": "C-17A Globemaster III",
+    "author": "Yi Tsung Lee",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/lowpoly-11-c17a-global-master-iii-5a8a1a57e54c495e8966087d0197f8e5",
+    "sourceAsset": "Lowpoly 1:1 C17A Global Master III",
+    "attribution": "Lowpoly 1:1 C17A Global Master III by Yi Tsung Lee on Sketchfab (CC BY) — https://sketchfab.com/3d-models/lowpoly-11-c17a-global-master-iii-5a8a1a57e54c495e8966087d0197f8e5",
+    "requiresAttribution": true,
+    "notes": "C-17A Globemaster III by Yi Tsung Lee (CC-BY). Scaled to 53.04 m length in-app."
   },
   {
     "id": "c18a",
@@ -508,26 +532,38 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
   {
     "id": "f22",
     "catalogName": "F-22 Raptor",
-    "author": "andertan",
+    "author": "Jan Esch",
     "license": "CC-BY-4.0",
     "licenseLabel": "CC BY",
-    "source": "https://sketchfab.com/3d-models/lockheed-martin-f-22-raptor-7e7b3c372e374dda98e70208d09cfdcf",
-    "sourceAsset": "Lockheed Martin F-22 \"Raptor\"",
-    "attribution": "Lockheed Martin F-22 \"Raptor\" by andertan on Sketchfab (CC BY) — https://sketchfab.com/3d-models/lockheed-martin-f-22-raptor-7e7b3c372e374dda98e70208d09cfdcf",
+    "source": "https://sketchfab.com/3d-models/f22-raptor-03a2651804344ebc930e01cc945bf07d",
+    "sourceAsset": "F22 Raptor",
+    "attribution": "F22 Raptor by Jan Esch on Sketchfab (CC BY) — https://sketchfab.com/3d-models/f22-raptor-03a2651804344ebc930e01cc945bf07d",
     "requiresAttribution": true,
-    "notes": "F-22 Raptor (CC-BY). Scaled to 18.92 m length in-app."
+    "notes": "Requested WTigerTw F-22A (ea657ca469424ad68c4b9e013b993c46) is Sketchfab Standard (not redistributable). CC-BY stand-in: Njan F-22 Raptor. Scaled to 18.92 m length in-app."
   },
   {
     "id": "f35",
-    "catalogName": "F-35B Lightning II",
-    "author": "AF267",
+    "catalogName": "F-35A Lightning II",
+    "author": "Yi Tsung Lee",
     "license": "CC-BY-4.0",
     "licenseLabel": "CC BY",
-    "source": "https://sketchfab.com/3d-models/lockheed-martin-f-35b-lightning-ii-5d54a6af45974ad386ae74d42b33374a",
-    "sourceAsset": "Lockheed Martin F-35B Lightning II",
-    "attribution": "Lockheed Martin F-35B Lightning II by AF267 on Sketchfab (CC BY) — https://sketchfab.com/3d-models/lockheed-martin-f-35b-lightning-ii-5d54a6af45974ad386ae74d42b33374a",
+    "source": "https://sketchfab.com/3d-models/low-poly-11-usaf-f35a-dc727cb5c1404f26b3a29a7e2d50bb2b",
+    "sourceAsset": "Low poly 1:1 USAF F35A",
+    "attribution": "Low poly 1:1 USAF F35A by Yi Tsung Lee on Sketchfab (CC BY) — https://sketchfab.com/3d-models/low-poly-11-usaf-f35a-dc727cb5c1404f26b3a29a7e2d50bb2b",
     "requiresAttribution": true,
-    "notes": "F-35B Lightning II (CC-BY). Tiny gear-animation helper meshes stripped from the GLB. Scaled to 15.61 m length in-app."
+    "notes": "F-35A Lightning II by Yi Tsung Lee (CC-BY). Replaces prior F-35B. Scaled to 15.67 m length in-app."
+  },
+  {
+    "id": "f18",
+    "catalogName": "F/A-18F Super Hornet",
+    "author": "Yi Tsung Lee",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/low-poly-11-fa-18f-superhornet-635e68b7a0d24ac29c10f5fb9110129f",
+    "sourceAsset": "Low poly 1:1 F/A-18F SuperHornet",
+    "attribution": "Low poly 1:1 F/A-18F SuperHornet by Yi Tsung Lee on Sketchfab (CC BY) — https://sketchfab.com/3d-models/low-poly-11-fa-18f-superhornet-635e68b7a0d24ac29c10f5fb9110129f",
+    "requiresAttribution": true,
+    "notes": "F/A-18F Super Hornet by Yi Tsung Lee (CC-BY). Replaces prior nazidefenseforceofficial stand-in. Scaled to 18.31 m length in-app."
   },
   {
     "id": "falcon-9",
@@ -614,18 +650,6 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Giganotosaurus walk (CC-BY, PusztaiAndras). Linked GremorySaiyan pack is Standard. Scaled to 12.5 m length in-app."
   },
   {
-    "id": "golden-gate",
-    "catalogName": "Golden Gate Bridge",
-    "author": "l o u i s",
-    "license": "CC-BY-4.0",
-    "licenseLabel": "CC BY",
-    "source": "https://sketchfab.com/3d-models/golden-gate-bridge-33f85548e51b474381f6c5991196b494",
-    "sourceAsset": "GOLDEN GATE BRIDGE",
-    "attribution": "GOLDEN GATE BRIDGE by l o u i s on Sketchfab (CC BY) — https://sketchfab.com/3d-models/golden-gate-bridge-33f85548e51b474381f6c5991196b494",
-    "requiresAttribution": true,
-    "notes": "Golden Gate Bridge (CC-BY, louis). Scaled to 1,966 m anchorage-to-anchorage length in-app."
-  },
-  {
     "id": "great-pyramids",
     "catalogName": "Great Pyramid of Giza",
     "author": "gfrez",
@@ -696,6 +720,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "Star Trek - Intrepid Type by Wholock on Sketchfab (CC BY) — https://sketchfab.com/3d-models/star-trek-intrepid-type-554e931031264afca1b4c62ecbff2978",
     "requiresAttribution": true,
     "notes": "Star Trek - Intrepid Type (CC-BY). Scaled to 165 m length (ENT Intrepid type, EAS)."
+  },
+  {
+    "id": "iowa",
+    "catalogName": "Iowa-class battleship",
+    "author": "SB-129",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/uss-new-jersey-bb-62-a15fd7f36eda4be28f2b3b6d7ccb10d0",
+    "sourceAsset": "USS New Jersey BB-62",
+    "attribution": "USS New Jersey BB-62 by SB-129 on Sketchfab (CC BY) — https://sketchfab.com/3d-models/uss-new-jersey-bb-62-a15fd7f36eda4be28f2b3b6d7ccb10d0",
+    "requiresAttribution": true,
+    "notes": "USS New Jersey BB-62 (Iowa-class) by SB-129 (CC-BY). Scaled to 270.4 m length in-app."
   },
   {
     "id": "iphone",
@@ -890,6 +926,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Blue Origin New Glenn (CC-BY, ~19k tris). Scaled to 98 m height in-app."
   },
   {
+    "id": "manhattan",
+    "catalogName": "NewYork City Manhattan",
+    "author": "CGTrader listing NewYork City Manhattan",
+    "license": "Royalty-Free",
+    "licenseLabel": "CGTrader Royalty Free",
+    "source": "https://www.cgtrader.com/free-3d-models/exterior/skyscraper/newyork-city-manhattan",
+    "sourceAsset": "NewYork City Manhattan",
+    "attribution": "NewYork City Manhattan on CGTrader (Royalty Free) — https://www.cgtrader.com/free-3d-models/exterior/skyscraper/newyork-city-manhattan",
+    "requiresAttribution": true,
+    "notes": "Google Earth photogrammetry from CGTrader (OBJ + textures; Blend/FBX/Max/C4D are the same mesh without a better look). Converted to Draco GLB with native 4096px JPEG textures. Optional true-scale ground plate, not a catalog item. CGTrader Royalty Free — incorporated into the viewer, not offered as a standalone download."
+  },
+  {
     "id": "nimitz",
     "catalogName": "Nimitz-class carrier",
     "author": "Muhamad Mirza Arrafi",
@@ -1068,6 +1116,30 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "Soyuz TMA by TwilightSparkleX on Sketchfab (CC BY) — https://sketchfab.com/3d-models/soyuz-tma-1ac2fad9da5242b9bf7c78872410c79e",
     "requiresAttribution": true,
     "notes": "Soyuz TMA spacecraft (CC-BY). Scaled to 7.48 m length in-app."
+  },
+  {
+    "id": "shuttle-atlantis",
+    "catalogName": "Space Shuttle Atlantis",
+    "author": "AF267",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/geofs-official-space-shuttle-atlantis-ov-104-729715b5365d468391b2fa5b98b63c5b",
+    "sourceAsset": "GeoFS Official Space Shuttle Atlantis (OV-104)",
+    "attribution": "GeoFS Official Space Shuttle Atlantis (OV-104) by AF267 on Sketchfab (CC BY) — https://sketchfab.com/3d-models/geofs-official-space-shuttle-atlantis-ov-104-729715b5365d468391b2fa5b98b63c5b",
+    "requiresAttribution": true,
+    "notes": "GeoFS Official Space Shuttle Atlantis (OV-104) full stack with ET and SRBs (CC-BY, ~24k tris). Scaled to 56.1 m stack height in-app."
+  },
+  {
+    "id": "shuttle-discovery",
+    "catalogName": "Space Shuttle Discovery",
+    "author": "rsatenza",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/discovery-space-shuttle-23c579b845e841c9b6c6d59bd5725bb6",
+    "sourceAsset": "Discovery Space Shuttle",
+    "attribution": "Discovery Space Shuttle by rsatenza on Sketchfab (CC BY) — https://sketchfab.com/3d-models/discovery-space-shuttle-23c579b845e841c9b6c6d59bd5725bb6",
+    "requiresAttribution": true,
+    "notes": "Discovery Space Shuttle orbiter (CC-BY, ~11k tris). Scaled to 37.24 m length in-app."
   },
   {
     "id": "spinosaurus",
@@ -1428,6 +1500,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "WW2 US Army Ranger by Tactical_Beard on Sketchfab (CC BY) — https://sketchfab.com/3d-models/ww2-us-army-ranger-dcbe89cd5de243af8e4677b769a831c6",
     "requiresAttribution": true,
     "notes": "WW2 US Army Ranger (CC-BY). Linked alpen soldier is not downloadable. Scaled to 1.75 m height in-app."
+  },
+  {
+    "id": "h20",
+    "catalogName": "Xian H-20",
+    "author": "SB-129",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/xian-h20-0f33efdf96514152b2aa8ebd03a1a747",
+    "sourceAsset": "Xian-H20",
+    "attribution": "Xian-H20 by SB-129 on Sketchfab (CC BY) — https://sketchfab.com/3d-models/xian-h20-0f33efdf96514152b2aa8ebd03a1a747",
+    "requiresAttribution": true,
+    "notes": "Xian H-20 by SB-129 (CC-BY). Size classified; scaled to 50 m wingspan estimate in-app."
   },
   {
     "id": "yoda",

@@ -1,12 +1,12 @@
-{
+﻿{
   "id": "f22",
   "file": "model.glb",
   "license": "CC-BY-4.0",
   "licenseLabel": "CC BY",
-  "author": "andertan",
-  "source": "https://sketchfab.com/3d-models/lockheed-martin-f-22-raptor-7e7b3c372e374dda98e70208d09cfdcf",
-  "sourceAsset": "Lockheed Martin F-22 \"Raptor\"",
-  "sketchfabUid": "7e7b3c372e374dda98e70208d09cfdcf",
-  "notes": "F-22 Raptor (CC-BY). Scaled to 18.92 m length in-app.",
-  "attribution": "Lockheed Martin F-22 \"Raptor\" by andertan on Sketchfab (CC BY) — https://sketchfab.com/3d-models/lockheed-martin-f-22-raptor-7e7b3c372e374dda98e70208d09cfdcf"
+  "author": "Jan Esch",
+  "source": "https://sketchfab.com/3d-models/f22-raptor-03a2651804344ebc930e01cc945bf07d",
+  "sourceAsset": "F22 Raptor",
+  "sketchfabUid": "03a2651804344ebc930e01cc945bf07d",
+  "notes": "Requested WTigerTw F-22A (ea657ca469424ad68c4b9e013b993c46) is Sketchfab Standard (not redistributable). CC-BY stand-in: Njan F-22 Raptor. Scaled to 18.92 m length in-app.",
+  "attribution": "F22 Raptor by Jan Esch on Sketchfab (CC BY) — https://sketchfab.com/3d-models/f22-raptor-03a2651804344ebc930e01cc945bf07d"
 }
