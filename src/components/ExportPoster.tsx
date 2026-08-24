@@ -1,5 +1,6 @@
 import { ArrowDownTrayIcon } from '@heroicons/react/24/outline'
 import { useEffect, useRef, useState } from 'react'
+import { trackPosterExported } from '../analytics/mixpanel'
 import { downloadBlob, paintPosterOverlay, posterFilename } from '../poster/composePoster'
 import { buildPosterImage } from '../poster/exportPoster'
 import {
@@ -23,6 +24,8 @@ import type { UnitSystem } from '../units'
 type ExportPosterProps = {
   disabled: boolean
   units: UnitSystem
+  /** Catalog ids currently in the comparison — reported with the export event. */
+  itemIds: string[]
   title: string
   shareUrl: string
   previewKey: string
@@ -37,6 +40,7 @@ type ExportPosterProps = {
 export function ExportPoster({
   disabled,
   units,
+  itemIds,
   title,
   shareUrl,
   previewKey,
@@ -165,6 +169,15 @@ export function ExportPoster({
         shareUrl,
       })
       downloadBlob(posterFilename(title), blob)
+      trackPosterExported({
+        item_ids: itemIds.join(','),
+        item_count: itemIds.length,
+        comparison_title: title,
+        layout: settings.layout,
+        view: settings.view,
+        resolution,
+        unit_system: units,
+      })
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Download failed')
     } finally {

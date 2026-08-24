@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { COMPARISON_PRESETS } from './data/catalog'
+import { CATALOG_BY_ID, COMPARISON_PRESETS } from './data/catalog'
 import type { DetonationMode } from './data/blastEffects'
 import { hasBlastEffect } from './data/blastEffects'
 import type { TourUiState } from './babylon/ComparisonScene'
+import { trackModelAdded } from './analytics/mixpanel'
 import { Sidebar } from './components/Sidebar'
 import { Viewer, type DebugToggle, type TourToggle } from './components/Viewer'
 import {
@@ -95,11 +96,20 @@ export default function App() {
   function handleToggleItem(itemId: string) {
     setCameraMode('preserve')
     setActivePresetId(null)
-    setActiveItemIds((current) =>
-      current.includes(itemId)
-        ? current.filter((id) => id !== itemId)
-        : [...current, itemId],
-    )
+    const adding = !activeItemIds.includes(itemId)
+    const next = adding
+      ? [...activeItemIds, itemId]
+      : activeItemIds.filter((id) => id !== itemId)
+    setActiveItemIds(next)
+    const item = adding ? CATALOG_BY_ID[itemId] : undefined
+    if (item) {
+      trackModelAdded({
+        item_id: item.id,
+        item_name: item.name,
+        item_category: item.category,
+        item_count_after: next.length,
+      })
+    }
   }
 
   function handleApplyPreset(presetId: string) {

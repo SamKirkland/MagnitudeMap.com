@@ -26,6 +26,7 @@
     "@babylonjs/serializers": "^9.20.0",
     "@headlessui/react": "^1.7.13",
     "@heroicons/react": "^2.0.16",
+    "mixpanel-browser": "^2.82.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
@@ -33,6 +34,7 @@
     "@gltf-transform/core": "^4.4.2",
     "@gltf-transform/extensions": "^4.4.2",
     "@gltf-transform/functions": "^4.4.2",
+    "@types/mixpanel-browser": "^2.60.0",
     "@types/react": "^18.0.28",
     "@types/react-dom": "^18.0.11",
     "@vitejs/plugin-react": "^4.3.4",

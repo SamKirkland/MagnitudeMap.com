@@ -191,6 +191,7 @@ export function Viewer({
       <ExportPoster
         disabled={activeItemIds.length === 0}
         units={units}
+        itemIds={activeItemIds}
         title={exportTitle}
         shareUrl={shareUrl}
         previewKey={`${activeItemIds.join(',')}@${displayYawTurns}`}
