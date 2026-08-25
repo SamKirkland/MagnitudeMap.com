@@ -2,7 +2,9 @@
  * Paint a seamless aerial neighborhood onto a Babylon DynamicTexture.
  * One tile = BLOCK_METERS + ROAD_METERS on each axis (true-scale when UV-tiled).
  */
-import { DynamicTexture, Texture, type Scene } from '@babylonjs/core'
+import { DynamicTexture } from '@babylonjs/core/Materials/Textures/dynamicTexture'
+import { Texture } from '@babylonjs/core/Materials/Textures/texture'
+import type { Scene } from '@babylonjs/core/scene'
 
 /** City block edge length (building lots), meters. */
 export const BLOCK_METERS = 100

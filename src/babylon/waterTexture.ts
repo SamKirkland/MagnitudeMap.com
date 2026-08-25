@@ -2,7 +2,9 @@
  * Procedural harbor water for the New York ground plate.
  * Top tiles in world meters; side V is 0–1 so the foam rim stays at the surface.
  */
-import { DynamicTexture, Texture, type Scene } from '@babylonjs/core'
+import { DynamicTexture } from '@babylonjs/core/Materials/Textures/dynamicTexture'
+import { Texture } from '@babylonjs/core/Materials/Textures/texture'
+import type { Scene } from '@babylonjs/core/scene'
 
 /** One water tile in world meters. Large enough to read at city overview. */
 export const WATER_TILE_METERS = 220

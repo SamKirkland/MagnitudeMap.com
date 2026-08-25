@@ -74,6 +74,14 @@ input {
 }
 
 .unit-toggle button {
+  /* WCAG 2.2 target size: "m" and "ft" are only ~12px of glyph, so the 24px
+     comes from the box, not the text. inline-flex + centring keeps the labels
+     visually where they were. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  min-height: 24px;
   border: 0;
   background: transparent;
   color: var(--muted);
@@ -235,8 +243,9 @@ input {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.35rem;
-  height: 1.35rem;
+  /* 24px minimum target; the glyph inside stays 1.05rem. */
+  width: 24px;
+  height: 24px;
   padding: 0;
   border: none;
   background: transparent;
@@ -305,6 +314,9 @@ input {
 }
 
 .text-btn {
+  /* WCAG 2.2 target size. min-height only -- these sit in flex rows where a
+     min-width would stretch the label. */
+  min-height: 24px;
   border: 0;
   background: transparent;
   color: var(--accent);
@@ -327,15 +339,18 @@ input {
 .tour-controls {
   display: inline-flex;
   align-items: center;
-  gap: 0.05rem;
+  /* Enough gap that adjacent 24px targets do not fail the neighbour spacing
+     half of the `target-size` rule. */
+  gap: 0.35rem;
 }
 
 .tour-options-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.2rem;
-  height: 1.2rem;
+  /* 24px minimum target; the glyph inside stays 0.9rem. */
+  width: 24px;
+  height: 24px;
   padding: 0;
   border: none;
   background: transparent;
@@ -393,6 +408,7 @@ input {
 
 .tour-seg button {
   flex: 1 1 0;
+  min-height: 24px;
   border: 0;
   background: transparent;
   padding: 0.38rem 0.35rem;
@@ -427,6 +443,7 @@ input {
 
 .facing-seg button {
   flex: 1 1 0;
+  min-height: 24px;
   display: inline-flex;
   align-items: center;
   justify-content: center;

@@ -1,4 +1,4 @@
-import { Vector3 } from '@babylonjs/core'
+import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import type { PosterView } from './types'
 
 /** Tiny tilt so ArcRotateCamera does not hit gimbal lock at straight-down. */

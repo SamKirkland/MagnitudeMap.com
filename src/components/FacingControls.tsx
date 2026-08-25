@@ -34,7 +34,7 @@ export function FacingControls({
           type="button"
           onClick={() => onChange(turns - 1)}
           title="Rotate all models 90° left"
-          aria-label="Rotate all models 90 degrees left"
+          aria-label="Rotate all models 90° left"
         >
           <ArrowUturnLeftIcon aria-hidden="true" />
           <span>90°</span>
@@ -46,7 +46,7 @@ export function FacingControls({
           type="button"
           onClick={() => onChange(turns + 1)}
           title="Rotate all models 90° right"
-          aria-label="Rotate all models 90 degrees right"
+          aria-label="Rotate all models 90° right"
         >
           <span>90°</span>
           <ArrowUturnRightIcon aria-hidden="true" />

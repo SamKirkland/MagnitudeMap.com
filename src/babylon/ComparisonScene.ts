@@ -1,45 +1,52 @@
-import {
-  AbstractMesh,
-  Animation,
-  AnimationGroup,
-  ArcRotateCamera,
-  BoundingInfo,
-  Camera,
-  Color3,
-  Color4,
-  Constants,
-  CubeTexture,
-  CubicEase,
-  DirectionalLight,
-  DynamicTexture,
-  EasingFunction,
-  Engine,
-  HemisphericLight,
-  type Material,
-  Matrix,
-  Mesh,
-  MeshBuilder,
-  MultiMaterial,
-  type Node,
-  PBRMaterial,
-  PointerEventTypes,
-  type PointerInfo,
-  Quaternion,
-  RawTexture,
-  Scene,
-  SceneLoader,
-  ShadowGenerator,
-  Skeleton,
-  StandardMaterial,
-  SubMesh,
-  Texture,
-  TransformNode,
-  Vector3,
-  VertexBuffer,
-  Viewport,
-} from '@babylonjs/core'
+// Deep imports, not the '@babylonjs/core' barrel. The barrel defeats
+// tree-shaking: it pulled the whole engine into the ComparisonScene chunk
+// (1.6 MB, ~60% of it unused, 3.3 s of script evaluation on mobile).
+//
+// These are the side-effectful module paths ('Meshes/mesh'), not the '.pure'
+// ones. Each re-exports its .pure implementation and additionally registers the
+// runtime bits that class needs, so behaviour matches the barrel; '.pure' would
+// silently drop those registrations.
+import { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh'
+import { Animation } from '@babylonjs/core/Animations/animation'
+import { AnimationGroup } from '@babylonjs/core/Animations/animationGroup'
+import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera'
+import { BoundingInfo } from '@babylonjs/core/Culling/boundingInfo'
+import { Camera } from '@babylonjs/core/Cameras/camera'
+import { Color3, Color4 } from '@babylonjs/core/Maths/math.color'
+import { Constants } from '@babylonjs/core/Engines/constants'
+import { CubeTexture } from '@babylonjs/core/Materials/Textures/cubeTexture'
+import { CubicEase, EasingFunction } from '@babylonjs/core/Animations/easing'
+import { DirectionalLight } from '@babylonjs/core/Lights/directionalLight'
+import { DynamicTexture } from '@babylonjs/core/Materials/Textures/dynamicTexture'
+import { Engine } from '@babylonjs/core/Engines/engine'
+import { HemisphericLight } from '@babylonjs/core/Lights/hemisphericLight'
+import type { Material } from '@babylonjs/core/Materials/material'
+import { Matrix, Quaternion, Vector3 } from '@babylonjs/core/Maths/math.vector'
+import { Mesh } from '@babylonjs/core/Meshes/mesh'
+import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder'
+import { MultiMaterial } from '@babylonjs/core/Materials/multiMaterial'
+import type { Node } from '@babylonjs/core/node'
+import { PBRMaterial } from '@babylonjs/core/Materials/PBR/pbrMaterial'
+import { PointerEventTypes, type PointerInfo } from '@babylonjs/core/Events/pointerEvents'
+import { RawTexture } from '@babylonjs/core/Materials/Textures/rawTexture'
+import { Scene } from '@babylonjs/core/scene'
+import { SceneLoader } from '@babylonjs/core/Loading/sceneLoader'
+import { ShadowGenerator } from '@babylonjs/core/Lights/Shadows/shadowGenerator'
+import { Skeleton } from '@babylonjs/core/Bones/skeleton'
+import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial'
+import { SubMesh } from '@babylonjs/core/Meshes/subMesh'
+import { Texture } from '@babylonjs/core/Materials/Textures/texture'
+import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
+import { VertexBuffer } from '@babylonjs/core/Buffers/buffer'
+import { Viewport } from '@babylonjs/core/Maths/math.viewport'
+// Side-effect only. shadowGenerator.js warns at runtime and renders no shadows
+// unless the scene component that drives it is registered; the barrel used to
+// bring this in for us.
+import '@babylonjs/core/Lights/Shadows/shadowGeneratorSceneComponent'
 import { CreateScreenshotUsingRenderTargetAsync } from '@babylonjs/core/Misc/screenshotTools'
-import '@babylonjs/loaders/glTF'
+// glTF 2.0 only. The bare '@babylonjs/loaders/glTF' entry also registers the
+// glTF 1.0 loader, which nothing here loads.
+import '@babylonjs/loaders/glTF/2.0'
 import {
   CATALOG_BY_ID,
   type CatalogItem,
@@ -364,6 +371,10 @@ export class ComparisonScene {
       preserveDrawingBuffer: this.captureMode,
       stencil: false,
       adaptToDeviceRatio: false,
+      // Babylon defaults the canvas to tabIndex="1", which puts it ahead of every
+      // other control in the tab order and fails the axe `tabindex` rule. 0 keeps
+      // the canvas keyboard-focusable in document order.
+      canvasTabIndex: 0,
     })
     this.applyResolutionCap()
 

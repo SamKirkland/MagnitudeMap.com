@@ -1,9 +1,7 @@
-import {
-  Mesh,
-  type Material,
-  type Scene,
-  VertexData,
-} from '@babylonjs/core'
+import { Mesh } from '@babylonjs/core/Meshes/mesh'
+import type { Material } from '@babylonjs/core/Materials/material'
+import type { Scene } from '@babylonjs/core/scene'
+import { VertexData } from '@babylonjs/core/Meshes/mesh.vertexData'
 import type { MoneyPack, MoneyUnitSize } from '../data/moneyPack'
 
 /**

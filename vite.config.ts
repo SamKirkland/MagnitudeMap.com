@@ -20,6 +20,10 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
+    // The app needs WebGL2, so every browser that can run it speaks ES2022.
+    // Vite's default ('modules') still downlevels a few things Lighthouse flags
+    // as legacy-javascript.
+    target: 'es2022',
     rollupOptions: {
       input: {
         main: resolve(rootDir, 'index.html'),
