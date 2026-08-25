@@ -50,6 +50,7 @@ export function trackPosterExported(props: {
   comparison_title: string
   layout: string
   view: string
+  background: string
   resolution: string
   unit_system: string
 }) {

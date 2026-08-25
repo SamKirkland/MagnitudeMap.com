@@ -14,6 +14,7 @@ import {
 import { MODEL_ATTRIBUTIONS, type ModelAttribution } from '../data/attributions'
 import { licenseDeedUrl, shortLicenseLabel } from '../data/licenseDisplay'
 import { searchItems } from '../librarySearch'
+import { presetHref } from '../selectionUrl'
 import type { UnitSystem } from '../units'
 import { SPREAD_MAX, SPREAD_MIN, type TourSettings } from '../tourSettings'
 import { UNOFFICIAL_DISCLAIMER } from '../siteMeta'
@@ -23,6 +24,8 @@ import { FacingControls } from './FacingControls'
 type SidebarProps = {
   activeItemIds: string[]
   activePresetId: string | null
+  /** Relative prefix for lineup hrefs; see `relativeSiteBase`. */
+  linkBase: string
   tourPlaying: boolean
   tourSettings: TourSettings
   units: UnitSystem
@@ -74,7 +77,10 @@ function LibraryRow({
   const licenseHref = credit ? licenseDeedUrl(credit.license) : null
   return (
     <li>
-      <label className={`item-row ${checked ? 'is-active' : ''}`}>
+      <label
+        className={`item-row ${checked ? 'is-active' : ''}`}
+        title={item.facts ?? undefined}
+      >
         <input
           type="checkbox"
           checked={checked}
@@ -83,6 +89,9 @@ function LibraryRow({
         <span className="swatch" style={{ background: item.color }} />
         <span className="item-text">
           <span className="item-name">{item.name}</span>
+          {checked && item.facts && (
+            <span className="item-facts">{item.facts}</span>
+          )}
           {showCredits && credit && (
             <span className="item-credit">
               {credit.source ? (
@@ -121,6 +130,7 @@ function LibraryRow({
 export function Sidebar({
   activeItemIds,
   activePresetId,
+  linkBase,
   tourPlaying,
   tourSettings,
   units,
@@ -331,15 +341,29 @@ export function Sidebar({
               const selected = activePresetId === preset.id
               return (
                 <li key={preset.id}>
-                  <button
-                    type="button"
+                  {/* A real link so crawlers can reach every lineup page;
+                      plain clicks stay in-app, modified clicks open normally. */}
+                  <a
+                    href={presetHref(linkBase, preset)}
                     className={`preset-card ${selected ? 'is-selected' : ''}`}
-                    onClick={() => onApplyPreset(preset.id)}
+                    aria-current={selected ? 'page' : undefined}
+                    onClick={(event) => {
+                      if (
+                        event.metaKey ||
+                        event.ctrlKey ||
+                        event.shiftKey ||
+                        event.altKey
+                      ) {
+                        return
+                      }
+                      event.preventDefault()
+                      onApplyPreset(preset.id)
+                    }}
                     title={preset.description}
                   >
                     <PresetIcon presetId={preset.id} className="preset-icon" />
                     <span className="preset-name">{preset.name}</span>
-                  </button>
+                  </a>
                 </li>
               )
             })}

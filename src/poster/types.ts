@@ -3,6 +3,7 @@ import type { CatalogItem } from '../data/catalog'
 export type PosterLayout = 'lineup' | 'stacked'
 export type PosterView = 'top' | 'side'
 export type PosterResolution = '4k' | '8k' | '16k'
+export type PosterBackground = 'white' | 'transparent'
 
 export type PosterContentRect = {
   left: number
@@ -17,9 +18,15 @@ export type PosterPreviewSettings = {
   contentRect: PosterContentRect
 }
 
-export type PosterCaptureRequest = PosterPreviewSettings & {
+/** Everything the camera framing needs — no background choice involved. */
+export type PosterFrameRequest = PosterPreviewSettings & {
   width: number
   height: number
+}
+
+export type PosterCaptureRequest = PosterFrameRequest & {
+  /** Transparent skips the white fill so the render keeps its alpha channel. */
+  background: PosterBackground
 }
 
 export type PosterOverlayState = {
@@ -51,6 +58,7 @@ export type PosterCaptureResult = {
 export type PosterSettings = {
   layout: PosterLayout
   view: PosterView
+  background: PosterBackground
 }
 
 /** Headline size for labels: the largest catalog dimension. */

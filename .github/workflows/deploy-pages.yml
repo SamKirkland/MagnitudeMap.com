@@ -35,6 +35,12 @@ jobs:
 
       # Static build only. `npm run build` also runs Playwright/WebGL OG capture,
       # which is unreliable on Actions runners. Committed public/og/*.jpg is copied to dist.
+      #
+      # build:static = vite build (pages, per-lineup meta, sitemap.xml)
+      #             -> build:ssr (Node bundle of the React tree)
+      #             -> prerender (inject markup into each page, then verify).
+      # The prerender step exits non-zero on an empty page, a missing <h1>, a
+      # meta image with no file behind it, or a missing sitemap/robots.
       - name: Build
         run: npm run build:static
 

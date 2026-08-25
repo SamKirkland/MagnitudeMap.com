@@ -1,3 +1,8 @@
+/* Self-hosted so the critical path has no third-party font connections. */
+@import '@fontsource/ibm-plex-sans/latin-400.css';
+@import '@fontsource/ibm-plex-sans/latin-500.css';
+@import '@fontsource/ibm-plex-sans/latin-600.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -546,9 +551,24 @@ input {
   gap: 0.35rem;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .preset-card {
   width: 100%;
   display: flex;
+  color: inherit;
+  text-decoration: none;
+  box-sizing: border-box;
   align-items: center;
   gap: 0.55rem;
   text-align: left;
@@ -631,6 +651,15 @@ input {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.item-facts {
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--muted);
+  margin-top: 0.15rem;
+  white-space: normal;
+  text-wrap: pretty;
 }
 
 .item-credit {

@@ -14,5 +14,5 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["vite.config.ts", "vite-plugin-og-pages.ts"]
+  "include": ["vite.config.ts", "vite.config.ssr.ts", "vite-plugin-og-pages.ts"]
 }

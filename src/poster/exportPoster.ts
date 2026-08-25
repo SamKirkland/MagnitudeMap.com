@@ -22,6 +22,7 @@ export async function buildPosterImage(args: {
     height: size.height,
     layout: args.settings.layout,
     view: args.settings.view,
+    background: args.settings.background,
     contentRect: posterContentRect(args.settings.layout),
   })
   return composePoster({
@@ -30,6 +31,7 @@ export async function buildPosterImage(args: {
     height: result.height,
     items: result.items,
     layout: args.settings.layout,
+    background: args.settings.background,
     units: args.units,
     pixelsPerMeter: result.pixelsPerMeter,
     title: args.title,

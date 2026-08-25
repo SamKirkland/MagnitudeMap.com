@@ -5,15 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && node scripts/compress-models.mjs && vite build && node scripts/generate-og.mjs",
-    "build:static": "tsc --noEmit && node scripts/compress-models.mjs && vite build",
+    "build": "tsc --noEmit && node scripts/compress-models.mjs && vite build && npm run build:ssr && npm run prerender && node scripts/generate-og.mjs",
+    "build:static": "tsc --noEmit && node scripts/compress-models.mjs && vite build && npm run build:ssr && npm run prerender",
     "compress-models": "node scripts/compress-models.mjs",
     "preview": "vite preview",
     "generate-og": "node scripts/generate-og.mjs",
     "generate-og:ui": "vite --open og-capture.html",
     "lint": "eslint .",
     "sync-attributions": "node scripts/sync-attributions.mjs",
-    "verify-models": "node scripts/verify-models.mjs"
+    "verify-models": "node scripts/verify-models.mjs",
+    "build:ssr": "vite build --config vite.config.ssr.ts",
+    "prerender": "node scripts/prerender.mjs"
   },
   "dependencies": {
     "@babylonjs/addons": "^9.20.0",
@@ -24,6 +26,7 @@
     "@babylonjs/loaders": "^9.20.0",
     "@babylonjs/materials": "^9.20.0",
     "@babylonjs/serializers": "^9.20.0",
+    "@fontsource/ibm-plex-sans": "^5.3.0",
     "@headlessui/react": "^1.7.13",
     "@heroicons/react": "^2.0.16",
     "mixpanel-browser": "^2.82.1",

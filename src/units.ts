@@ -6,9 +6,20 @@ const IMPERIAL_REGIONS = new Set(['US', 'LR', 'MM'])
 const M_TO_FT = 3.280839895
 const M_TO_IN = 39.37007874
 
-/** Best-effort default from browser locale (US / Liberia / Myanmar → imperial). */
+/** Rendered by the prerenderer and by the first client render, so both agree. */
+export const DEFAULT_UNIT_SYSTEM: UnitSystem = 'metric'
+
+/**
+ * Best-effort default from browser locale (US / Liberia / Myanmar → imperial).
+ *
+ * Node 22 defines a global `navigator` with a real `language`, so a bare
+ * `typeof navigator` check does not keep this off the prerenderer — the build
+ * machine's locale would otherwise be baked into every page. Gate on `window`.
+ */
 export function detectDefaultUnitSystem(): UnitSystem {
-  if (typeof navigator === 'undefined') return 'metric'
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+    return DEFAULT_UNIT_SYSTEM
+  }
   const locales = navigator.languages?.length
     ? [...navigator.languages]
     : [navigator.language || 'en']

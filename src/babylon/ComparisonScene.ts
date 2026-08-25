@@ -106,6 +106,7 @@ import {
   headlineSizeMeters,
   type PosterCaptureRequest,
   type PosterCaptureResult,
+  type PosterFrameRequest,
   type PosterItemProjection,
   type PosterLayout,
   type PosterOverlayState,
@@ -194,6 +195,100 @@ const ENABLE_SCENE_LIGHTING = true
 /** In-shadow light mix. 0.22 = visible contact shadows; 1 = none. */
 const SHADOW_DARKNESS = 0.22
 const SHADOW_DARKNESS_OFF = 1
+
+/** Max facts rows on a plaque; overflow is ellipsised on the last line. */
+const PLAQUE_FACT_LINES = 7
+
+/** Type scale + padding for a plaque, all as fractions of texture width. */
+function plaqueMetrics(texW: number) {
+  return {
+    titleSize: Math.round(texW * 0.085),
+    dimsSize: Math.round(texW * 0.055),
+    factsSize: Math.round(texW * 0.034),
+    lineHeight: Math.round(texW * 0.034) * 1.32,
+    padY: texW * 0.045,
+    gapTitle: texW * 0.018,
+    gapFacts: texW * 0.03,
+    factsWidth: texW * 0.9,
+  }
+}
+
+/**
+ * Offscreen 2D context used only to measure text before the plaque texture
+ * exists, so the mesh can be sized to the number of lines the facts wrap to.
+ */
+let plaqueMeasureCtx: CanvasRenderingContext2D | null = null
+function measureCtx(): CanvasRenderingContext2D | null {
+  if (plaqueMeasureCtx) return plaqueMeasureCtx
+  if (typeof document === 'undefined') return null
+  const canvas = document.createElement('canvas')
+  canvas.width = 8
+  canvas.height = 8
+  plaqueMeasureCtx = canvas.getContext('2d')
+  return plaqueMeasureCtx
+}
+
+/** Wrap an item's facts to the plaque column at the given texture width. */
+function plaqueFactLines(item: CatalogItem, texW: number): string[] {
+  if (!item.facts) return []
+  const ctx = measureCtx()
+  if (!ctx) return []
+  const m = plaqueMetrics(texW)
+  ctx.font = `${m.factsSize}px "IBM Plex Sans", sans-serif`
+  return wrapPlaqueText(ctx, item.facts, m.factsWidth, PLAQUE_FACT_LINES)
+}
+
+/**
+ * Plaque depth (and texture height) as a fraction of its width. With facts the
+ * height is driven by the wrapped line count, so short blurbs get a short
+ * plaque instead of padding out to a fixed box.
+ */
+function plaqueAspect(item: CatalogItem, texW: number): number {
+  const lines = plaqueFactLines(item, texW)
+  if (lines.length === 0) return 0.42
+  const m = plaqueMetrics(texW)
+  const height =
+    m.padY +
+    m.titleSize +
+    m.gapTitle +
+    m.dimsSize +
+    m.gapFacts +
+    m.lineHeight * lines.length +
+    m.padY
+  return height / texW
+}
+
+/** Greedy word wrap, ellipsising whatever does not fit in `maxLines`. */
+function wrapPlaqueText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+  maxLines: number,
+): string[] {
+  const lines: string[] = []
+  let line = ''
+  for (const word of text.split(/\s+/)) {
+    const next = line ? `${line} ${word}` : word
+    if (line && ctx.measureText(next).width > maxWidth) {
+      lines.push(line)
+      if (lines.length === maxLines) break
+      line = word
+    } else {
+      line = next
+    }
+  }
+  if (lines.length < maxLines && line) lines.push(line)
+
+  const truncated = lines.length === maxLines && line !== lines[maxLines - 1]
+  if (truncated) {
+    let last = lines[maxLines - 1]
+    while (last && ctx.measureText(`${last}…`).width > maxWidth) {
+      last = last.slice(0, -1).trimEnd()
+    }
+    lines[maxLines - 1] = `${last}…`
+  }
+  return lines
+}
 
 export class ComparisonScene {
   readonly engine: Engine
@@ -743,7 +838,8 @@ export class ComparisonScene {
   }
 
   /**
-   * Locked top-down or side poster of the current lineup on a white background.
+   * Locked top-down or side poster of the current lineup on a white (or
+   * transparent) background.
    * Restores the live camera, ground, and item positions afterward.
    */
   async capturePosterRender(
@@ -784,7 +880,10 @@ export class ComparisonScene {
 
     try {
       this.setPosterStageEnabled(false)
-      this.scene.clearColor = new Color4(1, 1, 1, 1)
+      this.scene.clearColor =
+        request.background === 'transparent'
+          ? new Color4(0, 0, 0, 0)
+          : new Color4(1, 1, 1, 1)
       this.scene.autoClear = true
       this.applyPosterItemLayout(request.layout)
 
@@ -1132,7 +1231,7 @@ export class ComparisonScene {
     return { min, max }
   }
 
-  private framePosterCamera(request: PosterCaptureRequest) {
+  private framePosterCamera(request: PosterFrameRequest) {
     const bounds = this.posterVisualBounds()
     if (!bounds) return
 
@@ -1220,7 +1319,7 @@ export class ComparisonScene {
   }
 
   private seedPosterOrtho(
-    request: PosterCaptureRequest,
+    request: PosterFrameRequest,
     bounds: { min: Vector3; max: Vector3 },
   ) {
     const aspect = request.width / Math.max(request.height, 1)
@@ -1230,7 +1329,7 @@ export class ComparisonScene {
 
   /** Zoom so the AABB fills the layout's content rect (not a bounding sphere). */
   private fitPosterOrthoToContent(
-    request: PosterCaptureRequest,
+    request: PosterFrameRequest,
     corners: Vector3[],
   ) {
     const { width, height, contentRect } = request
@@ -1250,7 +1349,7 @@ export class ComparisonScene {
 
   /** Pan so the lineup sits in the content rect, leaving room for labels. */
   private centerPosterInContentRect(
-    request: PosterCaptureRequest,
+    request: PosterFrameRequest,
     corners: Vector3[],
   ) {
     const { width, height, contentRect } = request
@@ -2554,7 +2653,17 @@ export class ComparisonScene {
   }
 
   private freezeStaticPlacement(placement: PlacedObject) {
-    if (this.isAnimatedPlacement(placement)) return
+    // Rigged placements keep live world matrices, but their materials still
+    // have to share the ground's depth encoding. Logarithmic depth writes
+    // gl_FragDepth on its own curve, so a mesh left on hardware depth cannot be
+    // compared against one using it — the ground wins the test and paints over
+    // models standing on top of it.
+    if (this.isAnimatedPlacement(placement)) {
+      for (const mesh of placement.root.getChildMeshes(false)) {
+        this.setMaterialLogarithmicDepth(mesh.material, !this.posterPreview)
+      }
+      return
+    }
     placement.root.computeWorldMatrix(true)
     placement.display.computeWorldMatrix(true)
     placement.body.computeWorldMatrix(true)
@@ -3865,7 +3974,10 @@ export class ComparisonScene {
     const footprintW = Math.max(localMax.x - localMin.x, localMax.z - localMin.z, 0.4)
     const magnitude = itemMagnitude(item)
     const labelW = Math.max(footprintW * 0.55, magnitude * 0.12, 1.4)
-    const labelD = labelW * 0.42
+    const texW = labelW > 20 ? 2048 : 1024
+    // Facts add rows, so the plaque deepens to exactly fit them; texture matches.
+    const aspect = plaqueAspect(item, texW)
+    const labelD = labelW * aspect
     const gap = Math.max(labelD * 0.2, footprintW * 0.06, magnitude * 0.02)
     const z = localMin.z - gap - labelD * 0.5
 
@@ -3882,8 +3994,7 @@ export class ComparisonScene {
     )
     label.isPickable = false
 
-    const texW = labelW > 20 ? 1024 : 512
-    const texH = labelW > 20 ? 512 : 256
+    const texH = Math.round(texW * aspect)
     const tex = new DynamicTexture(
       `label-tex-${instanceId}`,
       { width: texW, height: texH },
@@ -3920,18 +4031,44 @@ export class ComparisonScene {
     ctx.fillStyle = '#14181c'
     ctx.fillRect(0, 0, texW, texH)
 
-    const titleSize = Math.round(texH * 0.17)
-    const dimsSize = Math.round(texH * 0.11)
+    // Sizes track texture width so a deeper facts plaque keeps the same type scale.
+    const m = plaqueMetrics(texW)
+    const lines = plaqueFactLines(item, texW)
 
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
+
+    if (lines.length === 0) {
+      ctx.fillStyle = '#f7f4ef'
+      ctx.font = `600 ${m.titleSize}px "IBM Plex Sans", sans-serif`
+      ctx.fillText(item.name, texW / 2, texH * 0.4)
+
+      ctx.fillStyle = '#b8c0c6'
+      ctx.font = `${m.dimsSize}px "IBM Plex Sans", sans-serif`
+      ctx.fillText(this.labelDimensions(item), texW / 2, texH * 0.7)
+      tex.update()
+      return
+    }
+
+    // Same running total as plaqueAspect, so the box ends flush with the text.
+    let y = m.padY
+
     ctx.fillStyle = '#f7f4ef'
-    ctx.font = `600 ${titleSize}px "IBM Plex Sans", sans-serif`
-    ctx.fillText(item.name, texW / 2, texH * 0.4)
+    ctx.font = `600 ${m.titleSize}px "IBM Plex Sans", sans-serif`
+    ctx.fillText(item.name, texW / 2, y + m.titleSize / 2)
+    y += m.titleSize + m.gapTitle
 
     ctx.fillStyle = '#b8c0c6'
-    ctx.font = `${dimsSize}px "IBM Plex Sans", sans-serif`
-    ctx.fillText(this.labelDimensions(item), texW / 2, texH * 0.7)
+    ctx.font = `${m.dimsSize}px "IBM Plex Sans", sans-serif`
+    ctx.fillText(this.labelDimensions(item), texW / 2, y + m.dimsSize / 2)
+    y += m.dimsSize + m.gapFacts
+
+    ctx.fillStyle = '#98a2aa'
+    ctx.font = `${m.factsSize}px "IBM Plex Sans", sans-serif`
+    for (const line of lines) {
+      ctx.fillText(line, texW / 2, y + m.lineHeight / 2)
+      y += m.lineHeight
+    }
     tex.update()
   }
 

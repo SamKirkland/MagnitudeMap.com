@@ -1,6 +1,6 @@
 import { SITE_NAME } from '../siteMeta'
 import { formatLength, niceScaleMeters, type UnitSystem } from '../units'
-import type { PosterItemProjection, PosterLayout } from './types'
+import type { PosterBackground, PosterItemProjection, PosterLayout } from './types'
 
 const INK = '#1c2430'
 const MUTED = '#5c6b7a'
@@ -18,6 +18,7 @@ export type PosterOverlayOptions = {
 
 export type ComposePosterOptions = PosterOverlayOptions & {
   render: Blob
+  background: PosterBackground
 }
 
 export async function composePoster(opts: ComposePosterOptions): Promise<Blob> {
@@ -30,8 +31,10 @@ export async function composePoster(opts: ComposePosterOptions): Promise<Blob> {
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('Could not create poster canvas')
 
-  ctx.fillStyle = '#ffffff'
-  ctx.fillRect(0, 0, opts.width, opts.height)
+  if (opts.background !== 'transparent') {
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, opts.width, opts.height)
+  }
   ctx.imageSmoothingEnabled = true
   ctx.imageSmoothingQuality = 'high'
   ctx.drawImage(bitmap, 0, 0, opts.width, opts.height)

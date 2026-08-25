@@ -249,6 +249,7 @@ async function captureOne(row: CaptureRow): Promise<void> {
     layout: 'lineup',
     view: 'side',
     contentRect: { left: 0.04, right: 0.96, top: 0.08, bottom: 0.92 },
+    background: 'white',
     width: WIDTH,
     height: HEIGHT,
   })

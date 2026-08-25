@@ -1,4 +1,5 @@
 import type {
+  PosterBackground,
   PosterContentRect,
   PosterLayout,
   PosterResolution,
@@ -6,8 +7,9 @@ import type {
   PosterView,
 } from './types'
 
-const STORAGE_KEY = 'magnitudemap-poster-settings-v5'
+const STORAGE_KEY = 'magnitudemap-poster-settings-v6'
 const LEGACY_STORAGE_KEYS = [
+  'magnitudemap-poster-settings-v5',
   'magnitudemap-poster-settings-v4',
   'magnitudemap-poster-settings-v3',
   'magnitudemap-poster-settings-v2',
@@ -16,6 +18,7 @@ const LEGACY_STORAGE_KEYS = [
 export const DEFAULT_POSTER_SETTINGS: PosterSettings = {
   layout: 'lineup',
   view: 'side',
+  background: 'white',
 }
 
 export const POSTER_RESOLUTIONS: PosterResolution[] = ['4k', '8k', '16k']
@@ -68,6 +71,10 @@ function isLayout(value: unknown): value is PosterLayout {
   return value === 'lineup' || value === 'stacked'
 }
 
+function isBackground(value: unknown): value is PosterBackground {
+  return value === 'white' || value === 'transparent'
+}
+
 function isView(value: unknown): value is PosterView {
   return value === 'top' || value === 'side'
 }
@@ -89,6 +96,9 @@ export function loadPosterSettings(): PosterSettings {
     return {
       layout: isLayout(parsed.layout) ? parsed.layout : DEFAULT_POSTER_SETTINGS.layout,
       view: viewFromSaved(parsed),
+      background: isBackground(parsed.background)
+        ? parsed.background
+        : DEFAULT_POSTER_SETTINGS.background,
     }
   } catch {
     return { ...DEFAULT_POSTER_SETTINGS }

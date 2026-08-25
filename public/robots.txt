@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# Large binary model payloads — no value in the index, and crawling them
+# burns budget that should go to the comparison pages.
+Disallow: /models/
+Disallow: /grounds/
+Disallow: /env/
+
+Sitemap: https://magnitudemap.com/sitemap.xml

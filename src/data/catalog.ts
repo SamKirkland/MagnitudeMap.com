@@ -1,3 +1,4 @@
+import { CATALOG_FACTS } from './catalogFacts'
 import { CATALOG_TAGS } from './catalogTags'
 import { packMoneyAmount } from './moneyPack'
 
@@ -81,6 +82,8 @@ export type CatalogItem = {
   orientation?: CylinderOrientation
   color: string
   blurb: string
+  /** Short factual note about the real thing — shown under the name in the library. */
+  facts?: string
   /** Keywords for library search. */
   tags: string[]
   /** Optional colored GLB; falls back to stand-in mesh. */
@@ -169,7 +172,7 @@ function moneyItem(
 const CATALOG_SEED: CatalogSeed[] = [
   {
     id: 'person-male',
-    name: 'Adult (male)',
+    name: 'Adult',
     category: 'reference',
     length: 0.55,
     width: 0.55,
@@ -185,7 +188,7 @@ const CATALOG_SEED: CatalogSeed[] = [
   },
   {
     id: 'person-female',
-    name: 'Adult (female)',
+    name: 'Adult',
     category: 'reference',
     length: 0.5,
     width: 0.5,
@@ -419,7 +422,7 @@ const CATALOG_SEED: CatalogSeed[] = [
     model: {
       path: 'models/c-ram/model.glb',
       scaleAxis: 'height',
-      yawDegrees: 0,
+      yawDegrees: 180,
     },
   },
   {
@@ -487,6 +490,137 @@ const CATALOG_SEED: CatalogSeed[] = [
       path: 'models/f18/model.glb',
       scaleAxis: 'length',
       // Native nose is +Z. 180° points at the plaque (-Z).
+      yawDegrees: 180,
+    },
+  },
+  {
+    id: 'spitfire',
+    name: 'Spitfire Mk II',
+    category: 'military',
+    length: 9.12,
+    width: 11.23,
+    height: 3.86,
+    shape: 'box',
+    color: '#5f6b52',
+    blurb: 'Supermarine Spitfire Mk IIa fighter (~9.1 m long).',
+    model: {
+      path: 'models/spitfire/model.glb',
+      scaleAxis: 'length',
+      yawDegrees: 180,
+    },
+  },
+  {
+    id: 'concorde',
+    name: 'Concorde',
+    category: 'vehicle',
+    length: 61.66,
+    width: 25.6,
+    height: 12.2,
+    shape: 'box',
+    color: '#e8eaed',
+    blurb: 'Aerospatiale/BAC Concorde supersonic airliner (~61.7 m long).',
+    model: {
+      path: 'models/concorde/model.glb',
+      scaleAxis: 'length',
+      yawDegrees: 0,
+    },
+  },
+  {
+    id: 'b29',
+    name: 'B-29 Superfortress',
+    category: 'military',
+    length: 30.18,
+    width: 43.05,
+    height: 8.46,
+    shape: 'box',
+    color: '#b8bcc2',
+    blurb: 'Boeing B-29 Superfortress heavy bomber (~43 m span).',
+    model: {
+      path: 'models/b29/model.glb',
+      scaleAxis: 'length',
+      // Nose is native +Z; studio ground plane stripped.
+      yawDegrees: 180,
+    },
+  },
+  {
+    id: 'mig23',
+    name: 'MiG-23MLD',
+    category: 'military',
+    length: 16.7,
+    width: 7.78,
+    height: 4.82,
+    shape: 'box',
+    color: '#7d8a6f',
+    blurb: 'Mikoyan MiG-23MLD, wings fully swept (~16.7 m long).',
+    model: {
+      path: 'models/mig23/model.glb',
+      scaleAxis: 'length',
+      // Modelled wings-swept: 7.78 m span, not the 13.97 m spread.
+      yawDegrees: 180,
+    },
+  },
+  {
+    id: 'mig35',
+    name: 'MiG-35',
+    category: 'military',
+    length: 17.3,
+    width: 12.0,
+    height: 4.73,
+    shape: 'box',
+    color: '#4a5568',
+    blurb: 'Mikoyan MiG-35 multirole fighter (~17.3 m long).',
+    model: {
+      path: 'models/mig35/model.glb',
+      scaleAxis: 'length',
+      yawDegrees: 270,
+    },
+  },
+  {
+    id: 'b52',
+    name: 'B-52 Stratofortress',
+    category: 'military',
+    length: 48.5,
+    width: 56.4,
+    height: 12.4,
+    shape: 'box',
+    color: '#3f4a3a',
+    blurb: 'Boeing B-52 Stratofortress strategic bomber (~56.4 m span).',
+    model: {
+      path: 'models/b52/model.glb',
+      scaleAxis: 'length',
+      yawDegrees: 180,
+    },
+  },
+  {
+    id: 'su57',
+    name: 'Su-57 Felon',
+    category: 'military',
+    length: 20.1,
+    width: 14.1,
+    height: 4.6,
+    shape: 'box',
+    color: '#4b5563',
+    blurb: 'Sukhoi Su-57 Felon stealth fighter (~20.1 m long).',
+    model: {
+      path: 'models/su57/model.glb',
+      scaleAxis: 'length',
+      yawDegrees: 90,
+    },
+  },
+  {
+    id: 'sr71',
+    name: 'SR-71 Blackbird',
+    category: 'military',
+    length: 32.74,
+    width: 16.94,
+    height: 5.64,
+    shape: 'box',
+    color: '#0b1220',
+    blurb: 'Lockheed SR-71A strategic reconnaissance aircraft (~32.7 m long).',
+    model: {
+      path: 'models/sr71/model.glb',
+      scaleAxis: 'length',
+      // Diagonal authoring rotation baked into the GLB; nose is native +Z.
       yawDegrees: 180,
     },
   },
@@ -864,6 +998,7 @@ const CATALOG_SEED: CatalogSeed[] = [
     model: {
       path: 'models/falcon-9/model.glb',
       scaleAxis: 'height',
+      yawDegrees: 90,
     },
   },
   {
@@ -912,6 +1047,8 @@ const CATALOG_SEED: CatalogSeed[] = [
       path: 'models/shuttle-atlantis/model.glb',
       scaleAxis: 'height',
       rollDegrees: 270,
+      // 90° turns the orbiter to face the camera instead of side-on.
+      yawDegrees: 90,
     },
   },
   {
@@ -1000,19 +1137,20 @@ const CATALOG_SEED: CatalogSeed[] = [
     model: {
       path: 'models/starship/model.glb',
       scaleAxis: 'height',
+      yawDegrees: 90,
     },
   },
   {
     id: 'statue-liberty',
     name: 'Statue of Liberty',
     category: 'landmark',
-    length: 17,
-    width: 17,
-    height: 93,
+    length: 12,
+    width: 15.2,
+    height: 46.05,
     shape: 'cylinder',
     orientation: 'vertical',
     color: '#3f8f7a',
-    blurb: 'Torch height ~93 m. Gravity Jack CC-BY on Sketchfab.',
+    blurb: 'Statue only, heel to torch ~46 m (the pedestal adds another ~47 m).',
     model: {
       path: 'models/statue-liberty/model.glb',
       scaleAxis: 'height',
@@ -1096,15 +1234,32 @@ const CATALOG_SEED: CatalogSeed[] = [
     },
   },
   {
+    id: 'christ-redeemer',
+    name: 'Christ the Redeemer',
+    category: 'landmark',
+    length: 9,
+    width: 28,
+    height: 38,
+    shape: 'box',
+    color: '#cfc9bf',
+    blurb: 'Corcovado, Rio de Janeiro. 30 m statue on an 8 m pedestal, 28 m arm span.',
+    model: {
+      path: 'models/christ-redeemer/model.glb',
+      scaleAxis: 'height',
+      // Arms spread on native X; 180° turns him to face -Z like the other statues.
+      yawDegrees: 180,
+    },
+  },
+  {
     id: 'stonehenge',
     name: 'Stonehenge',
     category: 'landmark',
-    length: 50,
-    width: 50,
+    length: 33,
+    width: 33,
     height: 7.2,
     shape: 'box',
     color: '#8a8478',
-    blurb: 'Sarsen circle on the plateau (~50 m across, ~7.2 m lintel height).',
+    blurb: 'Sarsen circle (~33 m across, ~7.2 m lintel height).',
     model: {
       path: 'models/stonehenge/model.glb',
       scaleAxis: 'height',
@@ -1115,7 +1270,7 @@ const CATALOG_SEED: CatalogSeed[] = [
     name: 'Sydney Opera House',
     category: 'landmark',
     length: 183,
-    width: 177,
+    width: 120,
     height: 67,
     shape: 'box',
     color: '#f5f0e8',
@@ -1123,6 +1278,8 @@ const CATALOG_SEED: CatalogSeed[] = [
     model: {
       path: 'models/sydney-opera-house/model.glb',
       scaleAxis: 'length',
+      // Native length runs on X (shells aft toward +X); 90° puts length on +Z.
+      yawDegrees: 90,
     },
   },
   {
@@ -1138,8 +1295,8 @@ const CATALOG_SEED: CatalogSeed[] = [
     model: {
       path: 'models/great-pyramids/model.glb',
       scaleAxis: 'height',
-      // Longer base edge is native +X; 90° puts length on +Z.
-      yawDegrees: 90,
+      // Square base, axis-aligned in native X/Z; no yaw needed.
+      yawDegrees: 0,
     },
   },
   {
@@ -1188,8 +1345,8 @@ const CATALOG_SEED: CatalogSeed[] = [
     model: {
       path: 'models/container-ship/model.glb',
       scaleAxis: 'length',
-      // Native length on X, bridge aft toward +X. 90° puts bow on +Z.
-      yawDegrees: 90,
+      // Native length on X, bridge aft toward +X. 270° puts bow on +Z.
+      yawDegrees: 270,
     },
   },
   {
@@ -1205,8 +1362,8 @@ const CATALOG_SEED: CatalogSeed[] = [
     model: {
       path: 'models/super-tanker/model.glb',
       scaleAxis: 'length',
-      // Native length on Z, house aft toward +Z. 180° puts bow on +Z.
-      yawDegrees: 180,
+      // Native length on Z, house aft toward -Z. 0° puts bow on +Z.
+      yawDegrees: 0,
     },
   },
   {
@@ -2223,6 +2380,7 @@ const CATALOG_SEED: CatalogSeed[] = [
 export const CATALOG: CatalogItem[] = CATALOG_SEED.map((item) => ({
   ...item,
   tags: CATALOG_TAGS[item.id] ?? [item.category],
+  facts: CATALOG_FACTS[item.id],
 }))
 
 export const CATALOG_BY_ID = Object.fromEntries(
@@ -2418,6 +2576,7 @@ export const COMPARISON_PRESETS: ComparisonPreset[] = [
       'person-male',
       'stonehenge',
       'big-ben',
+      'christ-redeemer',
       'statue-liberty',
       'washington-monument',
       'colosseum',

@@ -1,16 +1,20 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { dirname, resolve } from 'node:path'
 import { setTimeout as sleep } from 'node:timers/promises'
 import { fileURLToPath } from 'node:url'
 import type { Plugin } from 'vite'
-import { COMPARISON_PRESETS } from './src/data/catalog'
+import { CATALOG_BY_ID, COMPARISON_PRESETS } from './src/data/catalog'
 import {
   DEFAULT_DESCRIPTION,
   OG_IMAGE_HEIGHT,
   OG_IMAGE_WIDTH,
   SITE_NAME,
+  SITE_ORIGIN,
+  THEME_COLOR,
+  ogImageAlt,
   ogImageUrl,
+  presetTitle,
   sharePageUrl,
 } from './src/siteMeta'
 
@@ -35,17 +39,63 @@ function escapeAttr(value: string): string {
     .replace(/</g, '&lt;')
 }
 
+/**
+ * A page must never advertise an image that 404s — social platforms cache the
+ * miss and the link unfurls blank. Lineups whose capture has not been run yet
+ * fall back to the default card rather than pointing at nothing.
+ */
+function resolveOgImage(slug: string, missing: string[]): string {
+  if (existsSync(resolve(rootDir, 'public/og', `${slug}.jpg`))) {
+    return ogImageUrl(slug)
+  }
+  missing.push(slug)
+  return ogImageUrl('default')
+}
+
+/** `</script>` inside a JSON-LD block would close the tag early. */
+function jsonLd(data: unknown): string {
+  const json = JSON.stringify(data, null, 2).replace(/</g, '\\u003c')
+  return `<script type="application/ld+json">
+${json}
+    </script>`
+}
+
+/** ItemList of the lineup's objects — the names people actually search for. */
+function presetStructuredData(preset: {
+  name: string
+  description: string
+  itemIds: string[]
+  url: string
+}) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: `${preset.name} size comparison`,
+    description: preset.description,
+    url: preset.url,
+    numberOfItems: preset.itemIds.length,
+    itemListElement: preset.itemIds.map((id, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: CATALOG_BY_ID[id]?.name ?? id,
+    })),
+  }
+}
+
 function ogMetaBlock(opts: {
   title: string
   description: string
   url: string
   image: string
+  imageAlt: string
+  structuredData: unknown
 }): string {
   const title = escapeAttr(opts.title)
   const description = escapeAttr(opts.description)
   return `<!-- og-meta -->
     <title>${title}</title>
     <meta name="description" content="${description}" />
+    <meta name="theme-color" content="${THEME_COLOR}" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="${SITE_NAME}" />
     <meta property="og:title" content="${title}" />
@@ -55,11 +105,14 @@ function ogMetaBlock(opts: {
     <meta property="og:image:width" content="${OG_IMAGE_WIDTH}" />
     <meta property="og:image:height" content="${OG_IMAGE_HEIGHT}" />
     <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:alt" content="${escapeAttr(opts.imageAlt)}" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${title}" />
     <meta name="twitter:description" content="${description}" />
     <meta name="twitter:image" content="${opts.image}" />
+    <meta name="twitter:image:alt" content="${escapeAttr(opts.imageAlt)}" />
     <link rel="canonical" href="${opts.url}" />
+    ${jsonLd(opts.structuredData)}
     <!-- /og-meta -->`
 }
 
@@ -178,16 +231,29 @@ export function ogPagesPlugin(): Plugin {
         return
       }
 
+      const missingImages: string[] = []
       for (const preset of COMPARISON_PRESETS) {
         const slug = presetSlug(preset.name)
+        // The default lineup is what `/` already shows. Its `/c/` page still
+        // exists so the slug unfurls, but it points search engines at `/`
+        // instead of competing with it.
+        const url = isHomepagePreset(preset) ? `${SITE_ORIGIN}/` : sharePageUrl(slug)
+        const description = preset.description || DEFAULT_DESCRIPTION
         const html = rewriteRelativeAssetUrls(
           replaceOgMeta(
             indexHtml,
             ogMetaBlock({
-              title: `${preset.name} — ${SITE_NAME}`,
-              description: preset.description || DEFAULT_DESCRIPTION,
-              url: sharePageUrl(slug),
-              image: ogImageUrl(slug),
+              title: presetTitle(preset.name),
+              description,
+              url,
+              image: resolveOgImage(slug, missingImages),
+              imageAlt: ogImageAlt(preset.name),
+              structuredData: presetStructuredData({
+                name: preset.name,
+                description,
+                itemIds: preset.itemIds,
+                url,
+              }),
             }),
           ),
         )
@@ -195,6 +261,48 @@ export function ogPagesPlugin(): Plugin {
         mkdirSync(dir, { recursive: true })
         writeFileSync(resolve(dir, 'index.html'), html)
       }
+
+      writeSitemap()
+
+      if (missingImages.length > 0) {
+        this.warn(
+          `No social image for ${missingImages.join(', ')} — using default.jpg. ` +
+            `Run \`npm run generate-og\` to render them.`,
+        )
+      }
     },
   }
+}
+
+/** The first preset is what `/` renders, so its `/c/` page is a duplicate. */
+function isHomepagePreset(preset: { id: string }): boolean {
+  return preset.id === COMPARISON_PRESETS[0]?.id
+}
+
+/**
+ * Lists `/` plus every non-duplicate share page. The sidebar links to these
+ * too; the sitemap makes them discoverable without executing the app.
+ */
+function writeSitemap() {
+  const urls = [
+    `${SITE_ORIGIN}/`,
+    ...COMPARISON_PRESETS.filter((preset) => !isHomepagePreset(preset)).map(
+      (preset) => sharePageUrl(presetSlug(preset.name)),
+    ),
+  ]
+  const body = urls
+    .map(
+      (url) => `  <url>
+    <loc>${url}</loc>
+  </url>
+`,
+    )
+    .join('')
+  writeFileSync(
+    resolve(rootDir, 'dist/sitemap.xml'),
+    `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${body}</urlset>
+`,
+  )
 }

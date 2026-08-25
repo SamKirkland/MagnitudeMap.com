@@ -1,8 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type MutableRefObject } from 'react'
-import {
-  ComparisonScene,
-  type TourUiState,
-} from '../babylon/ComparisonScene'
+import type { ComparisonScene, TourUiState } from '../babylon/ComparisonScene'
 import type { DetonationMode } from '../data/blastEffects'
 import type { TourSettings } from '../tourSettings'
 import type { PosterOverlayState, PosterPreviewSettings } from '../poster/types'
@@ -77,6 +74,7 @@ export function Viewer({
   const displayYawTurnsRef = useRef(displayYawTurns)
   const groundPlateIdRef = useRef(groundPlateId)
   const shadowsEnabledRef = useRef(shadowsEnabled)
+  const activeItemIdsRef = useRef(activeItemIds)
   const brandClicksRef = useRef<number[]>([])
   const [posterPreviewActive, setPosterPreviewActive] = useState(false)
   onTourStateRef.current = onTourState
@@ -87,6 +85,7 @@ export function Viewer({
   displayYawTurnsRef.current = displayYawTurns
   groundPlateIdRef.current = groundPlateId
   shadowsEnabledRef.current = shadowsEnabled
+  activeItemIdsRef.current = activeItemIds
 
   function handleBrandClick() {
     const now = Date.now()
@@ -99,20 +98,36 @@ export function Viewer({
     }
   }
 
+  // Babylon is imported lazily so the ~7 MB engine stays out of the initial
+  // bundle and never loads during server-side prerendering.
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
 
-    const scene = new ComparisonScene(canvas, tourSettingsRef.current)
-    scene.setUnits(unitsRef.current)
-    scene.setDetonationMode(detonationModeRef.current)
-    scene.setDisplayYawTurns(displayYawTurnsRef.current)
-    scene.setGroundPlate(groundPlateIdRef.current)
-    scene.setShadowsEnabled(shadowsEnabledRef.current)
-    sceneRef.current = scene
-    const unsubscribe = scene.subscribeTour((state) => {
-      onTourStateRef.current?.(state)
-    })
+    let cancelled = false
+    let scene: ComparisonScene | null = null
+    let unsubscribe: (() => void) | null = null
+
+    void (async () => {
+      const { ComparisonScene: Scene } = await import('../babylon/ComparisonScene')
+      if (cancelled) return
+
+      scene = new Scene(canvas, tourSettingsRef.current)
+      scene.setUnits(unitsRef.current)
+      scene.setDetonationMode(detonationModeRef.current)
+      scene.setDisplayYawTurns(displayYawTurnsRef.current)
+      scene.setGroundPlate(groundPlateIdRef.current)
+      scene.setShadowsEnabled(shadowsEnabledRef.current)
+      sceneRef.current = scene
+      unsubscribe = scene.subscribeTour((state) => {
+        onTourStateRef.current?.(state)
+      })
+      // Prop-driven effects below already ran against a null scene; replay the
+      // one that carries state the constructor does not take.
+      void scene.setActiveItems(activeItemIdsRef.current, {
+        camera: cameraModeRef.current,
+      })
+    })()
 
     if (tourToggleRef) {
       tourToggleRef.current = () => sceneRef.current?.toggleTour()
@@ -124,10 +139,11 @@ export function Viewer({
     }
 
     return () => {
+      cancelled = true
       if (tourToggleRef) tourToggleRef.current = null
       if (debugToggleRef) debugToggleRef.current = null
-      unsubscribe()
-      scene.dispose()
+      unsubscribe?.()
+      scene?.dispose()
       sceneRef.current = null
     }
   }, [tourToggleRef, debugToggleRef])

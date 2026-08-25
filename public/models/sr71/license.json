@@ -1,0 +1,12 @@
+{
+  "id": "sr71",
+  "file": "model.glb",
+  "license": "CC-BY-4.0",
+  "licenseLabel": "CC BY",
+  "author": "manilov.ap",
+  "source": "https://sketchfab.com/3d-models/sr71-908985d8ec544638bcd661bc315597ad",
+  "sourceAsset": "Sr71",
+  "sketchfabUid": "908985d8ec544638bcd661bc315597ad",
+  "notes": "SR-71 Blackbird (CC-BY, manilov.ap). Authored in meters at a 37.6 deg yaw; catalog yaw squares the nose to +Z. Scaled to 32.74 m length in-app.",
+  "attribution": "Sr71 by manilov.ap on Sketchfab (CC BY) — https://sketchfab.com/3d-models/sr71-908985d8ec544638bcd661bc315597ad"
+}

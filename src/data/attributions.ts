@@ -39,7 +39,7 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
   },
   {
     "id": "person-female",
-    "catalogName": "Adult (female)",
+    "catalogName": "Adult",
     "author": "Ready Player Me",
     "license": "CC-BY-NC-SA-4.0",
     "licenseLabel": "CC BY-NC-SA",
@@ -51,7 +51,7 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
   },
   {
     "id": "person-male",
-    "catalogName": "Adult (male)",
+    "catalogName": "Adult",
     "author": "Ready Player Me",
     "license": "CC-BY-NC-SA-4.0",
     "licenseLabel": "CC BY-NC-SA",
@@ -204,6 +204,30 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "B-21 Raider by Ricardo3D on Sketchfab (CC BY) — https://sketchfab.com/3d-models/b-21-raider-21a6984123814efc83a77f7c03977af8",
     "requiresAttribution": true,
     "notes": "B-21 Raider (CC-BY, creadordemu). Linked yakudami model is Store-only/not downloadable. Scaled to ~45 m wingspan estimate in-app."
+  },
+  {
+    "id": "b29",
+    "catalogName": "B-29 Superfortress",
+    "author": "Kai Xiang",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/b29-29d5ea108bb344149c917db9d577e220",
+    "sourceAsset": "Lowpoly B-29 Superfortress",
+    "attribution": "Lowpoly B-29 Superfortress by Kai Xiang on Sketchfab (CC BY) — https://sketchfab.com/3d-models/b29-29d5ea108bb344149c917db9d577e220",
+    "requiresAttribution": true,
+    "notes": "Lowpoly B-29 Superfortress (CC-BY, Kai Xiang). Studio ground plane stripped. Scaled to 30.18 m length in-app."
+  },
+  {
+    "id": "b52",
+    "catalogName": "B-52 Stratofortress",
+    "author": "hruschak30",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/b52-44b4fdb01ef640c0ad7c5ba0f9ac30ca",
+    "sourceAsset": "Boeing B-52 Stratofortress",
+    "attribution": "Boeing B-52 Stratofortress by hruschak30 on Sketchfab (CC BY) — https://sketchfab.com/3d-models/b52-44b4fdb01ef640c0ad7c5ba0f9ac30ca",
+    "requiresAttribution": true,
+    "notes": "Boeing B-52 Stratofortress (CC-BY, hruschak30). Scaled to 48.5 m length in-app."
   },
   {
     "id": "eagle",
@@ -362,6 +386,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Chieftain Mk 5 by nazidefenseforceofficial (CC-BY). Scaled to 10.77 m length in-app."
   },
   {
+    "id": "christ-redeemer",
+    "catalogName": "Christ the Redeemer",
+    "author": "Naveen Himal",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/christ-the-redeemer-d6f51d0fad7142a08ed26455f84f72ca",
+    "sourceAsset": "Christ The Redeemer",
+    "attribution": "Christ The Redeemer by Naveen Himal on Sketchfab (CC BY) — https://sketchfab.com/3d-models/christ-the-redeemer-d6f51d0fad7142a08ed26455f84f72ca",
+    "requiresAttribution": true,
+    "notes": "Christ The Redeemer (CC-BY, Naveen Himal). Low poly; includes the pedestal. Scaled to 38 m total height in-app."
+  },
+  {
     "id": "colosseum",
     "catalogName": "Colosseum",
     "author": "Carlos.Maciel",
@@ -372,6 +408,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "Colosseum by Carlos.Maciel on Sketchfab (CC BY) — https://sketchfab.com/3d-models/colosseum-e749705838044be78ced42205f9f9dda",
     "requiresAttribution": true,
     "notes": "Colosseum reconstruction (CC-BY). Scaled to 189 m length in-app."
+  },
+  {
+    "id": "concorde",
+    "catalogName": "Concorde",
+    "author": "thomas333",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/concorde-d2222f34152d4850afff0124872fc9ba",
+    "sourceAsset": "Concorde 3D Model",
+    "attribution": "Concorde 3D Model by thomas333 on Sketchfab (CC BY) — https://sketchfab.com/3d-models/concorde-d2222f34152d4850afff0124872fc9ba",
+    "requiresAttribution": true,
+    "notes": "Concorde 3D Model (CC-BY, thomas333). Scaled to 61.66 m length in-app."
   },
   {
     "id": "constitution-iii",
@@ -652,14 +700,14 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
   {
     "id": "great-pyramids",
     "catalogName": "Great Pyramid of Giza",
-    "author": "gfrez",
+    "author": "MarloesB",
     "license": "CC-BY-4.0",
     "licenseLabel": "CC BY",
-    "source": "https://sketchfab.com/3d-models/pyramids-of-giza-ea753397274d4e3f93db5a6a9810aa6f",
-    "sourceAsset": "Pyramids of Giza",
-    "attribution": "Pyramids of Giza by gfrez on Sketchfab (CC BY) — https://sketchfab.com/3d-models/pyramids-of-giza-ea753397274d4e3f93db5a6a9810aa6f",
+    "source": "https://sketchfab.com/3d-models/pyramid-2e0a99016e5a4ac5a9b56caf6a802b06",
+    "sourceAsset": "Pyramid",
+    "attribution": "Pyramid by MarloesB on Sketchfab (CC BY) — https://sketchfab.com/3d-models/pyramid-2e0a99016e5a4ac5a9b56caf6a802b06",
     "requiresAttribution": true,
-    "notes": "Great Pyramid of Giza / Khufu (CC-BY, gfrez). Ground plane cropped. Scaled to 138.5 m current height in-app."
+    "notes": "Egyptian pyramid (CC-BY, MarloesB). Square base, photo-textured. Scaled to 138.5 m current height in-app."
   },
   {
     "id": "anaconda",
@@ -828,6 +876,30 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "M4 Sherman Tank Challenger by sayedgamal655 on Sketchfab (CC BY) — https://sketchfab.com/3d-models/m4-sherman-tank-challenger-e5252c21cd624182862514de993d21f3",
     "requiresAttribution": true,
     "notes": "M4 Sherman Tank Challenger (CC-BY). Scaled to 5.89 m length in-app."
+  },
+  {
+    "id": "mig23",
+    "catalogName": "MiG-23MLD",
+    "author": "Tim Samedov",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/mig23-7a13c91f07e042a685b4d265644fdc06",
+    "sourceAsset": "Mig-23 MLD",
+    "attribution": "Mig-23 MLD by Tim Samedov on Sketchfab (CC BY) — https://sketchfab.com/3d-models/mig23-7a13c91f07e042a685b4d265644fdc06",
+    "requiresAttribution": true,
+    "notes": "Mig-23 MLD (CC-BY, Tim Samedov). Scaled to 16.7 m length in-app."
+  },
+  {
+    "id": "mig35",
+    "catalogName": "MiG-35",
+    "author": "spacewatermelon",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/mig35-53455670e65945fe88553090e27400b5",
+    "sourceAsset": "mig-35-fighter-jet",
+    "attribution": "mig-35-fighter-jet by spacewatermelon on Sketchfab (CC BY) — https://sketchfab.com/3d-models/mig35-53455670e65945fe88553090e27400b5",
+    "requiresAttribution": true,
+    "notes": "mig-35-fighter-jet (CC-BY, spacewatermelon). Scaled to 17.3 m length in-app."
   },
   {
     "id": "tealc",
@@ -1154,6 +1226,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Walking Spinosaurus maroccanus (CC-BY, nobilishornet). Linked GremorySaiyan pack is Standard. Scaled to 14 m length in-app."
   },
   {
+    "id": "sr71",
+    "catalogName": "SR-71 Blackbird",
+    "author": "manilov.ap",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/sr71-908985d8ec544638bcd661bc315597ad",
+    "sourceAsset": "Sr71",
+    "attribution": "Sr71 by manilov.ap on Sketchfab (CC BY) — https://sketchfab.com/3d-models/sr71-908985d8ec544638bcd661bc315597ad",
+    "requiresAttribution": true,
+    "notes": "SR-71 Blackbird (CC-BY, manilov.ap). Authored in meters at a 37.6 deg yaw; catalog yaw squares the nose to +Z. Scaled to 32.74 m length in-app."
+  },
+  {
     "id": "valdore",
     "catalogName": "Star Trek Online | Romulan Valdore",
     "author": "LoganRolphh",
@@ -1238,6 +1322,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Requested LostModels2025 Stormtrooper Walk (dc7237f92c824cd78abc0f5bb4cb6290) is CC-BY-NC. Substituted lampotstreams' downloadable CC-BY walk clip (same ~55k-face silhouette). Scaled to 1.83 m height in-app. Walks when focused."
   },
   {
+    "id": "su57",
+    "catalogName": "Su-57 Felon",
+    "author": "andertan",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/su57-09d546b4355c4fa6882ca46e05069bee",
+    "sourceAsset": "Sukhoi Su-57 \"Felon\"",
+    "attribution": "Sukhoi Su-57 \"Felon\" by andertan on Sketchfab (CC BY) — https://sketchfab.com/3d-models/su57-09d546b4355c4fa6882ca46e05069bee",
+    "requiresAttribution": true,
+    "notes": "Sukhoi Su-57 \"Felon\" (CC-BY, andertan). Scaled to 20.1 m length in-app."
+  },
+  {
     "id": "super-tanker",
     "catalogName": "Super tanker",
     "author": "Art Blender",
@@ -1248,6 +1344,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "Tanker Ship by Art Blender on Sketchfab (CC BY) — https://sketchfab.com/3d-models/tanker-ship-96ebf61af42b4062ae98a6ad848e1a25",
     "requiresAttribution": true,
     "notes": "Tanker Ship by Art Blender (CC-BY), authored as Suezmax 322 m × 47 m. Scaled to 322 m length; beam follows the GLB (~40 m)."
+  },
+  {
+    "id": "spitfire",
+    "catalogName": "Supermarine Spitfire Mk IIa",
+    "author": "barking_dogo",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/spitfire-a49be5ab6d624e75b55231948a31b1b3",
+    "sourceAsset": "Supermarine Spitfire Mk.IIa",
+    "attribution": "Supermarine Spitfire Mk.IIa by barking_dogo on Sketchfab (CC BY) — https://sketchfab.com/3d-models/spitfire-a49be5ab6d624e75b55231948a31b1b3",
+    "requiresAttribution": true,
+    "notes": "Supermarine Spitfire Mk.IIa (CC-BY, barking_dogo). Scaled to 9.12 m length in-app."
   },
   {
     "id": "sydney-opera-house",

@@ -64,6 +64,7 @@ function shareSlugFromPath(): string | null {
 
 /** Read `/c/{preset}` or `#hash` into a selection, or `null` if absent/invalid. */
 export function parseSelectionFromLocation(): SelectionFromUrl | null {
+  if (typeof window === 'undefined') return null
   const fromPath = shareSlugFromPath()
   if (fromPath) {
     const preset = findPresetBySlug(fromPath)
@@ -119,6 +120,7 @@ function sameLocation(a: string, b: string): boolean {
 
 /** Update the path (presets) or hash (custom mixes) — shareable, no history spam. */
 export function replaceSelectionUrl(itemIds: string[], presetId: string | null) {
+  if (typeof window === 'undefined') return
   const encoded = serializeSelection(itemIds, presetId)
   const { search } = window.location
   const base = siteBaseUrl()
@@ -139,6 +141,37 @@ export function replaceSelectionUrl(itemIds: string[], presetId: string | null) 
   const current = `${window.location.pathname}${window.location.search}${window.location.hash}`
   if (sameLocation(next, current)) return
   window.history.replaceState(null, '', next)
+}
+
+/** Site-root path the current selection lives at: `/c/{slug}/` or `/`. */
+export function selectionPathname(
+  itemIds: string[],
+  presetId: string | null,
+): string {
+  const encoded = serializeSelection(itemIds, presetId)
+  const preset = encoded ? findPresetBySlug(encoded) : undefined
+  const homepagePreset = COMPARISON_PRESETS[0]
+  if (preset && preset.id !== homepagePreset?.id) {
+    return `/c/${presetSlug(preset)}/`
+  }
+  return '/'
+}
+
+/**
+ * Prefix that rebases a root-relative path onto `pathname`.
+ *
+ * Relative rather than absolute so the site still works under a subpath, and
+ * so the prerenderer and the first client render emit identical hrefs.
+ */
+export function relativeSiteBase(pathname: string): string {
+  return /\/c\/[^/]+\/?$/.test(pathname) ? '../../' : ''
+}
+
+/** Crawlable href for a lineup, relative to the page currently being viewed. */
+export function presetHref(base: string, preset: ComparisonPreset): string {
+  const homepagePreset = COMPARISON_PRESETS[0]
+  if (preset.id === homepagePreset?.id) return base === '' ? './' : base
+  return `${base}c/${presetSlug(preset)}/`
 }
 
 /** Canonical URL for the current lineup (PNG metadata / poster footer). */

@@ -128,7 +128,10 @@ export function ExportPoster({
       canvas.height = height
     }
     ctx.setTransform(1, 0, 0, 1, 0, 0)
-    ctx.clearRect(0, 0, width, height)
+    // Clear the whole backing store, not the new state's rect: labels from the
+    // previous lineup sit wherever those items were and would survive a
+    // narrower clear.
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
     const meta = overlayMetaRef.current
     paintPosterOverlay(ctx, {
       width,
@@ -175,6 +178,7 @@ export function ExportPoster({
         comparison_title: title,
         layout: settings.layout,
         view: settings.view,
+        background: settings.background,
         resolution,
         unit_system: units,
       })
@@ -245,6 +249,25 @@ export function ExportPoster({
                   onClick={() => patch({ view: 'top' })}
                 >
                   Top
+                </SegButton>
+              </div>
+            </fieldset>
+
+            <fieldset className="export-field">
+              <legend>Background</legend>
+              <div className="export-seg" role="group">
+                <SegButton
+                  active={settings.background === 'white'}
+                  onClick={() => patch({ background: 'white' })}
+                >
+                  White
+                </SegButton>
+                <SegButton
+                  active={settings.background === 'transparent'}
+                  onClick={() => patch({ background: 'transparent' })}
+                  title="Transparent WebP — labels stay dark, so use it over light surfaces"
+                >
+                  Transparent
                 </SegButton>
               </div>
             </fieldset>
