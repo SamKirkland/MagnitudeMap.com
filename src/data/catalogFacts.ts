@@ -19,16 +19,12 @@ export const CATALOG_FACTS: Record<string, string> = {
     'US Army Ranger, 1944. About 16 million Americans served in WWII. A rifleman carried roughly 25–35 kg of kit, and the M1 Garand he shouldered weighed 4.3 kg.',
   'iphone':
     'Apple has sold well over 2 billion iPhones since 2007, making it one of the best-selling products of any kind. A modern handset is about 147 mm tall and 170–230 g.',
-  'astronaut':
-    'A NASA EMU spacesuit weighs about 145 kg on the ground, has 14 layers, and reportedly costs $15–22 million. Only around 700 people have ever been to space.',
   'firetruck':
     'A full aerial-ladder truck runs roughly $1–1.5 million, weighs 25–30 t loaded, and carries a ladder reaching 30 m or more.',
   'school-bus':
     'About 480,000 school buses operate in the US, carrying more children each day than every other form of public transport combined. A new Type C bus costs roughly $120,000 and seats up to 90 kids.',
   'container-20':
     'The ISO 40-foot container holds about 67 m³, weighs 3.8 t empty, and is rated to 30.5 t gross. Roughly 25 million are in circulation, and standardising them in the 1950s cut ocean freight costs by over 90%.',
-  'ak47':
-    'A stand-in rifle prop at about 0.88 m. For scale: the AK-47 is 0.88 m long and 4.3 kg loaded, and with roughly 75–100 million made it is the most-produced firearm in history.',
 
   // --- Armour and ground -----------------------------------------------------
   'sherman':
