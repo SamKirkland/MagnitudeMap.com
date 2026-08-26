@@ -7,10 +7,8 @@ import { SITE_ORIGIN } from '../siteMeta'
 import type { UnitSystem } from '../units'
 import { DetonateControls } from './DetonateControls'
 import { ExportPoster } from './ExportPoster'
-import { FacingControls } from './FacingControls'
-import { GroundPlateControls } from './GroundPlateControls'
-import { ShadowControls } from './ShadowControls'
 import { MagnitudeMapLogo } from './MagnitudeMapLogo'
+import { ViewerToolbar, type ToolbarPopover } from './ViewerToolbar'
 import { DEFAULT_GROUND_PLATE, type GroundPlateId } from '../data/groundPlates'
 import { DEFAULT_SHADOWS_ENABLED } from '../shadows'
 
@@ -23,6 +21,7 @@ const DEBUG_WINDOW_MS = 3000
 type ViewerProps = {
   activeItemIds: string[]
   units: UnitSystem
+  onUnitsChange: (units: UnitSystem) => void
   detonationMode: DetonationMode
   showDetonationControls: boolean
   onDetonationModeChange: (mode: DetonationMode) => void
@@ -46,6 +45,7 @@ type ViewerProps = {
 export function Viewer({
   activeItemIds,
   units,
+  onUnitsChange,
   detonationMode,
   showDetonationControls,
   onDetonationModeChange,
@@ -77,6 +77,10 @@ export function Viewer({
   const activeItemIdsRef = useRef(activeItemIds)
   const brandClicksRef = useRef<number[]>([])
   const [posterPreviewActive, setPosterPreviewActive] = useState(false)
+  const [openPopover, setOpenPopover] = useState<ToolbarPopover | null>(null)
+  // The poster overlay portals into the viewer stack; state (not a ref) so the
+  // first render with a mounted node re-renders the portal target.
+  const [stackEl, setStackEl] = useState<HTMLDivElement | null>(null)
   onTourStateRef.current = onTourState
   unitsRef.current = units
   detonationModeRef.current = detonationMode
@@ -190,7 +194,10 @@ export function Viewer({
   )
 
   return (
-    <div className={`viewer-stack${posterPreviewActive ? ' is-poster-preview' : ''}`}>
+    <div
+      ref={setStackEl}
+      className={`viewer-stack${posterPreviewActive ? ' is-poster-preview' : ''}`}
+    >
       <canvas
         ref={canvasRef}
         className="viewer-canvas"
@@ -204,42 +211,44 @@ export function Viewer({
       >
         <MagnitudeMapLogo className="map-brand-logo" />
       </button>
-      <ExportPoster
-        disabled={activeItemIds.length === 0}
-        units={units}
-        itemIds={activeItemIds}
-        title={exportTitle}
-        shareUrl={shareUrl}
-        previewKey={`${activeItemIds.join(',')}@${displayYawTurns}`}
-        capture={(request) => {
-          const scene = sceneRef.current
-          if (!scene) return Promise.reject(new Error('Viewer is still loading'))
-          return scene.capturePosterRender(request)
-        }}
-        setLivePreview={setLivePreview}
-        subscribeOverlay={subscribeOverlay}
-        onPreviewActive={setPosterPreviewActive}
-      />
-      <div className="viewer-docks">
-        <GroundPlateControls
-          plateId={groundPlateId}
-          onChange={(id) => onGroundPlateChange?.(id)}
-        />
-        <ShadowControls
-          enabled={shadowsEnabled}
-          onChange={(enabled) => onShadowsEnabledChange?.(enabled)}
-        />
-        <FacingControls
-          variant="overlay"
-          yawTurns={displayYawTurns}
-          onChange={(turns) => onDisplayYawTurns?.(turns)}
-        />
-      </div>
       <DetonateControls
         visible={showDetonationControls}
         mode={detonationMode}
         onDetonate={onDetonationModeChange}
         onReset={() => onDetonationModeChange('casing')}
+      />
+      <ViewerToolbar
+        yawTurns={displayYawTurns}
+        onYawTurns={(turns) => onDisplayYawTurns?.(turns)}
+        plateId={groundPlateId}
+        onPlateChange={(id) => onGroundPlateChange?.(id)}
+        shadowsEnabled={shadowsEnabled}
+        onShadowsChange={(enabled) => onShadowsEnabledChange?.(enabled)}
+        units={units}
+        onUnitsChange={onUnitsChange}
+        openPopover={openPopover}
+        onOpenPopover={setOpenPopover}
+        downloadItem={
+          <ExportPoster
+            disabled={activeItemIds.length === 0}
+            units={units}
+            itemIds={activeItemIds}
+            title={exportTitle}
+            shareUrl={shareUrl}
+            previewKey={`${activeItemIds.join(',')}@${displayYawTurns}`}
+            capture={(request) => {
+              const scene = sceneRef.current
+              if (!scene) return Promise.reject(new Error('Viewer is still loading'))
+              return scene.capturePosterRender(request)
+            }}
+            setLivePreview={setLivePreview}
+            subscribeOverlay={subscribeOverlay}
+            onPreviewActive={setPosterPreviewActive}
+            open={openPopover === 'download'}
+            onOpenChange={(next) => setOpenPopover(next ? 'download' : null)}
+            overlayContainer={stackEl}
+          />
+        }
       />
     </div>
   )

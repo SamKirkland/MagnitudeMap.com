@@ -10,6 +10,7 @@ import { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh'
 import { Animation } from '@babylonjs/core/Animations/animation'
 import { AnimationGroup } from '@babylonjs/core/Animations/animationGroup'
 import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera'
+import type { ArcRotateCameraPointersInput } from '@babylonjs/core/Cameras/Inputs/arcRotateCameraPointersInput'
 import { BoundingInfo } from '@babylonjs/core/Culling/boundingInfo'
 import { Camera } from '@babylonjs/core/Cameras/camera'
 import { Color3, Color4 } from '@babylonjs/core/Maths/math.color'
@@ -43,6 +44,10 @@ import { Viewport } from '@babylonjs/core/Maths/math.viewport'
 // unless the scene component that drives it is registered; the barrel used to
 // bring this in for us.
 import '@babylonjs/core/Lights/Shadows/shadowGeneratorSceneComponent'
+// Installs Scene.createPickingRay / Scene.pick. Babylon's ES6 build ships the
+// picking API as a side-effect augmentation, so without this import every
+// scene.pick() throws and click-to-focus and hover silently do nothing.
+import '@babylonjs/core/Culling/ray'
 import { CreateScreenshotUsingRenderTargetAsync } from '@babylonjs/core/Misc/screenshotTools'
 // glTF 2.0 only. The bare '@babylonjs/loaders/glTF' entry also registers the
 // glTF 1.0 loader, which nothing here loads.
@@ -193,6 +198,29 @@ const IDLE_SETTLE_MS = 300
  * human-scale navigation stays the same; larger views scale pan and zoom with it.
  */
 const CAMERA_NAV_REFERENCE_RADIUS = 40
+
+/**
+ * Zoom envelope, as multiples of the radius the current framing uses.
+ *
+ * A flat 0.4 m floor and 50,000 km ceiling made zoom lopsided: you could pull
+ * back roughly 50 notches into empty space, while the floor was measured from
+ * the camera *target*, so on a wide lineup zooming in only ever closed on the
+ * gap between models. Both ends now scale with whatever is being framed.
+ */
+const CAMERA_MIN_RADIUS_FRACTION = 0.02
+const CAMERA_MAX_RADIUS_FACTOR = 6
+/** Smallest usable radius outright; below this the near plane starts clipping. */
+const CAMERA_MIN_RADIUS = 0.1
+/** Floor for the ceiling, so a lone iPhone still has room to pull back. */
+const CAMERA_MIN_MAX_RADIUS = 200
+
+/** Fingers that must be down before a drag tilts instead of panning. */
+const TILT_TOUCH_COUNT = 3
+/** Radians of pitch per pixel of three-finger vertical travel. */
+const TILT_RADIANS_PER_PIXEL = 0.006
+/** Straight down and a hair above the horizon; past either the ground clips. */
+const TILT_MIN_BETA = 0.12
+const TILT_MAX_BETA = 1.52
 /**
  * Directional sun + contact shadows. Off restores the original unlit comparison
  * look (no shadow maps, no extra lights). Flip true to ship lighting later.
@@ -325,6 +353,11 @@ export class ComparisonScene {
   private tourTimer: number | null = null
   private listeners = new Set<TourListener>()
   private pointerDownPos: { x: number; y: number } | null = null
+  /** Live touch points on the canvas, keyed by pointerId. Touch only — a mouse
+   *  never enters here, so the gesture layer is inert on desktop. */
+  private activeTouches = new Map<number, { x: number; y: number }>()
+  /** Mean Y of the touch points on the previous move, while tilting. */
+  private tiltLastY: number | null = null
   private units: UnitSystem = 'metric'
   private groundPlateId: GroundPlateId = DEFAULT_GROUND_PLATE
   private shadowsWanted = true
@@ -408,7 +441,9 @@ export class ComparisonScene {
     this.camera.lowerRadiusLimit = 0.4
     // Death Star II is 160 km; leave headroom to zoom out past km-scale subjects.
     this.camera.upperRadiusLimit = 50_000_000
-    this.camera.wheelPrecision = 8
+    // Lower = faster. At the old 8 a notch moved radius ~4%, so crossing the
+    // zoom range took 60-odd notches and read as "it stopped letting me in".
+    this.camera.wheelPrecision = 1.5
     this.camera.panningSensibility = 40
     // Babylon's default 0.9 pan inertia *adds* each mouse delta onto leftover
     // velocity, so a steady drag ramps to ~10× speed. Map-style pan: 1:1 with
@@ -425,8 +460,18 @@ export class ComparisonScene {
         button: 1,
         interaction: 'pan',
       })
+      const pointers = this.camera.inputs.attached
+        .pointers as ArcRotateCameraPointersInput | undefined
+      if (pointers) {
+        // Pinch tracks the fingers themselves rather than a fixed pixel
+        // precision, which is the only zoom that stays usable across a range
+        // running from a 0.4 m radius to a 160 km Death Star.
+        pointers.useNaturalPinchZoom = true
+      }
       canvas.addEventListener('pointerdown', this.onCanvasPointerDown)
       canvas.addEventListener('pointermove', this.onCanvasPointerMove)
+      canvas.addEventListener('pointerup', this.onCanvasPointerUp)
+      canvas.addEventListener('pointercancel', this.onCanvasPointerUp)
       canvas.addEventListener('wheel', this.onCanvasWheel, { passive: true })
     }
 
@@ -1837,7 +1882,10 @@ export class ComparisonScene {
     const canvas = this.engine.getRenderingCanvas()
     canvas?.removeEventListener('pointerdown', this.onCanvasPointerDown)
     canvas?.removeEventListener('pointermove', this.onCanvasPointerMove)
+    canvas?.removeEventListener('pointerup', this.onCanvasPointerUp)
+    canvas?.removeEventListener('pointercancel', this.onCanvasPointerUp)
     canvas?.removeEventListener('wheel', this.onCanvasWheel)
+    this.activeTouches.clear()
     try {
       if (this.scene.debugLayer?.isVisible()) this.scene.debugLayer.hide()
     } catch {
@@ -1975,12 +2023,32 @@ export class ComparisonScene {
     }
   }
 
+  /**
+   * Rebuild the zoom envelope around the framing about to be adopted.
+   *
+   * Called before the pose is applied so the limits already bracket
+   * `pose.radius` — the camera clamps radius every frame, and a limit set
+   * afterwards would fight the framing animation.
+   */
+  private syncCameraRadiusLimits(framedRadius: number) {
+    const framed = Math.max(framedRadius, CAMERA_MIN_RADIUS)
+    this.camera.lowerRadiusLimit = Math.max(
+      CAMERA_MIN_RADIUS,
+      framed * CAMERA_MIN_RADIUS_FRACTION,
+    )
+    this.camera.upperRadiusLimit = Math.max(
+      framed * CAMERA_MAX_RADIUS_FACTOR,
+      CAMERA_MIN_MAX_RADIUS,
+    )
+  }
+
   private applyPose(
     pose: CameraPose,
     animate: boolean,
     frames = CAMERA_ANIM_FRAMES,
     onComplete?: () => void,
   ) {
+    this.syncCameraRadiusLimits(pose.radius)
     this.scene.stopAnimation(this.camera)
     this.camera.animations = []
     this.cameraMoveGen += 1
@@ -2351,11 +2419,70 @@ export class ComparisonScene {
 
   private onCanvasPointerDown = (event: PointerEvent) => {
     if (event.button === 1) event.preventDefault()
+    if (event.pointerType === 'touch') {
+      this.activeTouches.set(event.pointerId, { x: event.clientX, y: event.clientY })
+      this.syncTiltGesture()
+    }
     this.markDirty()
   }
 
   private onCanvasPointerMove = (event: PointerEvent) => {
+    if (event.pointerType === 'touch' && this.activeTouches.has(event.pointerId)) {
+      this.activeTouches.set(event.pointerId, { x: event.clientX, y: event.clientY })
+      this.applyTiltGesture()
+    }
     if (event.buttons) this.markDirty()
+  }
+
+  private onCanvasPointerUp = (event: PointerEvent) => {
+    if (event.pointerType !== 'touch') return
+    this.activeTouches.delete(event.pointerId)
+    this.syncTiltGesture()
+  }
+
+  /** Mean Y of the live touch points, or `null` when none are down. */
+  private touchCentroidY() {
+    if (this.activeTouches.size === 0) return null
+    let sum = 0
+    for (const point of this.activeTouches.values()) sum += point.y
+    return sum / this.activeTouches.size
+  }
+
+  /**
+   * Starts or ends the three-finger tilt as fingers land and lift.
+   *
+   * Babylon's pointer input only ever tracks two pointers, so a third finger
+   * would otherwise be ignored while the first two kept pinching. Detaching the
+   * camera for the duration hands the gesture over cleanly and drops the input's
+   * half-finished pinch state; re-attaching on the way back down means the user
+   * must lift and re-touch to pinch again, rather than the camera lurching from
+   * a stale finger pair.
+   */
+  private syncTiltGesture() {
+    const tilting = this.activeTouches.size >= TILT_TOUCH_COUNT
+    if (tilting === (this.tiltLastY !== null)) return
+    const canvas = this.engine.getRenderingCanvas()
+    if (tilting) {
+      this.camera.detachControl()
+      this.haltCameraMotion()
+      this.tiltLastY = this.touchCentroidY()
+    } else {
+      this.tiltLastY = null
+      if (canvas) this.camera.attachControl(canvas, true)
+    }
+  }
+
+  private applyTiltGesture() {
+    if (this.tiltLastY === null) return
+    const centroidY = this.touchCentroidY()
+    if (centroidY === null) return
+    const deltaY = centroidY - this.tiltLastY
+    this.tiltLastY = centroidY
+    // Matches the one-finger orbit convention: dragging down looks from above.
+    const beta = this.camera.beta - deltaY * TILT_RADIANS_PER_PIXEL
+    this.camera.beta = Math.min(TILT_MAX_BETA, Math.max(TILT_MIN_BETA, beta))
+    this.camera.unfreezeProjectionMatrix()
+    this.markDirty()
   }
 
   private onCanvasWheel = () => {

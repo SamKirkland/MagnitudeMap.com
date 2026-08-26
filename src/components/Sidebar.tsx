@@ -15,7 +15,6 @@ import { MODEL_ATTRIBUTIONS, type ModelAttribution } from '../data/attributions'
 import { licenseDeedUrl, shortLicenseLabel } from '../data/licenseDisplay'
 import { searchItems } from '../librarySearch'
 import { presetHref } from '../selectionUrl'
-import type { UnitSystem } from '../units'
 import { SPREAD_MAX, SPREAD_MIN, type TourSettings } from '../tourSettings'
 import { UNOFFICIAL_DISCLAIMER } from '../siteMeta'
 import { PresetIcon } from './PresetIcons'
@@ -28,12 +27,10 @@ type SidebarProps = {
   linkBase: string
   tourPlaying: boolean
   tourSettings: TourSettings
-  units: UnitSystem
   onToggleItem: (itemId: string) => void
   onApplyPreset: (presetId: string) => void
   onClear: () => void
   onToggleTour: () => void
-  onUnitsChange: (units: UnitSystem) => void
   onTourSettingsChange: (patch: Partial<TourSettings>) => void
   displayYawTurns: number
   onDisplayYawTurns: (turns: number) => void
@@ -133,12 +130,10 @@ export function Sidebar({
   linkBase,
   tourPlaying,
   tourSettings,
-  units,
   onToggleItem,
   onApplyPreset,
   onClear,
   onToggleTour,
-  onUnitsChange,
   onTourSettingsChange,
   displayYawTurns,
   onDisplayYawTurns,
@@ -388,25 +383,6 @@ export function Sidebar({
             <ChevronDownIcon className="section-accordion-chevron" aria-hidden="true" />
           </button>
           <div className="section-heading-actions library-heading-actions">
-            <div className="unit-toggle" role="group" aria-label="Units">
-              <button
-                type="button"
-                className={units === 'metric' ? 'is-active' : ''}
-                onClick={() => onUnitsChange('metric')}
-              >
-                m
-              </button>
-              <span className="unit-toggle-sep" aria-hidden="true">
-                /
-              </span>
-              <button
-                type="button"
-                className={units === 'imperial' ? 'is-active' : ''}
-                onClick={() => onUnitsChange('imperial')}
-              >
-                ft
-              </button>
-            </div>
             <button
               type="button"
               className={`credits-icon-btn ${showCredits ? 'is-active' : ''}`}

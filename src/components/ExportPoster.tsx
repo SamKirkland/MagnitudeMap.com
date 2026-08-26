@@ -1,5 +1,6 @@
 import { ArrowDownTrayIcon } from '@heroicons/react/24/outline'
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { trackPosterExported } from '../analytics/mixpanel'
 import { downloadBlob, paintPosterOverlay, posterFilename } from '../poster/composePoster'
 import { buildPosterImage } from '../poster/exportPoster'
@@ -35,6 +36,14 @@ type ExportPosterProps = {
     listener: (state: PosterOverlayState | null) => void,
   ) => () => void
   onPreviewActive?: (active: boolean) => void
+  /** Toolbar-owned open state, so only one popover shows at a time. */
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  /**
+   * Where the full-bleed preview overlay renders. The button itself lives in
+   * the toolbar, which is too small to host an `inset: 0` canvas.
+   */
+  overlayContainer: HTMLElement | null
 }
 
 export function ExportPoster({
@@ -48,8 +57,10 @@ export function ExportPoster({
   setLivePreview,
   subscribeOverlay,
   onPreviewActive,
+  open,
+  onOpenChange,
+  overlayContainer,
 }: ExportPosterProps) {
-  const [open, setOpen] = useState(false)
   const [settings, setSettings] = useState<PosterSettings>(() => loadPosterSettings())
   const [busy, setBusy] = useState<PosterResolution | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -189,7 +200,7 @@ export function ExportPoster({
     }
   }
 
-  return (
+  const overlay = (
     <>
       <canvas
         ref={overlayRef}
@@ -198,22 +209,29 @@ export function ExportPoster({
         aria-hidden
       />
       {busy && <div className="export-capture-veil" aria-hidden />}
-      <div className="export-dock">
+    </>
+  )
+
+  return (
+    <>
+      {overlayContainer ? createPortal(overlay, overlayContainer) : null}
+      <div className="toolbar-item">
         <button
           type="button"
-          className={`export-toggle ${open ? 'is-open' : ''}`}
-          onClick={() => setOpen((value) => !value)}
+          className={`toolbar-btn ${open ? 'is-open' : ''}`}
+          onClick={() => onOpenChange(!open)}
           aria-expanded={open}
           aria-controls="export-poster-panel"
+          title="Download image"
+          aria-label="Download image"
         >
           <ArrowDownTrayIcon aria-hidden="true" />
-          Download image
         </button>
 
         {open && (
           <div
             id="export-poster-panel"
-            className="export-panel"
+            className="toolbar-popover toolbar-popover-end export-panel"
             role="region"
             aria-label="Comparison image settings"
           >

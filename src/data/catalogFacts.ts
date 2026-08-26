@@ -42,41 +42,41 @@ export const CATALOG_FACTS: Record<string, string> = {
 
   // --- Fighters --------------------------------------------------------------
   'f16':
-    'USA, 1978–present. Over 4,600 built and flown by 25 air forces — the most-produced Western fighter since the 1970s. Mach 2, 550 km combat radius, radar cross-section around 1.2 m². New Block 70 aircraft cost roughly $63 million.',
+    'USA, 1978–present. Over 4,600 built and flown by 25 air forces — the most-produced Western fighter since the 1970s. Mach 2, 550 km combat radius, radar cross-section around 1.2 m² — about the radar return of an adult standing side-on. New Block 70 aircraft cost roughly $63 million.',
   'f22':
-    'USA, 2005–2012. Only 195 built before the line closed. About $150 million flyaway, or $350 million per aircraft counting development. Its radar cross-section is often quoted at 0.0001 m² — the return of a marble — and it supercruises at Mach 1.8 without afterburner.',
+    'USA, 2005–2012. Only 195 built before the line closed. About $150 million flyaway, or $350 million per aircraft counting development. Its radar cross-section is often quoted at 0.0001 m² — about the radar return of a honeybee — and it supercruises at Mach 1.8 without afterburner.',
   'f35':
-    'USA, 2015–present. Over 1,100 delivered of roughly 3,000 planned, across three variants. An F-35A costs about $82 million. Radar cross-section is roughly 0.0015 m², combat radius 1,240 km, and it fuses sensor data across an entire formation.',
+    'USA, 2015–present. Over 1,100 delivered of roughly 3,000 planned, across three variants. An F-35A costs about $82 million. Radar cross-section is roughly 0.0015 m² — a golf ball, and some fifteen times the F-22’s honeybee. Combat radius is 1,240 km, and it fuses sensor data across an entire formation.',
   'f18':
-    'USA, 1999–present. About 600 Super Hornets built at roughly $70 million each. 20% larger than the original Hornet, carrier-capable, and the backbone of US Navy strike wings; the two-seat F model adds a weapons systems officer.',
+    'USA, 1999–present. About 600 Super Hornets built at roughly $70 million each. 20% larger than the original Hornet, carrier-capable, and the backbone of US Navy strike wings. Its radar cross-section is unpublished, but reshaped intakes and edge treatments are generally credited with roughly a tenth of the legacy Hornet’s return — on the order of 0.1 m², about a pigeon.',
   'spitfire':
-    'United Kingdom, 1938–1948. 20,351 built across 24 marks — the only British fighter in continuous production through the whole war. About £12,600 in 1940 (roughly £700,000 today). Its elliptical wing was expensive to build but gave low drag and a 594 km/h top speed on the Mk IIa.',
+    'United Kingdom, 1938–1948. 20,351 built across 24 marks — the only British fighter in continuous production through the whole war. About £12,600 in 1940 (roughly £700,000 today). Its elliptical wing was expensive to build but gave low drag and a 594 km/h top speed on the Mk IIa. Radar cross-section was nobody’s concern in 1938: an unshaped fighter this size returns several square metres, a larger radar target than the man flying it.',
   'mig23':
-    'Soviet Union, 1970–1985. Around 5,000 built, making it one of the most-produced supersonic fighters ever. Variable-sweep wings let it operate from short strips and reach Mach 2.35. The MLD was the final, most agile Soviet variant, with reworked aerodynamics and radar.',
+    'Soviet Union, 1970–1985. Around 5,000 built, making it one of the most-produced supersonic fighters ever. Variable-sweep wings let it operate from short strips and reach Mach 2.35. The MLD was the final, most agile Soviet variant, with reworked aerodynamics and radar. Its slab sides and boxy intakes concede nothing to stealth — estimates run to several square metres, about a doorway’s worth of radar return.',
   'mig35':
-    'Russia, 2019–present. Only a handful delivered against hopes of hundreds — export orders never materialised. A deep 4++ generation rework of the MiG-29 with AESA radar, thrust vectoring and roughly 50% more range, at about $40 million.',
+    'Russia, 2019–present. Only a handful delivered against hopes of hundreds — export orders never materialised. A deep 4++ generation rework of the MiG-29 with AESA radar, thrust vectoring and roughly 50% more range, at about $40 million. Radar-absorbent coatings are claimed to cut its return to around 1 m² — an adult human — from the MiG-29’s five or so.',
   'su57':
-    'Russia, 2020–present. Roughly 20–30 delivered so far of 76 ordered, at an estimated $35–50 million each. Russia’s first stealth fighter, with supercruise and thrust vectoring, though its radar cross-section is widely judged well short of the F-22’s owing to exposed engine faces and surface gaps.',
+    'Russia, 2020–present. Roughly 20–30 delivered so far of 76 ordered, at an estimated $35–50 million each. Russia’s first stealth fighter, with supercruise and thrust vectoring, though its radar cross-section is widely judged well short of the F-22’s owing to exposed engine faces and surface gaps. Western estimates cluster around 0.1–1 m² — a pigeon to a person — against the F-22’s honeybee.',
   'sr71':
-    'USA, 1966–1998. Only 32 built, at about $34 million each in 1960s dollars. Mach 3.3 at 26,000 m, and no SR-71 was ever lost to enemy fire — over 4,000 missiles were fired at them and all missed. The titanium airframe leaked fuel on the ground because the panels only sealed once friction heated the skin past 300 °C.',
+    'USA, 1966–1998. Only 32 built, at about $34 million each in 1960s dollars. Mach 3.3 at 26,000 m, and no SR-71 was ever lost to enemy fire — over 4,000 missiles were fired at them and all missed. The titanium airframe leaked fuel on the ground because the panels only sealed once friction heated the skin past 300 °C. Sloped chines and iron-ball paint cut its radar return hard for 1960s work, but frontal RCS is still put near 10 m² — elephant-sized. Nothing could catch it anyway.',
   'f117':
-    'USA, 1983–2008. 59 built at about $42.6 million each in 1983 dollars (roughly $135 million today). Its faceted shape was dictated by 1970s computers that could only model flat panels, cutting radar cross-section to around 0.003 m². One was lost to a Serbian SAM in 1999 — the only combat loss.',
+    'USA, 1983–2008. 59 built at about $42.6 million each in 1983 dollars (roughly $135 million today). Its faceted shape was dictated by 1970s computers that could only model flat panels, cutting radar cross-section to around 0.003 m² — roughly the radar return of a tennis ball. One was lost to a Serbian SAM in 1999 — the only combat loss.',
 
   // --- Bombers ---------------------------------------------------------------
   'b29':
-    'USA, 1943–1946. 3,970 built. Its $3 billion development cost more than the Manhattan Project whose bombs it carried — about $600,000 per aircraft in 1945, roughly $10 million today. The first bomber with a pressurised cabin and remote-controlled gun turrets, with a 5,230 km range.',
+    'USA, 1943–1946. 3,970 built. Its $3 billion development cost more than the Manhattan Project whose bombs it carried — about $600,000 per aircraft in 1945, roughly $10 million today. The first bomber with a pressurised cabin and remote-controlled gun turrets, with a 5,230 km range. Radar cross-section was not yet a design variable: 43 m of bare aluminium wing returns on the order of 100 m², about the broad side of a house.',
   'b52':
-    'USA, 1955–1962. 744 built, and 76 are still flying — the airframes are older than the crews’ grandparents, with service now projected past 2050, a century after first flight. 32,000 kg payload, 14,080 km unrefuelled range, and eight engines being replaced with modern turbofans.',
+    'USA, 1955–1962. 744 built, and 76 are still flying — the airframes are older than the crews’ grandparents, with service now projected past 2050, a century after first flight. 32,000 kg payload, 14,080 km unrefuelled range, and eight engines being replaced with modern turbofans. Its radar cross-section is around 100 m² — a house — which is why it now flies as a standoff missile truck instead of penetrating defended airspace.',
   'b21':
-    'USA, first flight November 2023. At least 100 planned at about $692 million each in 2022 dollars. Designed around open-architecture upgrades, and smaller than the B-2 it replaces. Exact dimensions remain classified.',
+    'USA, first flight November 2023. At least 100 planned at about $692 million each in 2022 dollars. Designed around open-architecture upgrades, and smaller than the B-2 it replaces. Exact dimensions and radar cross-section remain classified; it is intended to better the B-2’s, itself quoted near 0.1 m².',
   'b2':
-    'USA, 1997–present. Only 21 built after the Cold War ended, at roughly $2.1 billion each including development — the most expensive aircraft ever. 11,000 km unrefuelled range, and a flying-wing shape with no vertical surfaces to reflect radar.',
+    'USA, 1997–present. Only 21 built after the Cold War ended, at roughly $2.1 billion each including development — the most expensive aircraft ever. 11,000 km unrefuelled range, and a flying-wing shape with no vertical surfaces to reflect radar. Its cross-section is commonly quoted near 0.1 m² — a pigeon’s worth of return from an aircraft with a 52 m wingspan.',
   'b1':
-    'USA, 1986–present. 100 built at about $283 million each. Mach 1.25 with variable-sweep wings, and the largest internal payload of any US bomber at 34,000 kg. Now conventional-only; its nuclear role was retired under START.',
+    'USA, 1986–present. 100 built at about $283 million each. Mach 1.25 with variable-sweep wings, and the largest internal payload of any US bomber at 34,000 kg. Radar cross-section is about 1 m² — an adult human, and a hundredth of the B-52’s — achieved with blended surfaces and serpentine intake ducts rather than faceting. Now conventional-only; its nuclear role was retired under START.',
   'tu22m3':
-    'Soviet Union / Russia, 1972–1993. About 497 built. Mach 1.88, 6,800 km range, and up to 24,000 kg of ordnance — originally designed to hunt NATO carrier groups with long-range anti-ship missiles.',
+    'Soviet Union / Russia, 1972–1993. About 497 built. Mach 1.88, 6,800 km range, and up to 24,000 kg of ordnance — originally designed to hunt NATO carrier groups with long-range anti-ship missiles. There is no low-observable shaping anywhere on it — the return is tens of square metres, elephant-sized or worse — so it shoots from standoff range.',
   'h20':
-    'China, in development and not yet publicly flown. Expected to be a subsonic flying wing with 8,500 km-plus range and a 10 t payload. Nearly all specifics remain unconfirmed; the shape shown here is an estimate.',
+    'China, in development and not yet publicly flown. Expected to be a subsonic flying wing with 8,500 km-plus range and a 10 t payload. A flying wing implies a low radar cross-section, but no figure has been published — nearly all specifics remain unconfirmed, and the shape shown here is an estimate.',
 
   // --- Airliners and transports ---------------------------------------------
   'concorde':

@@ -230,12 +230,10 @@ export default function App({ initialSelection: seed }: AppProps = {}) {
         activePresetId={shownPresetId}
         tourPlaying={tourPlaying}
         tourSettings={tourSettings}
-        units={units}
         onToggleItem={handleToggleItem}
         onApplyPreset={handleApplyPreset}
         onClear={handleClear}
         onToggleTour={() => tourToggleRef.current?.()}
-        onUnitsChange={handleUnitsChange}
         onTourSettingsChange={handleTourSettingsChange}
         displayYawTurns={displayYawTurns}
         onDisplayYawTurns={handleDisplayYawTurns}
@@ -244,6 +242,7 @@ export default function App({ initialSelection: seed }: AppProps = {}) {
         <Viewer
           activeItemIds={activeItemIds}
           units={units}
+          onUnitsChange={handleUnitsChange}
           detonationMode={detonationMode}
           showDetonationControls={showDetonationControls}
           onDetonationModeChange={setDetonationMode}

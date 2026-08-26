@@ -4,32 +4,18 @@ import { normalizeYawTurns } from '../modelOrientation'
 type FacingControlsProps = {
   yawTurns: number
   onChange: (turns: number) => void
-  variant?: 'sidebar' | 'overlay'
 }
 
-export function FacingControls({
-  yawTurns,
-  onChange,
-  variant = 'sidebar',
-}: FacingControlsProps) {
+export function FacingControls({ yawTurns, onChange }: FacingControlsProps) {
   const turns = normalizeYawTurns(yawTurns)
   const degrees = turns * 90
 
   return (
-    <div
-      className={variant === 'overlay' ? 'facing-dock' : 'tour-option-row'}
-      role="group"
-      aria-label="Rotate all models"
-    >
-      {variant === 'overlay' && (
-        <span className="facing-overlay-label">Facing</span>
-      )}
-      {variant === 'sidebar' && (
-        <span className="tour-option-label" id="facing-label">
-          Facing
-        </span>
-      )}
-      <div className="facing-seg" role="group" aria-labelledby={variant === 'sidebar' ? 'facing-label' : undefined}>
+    <div className="tour-option-row" role="group" aria-label="Rotate all models">
+      <span className="tour-option-label" id="facing-label">
+        Facing
+      </span>
+      <div className="facing-seg" role="group" aria-labelledby="facing-label">
         <button
           type="button"
           onClick={() => onChange(turns - 1)}
