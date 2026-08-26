@@ -15,7 +15,8 @@
     "sync-attributions": "node scripts/sync-attributions.mjs",
     "verify-models": "node scripts/verify-models.mjs",
     "build:ssr": "vite build --config vite.config.ssr.ts",
-    "prerender": "node scripts/prerender.mjs"
+    "prerender": "node scripts/prerender.mjs",
+    "test": "node --test scripts/tests/*.test.mjs"
   },
   "dependencies": {
     "@babylonjs/addons": "^9.20.0",

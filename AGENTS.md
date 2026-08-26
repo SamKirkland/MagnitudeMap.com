@@ -72,3 +72,13 @@ Two rules keep this working:
 2. **Babylon must stay behind a dynamic `import()`.** `Viewer.tsx` imports `ComparisonScene` lazily inside its effect. A module-scope import would pull ~7 MB into both the prerenderer and the initial client bundle.
 
 Lineup cards in the sidebar are `<a href>` elements, not buttons — they are the only crawl path to the `/c/` pages. Keep the href and the click handler that intercepts unmodified clicks.
+
+## Descriptions are authored in metric
+
+`blurb` / `facts` in `src/data/catalog.ts` and `catalogFacts.ts` are written in metric prose. `src/unitText.ts` converts the quantities to imperial at render time (sidebar facts, lineup tooltips, 3D plaques) — do not author a second imperial copy.
+
+Write quantities as a number, a space, and the unit (`73 t`, `120 mm`, `25–35 kg`, `67 km/h`) so the converter can find them. If a metric unit must stay metric for every reader (a physical constant, or the unit itself being named), add the phrase to `IMPERIAL_EXEMPT_PHRASES`; if it sits in the denominator of a rate ("per kilometre"), add it to `PHRASE_OVERRIDES`.
+
+Sub-10 ft lengths render as feet and inches (`5 ft 9 in`) via `formatFeetInches` in `src/units.ts`, shared with the viewer's dimension labels. Ranges stay in decimal feet.
+
+`npm test` walks every shipped description and fails if a metric quantity survives conversion. Run it after editing facts.

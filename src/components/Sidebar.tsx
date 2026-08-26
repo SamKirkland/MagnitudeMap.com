@@ -17,6 +17,8 @@ import { searchItems } from '../librarySearch'
 import { presetHref } from '../selectionUrl'
 import { SPREAD_MAX, SPREAD_MIN, type TourSettings } from '../tourSettings'
 import { UNOFFICIAL_DISCLAIMER } from '../siteMeta'
+import { convertUnitsInText } from '../unitText'
+import type { UnitSystem } from '../units'
 import { PresetIcon } from './PresetIcons'
 import { FacingControls } from './FacingControls'
 
@@ -34,6 +36,8 @@ type SidebarProps = {
   onTourSettingsChange: (patch: Partial<TourSettings>) => void
   displayYawTurns: number
   onDisplayYawTurns: (turns: number) => void
+  /** Descriptions are authored in metric and converted for imperial readers. */
+  units: UnitSystem
 }
 
 const CATEGORY_ORDER: CatalogCategory[] = [
@@ -62,21 +66,24 @@ function LibraryRow({
   checked,
   showCredits,
   credit,
+  units,
   onToggle,
 }: {
   item: CatalogItem
   checked: boolean
   showCredits: boolean
   credit: ModelAttribution | undefined
+  units: UnitSystem
   onToggle: (itemId: string) => void
 }) {
+  const facts = item.facts ? convertUnitsInText(item.facts, units) : null
   const licenseText = credit ? shortLicenseLabel(credit.license) : ''
   const licenseHref = credit ? licenseDeedUrl(credit.license) : null
   return (
     <li>
       <label
         className={`item-row ${checked ? 'is-active' : ''}`}
-        title={item.facts ?? undefined}
+        title={facts ?? undefined}
       >
         <input
           type="checkbox"
@@ -86,8 +93,8 @@ function LibraryRow({
         <span className="swatch" style={{ background: item.color }} />
         <span className="item-text">
           <span className="item-name">{item.name}</span>
-          {checked && item.facts && (
-            <span className="item-facts">{item.facts}</span>
+          {checked && facts && (
+            <span className="item-facts">{facts}</span>
           )}
           {showCredits && credit && (
             <span className="item-credit">
@@ -137,6 +144,7 @@ export function Sidebar({
   onTourSettingsChange,
   displayYawTurns,
   onDisplayYawTurns,
+  units,
 }: SidebarProps) {
   const [showCredits, setShowCredits] = useState(false)
   const [showTourOptions, setShowTourOptions] = useState(false)
@@ -354,7 +362,7 @@ export function Sidebar({
                       event.preventDefault()
                       onApplyPreset(preset.id)
                     }}
-                    title={preset.description}
+                    title={convertUnitsInText(preset.description, units)}
                   >
                     <PresetIcon presetId={preset.id} className="preset-icon" />
                     <span className="preset-name">{preset.name}</span>
@@ -433,6 +441,7 @@ export function Sidebar({
                     checked={activeSet.has(item.id)}
                     showCredits={showCredits}
                     credit={creditsById.get(item.id)}
+                    units={units}
                     onToggle={onToggleItem}
                   />
                 ))}
@@ -452,6 +461,7 @@ export function Sidebar({
                           checked={activeSet.has(item.id)}
                           showCredits={showCredits}
                           credit={creditsById.get(item.id)}
+                          units={units}
                           onToggle={onToggleItem}
                         />
                       ))}

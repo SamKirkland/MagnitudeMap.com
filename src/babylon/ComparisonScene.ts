@@ -69,6 +69,7 @@ import {
 } from '../data/moneyPack'
 import { createMoneyTiledPile } from './moneyTiledMesh'
 import { formatLength, type UnitSystem } from '../units'
+import { convertUnitsInText } from '../unitText'
 import {
   facingExtentAlongX,
   itemMagnitude,
@@ -231,6 +232,16 @@ const ENABLE_SCENE_LIGHTING = true
 const SHADOW_DARKNESS = 0.22
 const SHADOW_DARKNESS_OFF = 1
 
+/** Fraction of the gap to a neighbour a plaque may occupy, so the two never touch. */
+const PLAQUE_LANE_MARGIN = 0.92
+/**
+ * A plaque never shrinks below this, however tightly the lineup is packed —
+ * a guard against a degenerate zero-width lane, not a legibility floor. Keep it
+ * under the tightest real lane in the catalog (Rabbit beside Owl, 0.29 m) or it
+ * reintroduces the overlap it is clamping.
+ */
+const PLAQUE_MIN_WIDTH_M = 0.25
+
 /** Max facts rows on a plaque; overflow is ellipsised on the last line. */
 const PLAQUE_FACT_LINES = 7
 
@@ -264,13 +275,18 @@ function measureCtx(): CanvasRenderingContext2D | null {
 }
 
 /** Wrap an item's facts to the plaque column at the given texture width. */
-function plaqueFactLines(item: CatalogItem, texW: number): string[] {
+function plaqueFactLines(
+  item: CatalogItem,
+  texW: number,
+  units: UnitSystem,
+): string[] {
   if (!item.facts) return []
   const ctx = measureCtx()
   if (!ctx) return []
   const m = plaqueMetrics(texW)
   ctx.font = `${m.factsSize}px "IBM Plex Sans", sans-serif`
-  return wrapPlaqueText(ctx, item.facts, m.factsWidth, PLAQUE_FACT_LINES)
+  const facts = convertUnitsInText(item.facts, units)
+  return wrapPlaqueText(ctx, facts, m.factsWidth, PLAQUE_FACT_LINES)
 }
 
 /**
@@ -278,8 +294,12 @@ function plaqueFactLines(item: CatalogItem, texW: number): string[] {
  * height is driven by the wrapped line count, so short blurbs get a short
  * plaque instead of padding out to a fixed box.
  */
-function plaqueAspect(item: CatalogItem, texW: number): number {
-  const lines = plaqueFactLines(item, texW)
+function plaqueAspect(
+  item: CatalogItem,
+  texW: number,
+  units: UnitSystem,
+): number {
+  const lines = plaqueFactLines(item, texW, units)
   if (lines.length === 0) return 0.42
   const m = plaqueMetrics(texW)
   const height =
@@ -291,6 +311,30 @@ function plaqueAspect(item: CatalogItem, texW: number): number {
     m.lineHeight * lines.length +
     m.padY
   return height / texW
+}
+
+/**
+ * Largest font size at or below `size` that fits `text` in `maxWidth`, down to
+ * 60% before it gives up. The title and dimension lines are single centred
+ * `fillText` calls with no wrap, so a long string ("5 ft 9 in tall", "ground
+ * blast r 1,310 ft") would otherwise bleed past the plaque edge.
+ */
+function fitFontSize(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+  size: number,
+  weight = '',
+): number {
+  const prefix = weight ? `${weight} ` : ''
+  let fitted = size
+  const floor = size * 0.6
+  while (fitted > floor) {
+    ctx.font = `${prefix}${Math.round(fitted)}px "IBM Plex Sans", sans-serif`
+    if (ctx.measureText(text).width <= maxWidth) break
+    fitted -= 1
+  }
+  return Math.round(Math.max(fitted, floor))
 }
 
 /** Greedy word wrap, ellipsising whatever does not fit in `maxLines`. */
@@ -444,7 +488,6 @@ export class ComparisonScene {
     // Lower = faster. At the old 8 a notch moved radius ~4%, so crossing the
     // zoom range took 60-odd notches and read as "it stopped letting me in".
     this.camera.wheelPrecision = 1.5
-    this.camera.panningSensibility = 40
     // Babylon's default 0.9 pan inertia *adds* each mouse delta onto leftover
     // velocity, so a steady drag ramps to ~10× speed. Map-style pan: 1:1 with
     // the cursor, no coast after release.
@@ -624,7 +667,15 @@ export class ComparisonScene {
     this.tourSettings = next
 
     const layoutChanged = prev.spread !== next.spread
-    if (layoutChanged) this.relayoutLineup()
+    if (layoutChanged) {
+      this.relayoutLineup()
+      // Plaque width is clamped to the gap between neighbours, which just moved.
+      for (const placement of this.placements.values()) {
+        this.thawPlacement(placement)
+        this.relayoutPlaque(placement)
+      }
+      this.freezeStaticScene()
+    }
     this.reframeAfterSettingsChange(layoutChanged)
   }
 
@@ -2604,6 +2655,19 @@ export class ComparisonScene {
     const movement = this.camera.movement
     movement.panSpeed = scale
     movement.zoomSpeed = scale
+
+    // Pan must track the cursor 1:1. Effective world-units-per-pixel is
+    // panSpeed / panningSensibility, and one pixel spans
+    // 2 * radius * tan(fov / 2) / viewportPx of world at the target plane, so
+    // solving for the sensibility that cancels out leaves this constant.
+    const horizontalFov = this.camera.fovMode === Camera.FOVMODE_HORIZONTAL_FIXED
+    const viewportPx = horizontalFov
+      ? this.engine.getRenderWidth()
+      : this.engine.getRenderHeight()
+    const worldPerPixelAtReference =
+      (2 * Math.tan(this.camera.fov / 2)) / Math.max(viewportPx, 1)
+    this.camera.panningSensibility =
+      1 / (CAMERA_NAV_REFERENCE_RADIUS * worldPerPixelAtReference)
   }
 
   private tickRender = () => {
@@ -4077,6 +4141,30 @@ export class ComparisonScene {
     )
   }
 
+  /**
+   * Widest a plaque can be without touching its neighbours': the smaller of the
+   * centre-to-centre distances to the items either side, minus a hair so two
+   * equally clamped plaques still show daylight between them. Unbounded for a
+   * lone item, and never below a floor that would make the text unreadable.
+   */
+  private plaqueLaneWidth(itemId: string): number {
+    const index = this.sortedItems.findIndex((entry) => entry.id === itemId)
+    if (index < 0) return Number.POSITIVE_INFINITY
+
+    const x = this.itemXs.get(itemId)
+    if (x == null) return Number.POSITIVE_INFINITY
+
+    let lane = Number.POSITIVE_INFINITY
+    for (const neighbor of [this.sortedItems[index - 1], this.sortedItems[index + 1]]) {
+      if (!neighbor) continue
+      const neighborX = this.itemXs.get(neighbor.id)
+      if (neighborX == null) continue
+      lane = Math.min(lane, Math.abs(neighborX - x))
+    }
+    if (!Number.isFinite(lane)) return Number.POSITIVE_INFINITY
+    return Math.max(lane * PLAQUE_LANE_MARGIN, PLAQUE_MIN_WIDTH_M)
+  }
+
   private attachPlaque(
     root: TransformNode,
     body: TransformNode,
@@ -4111,10 +4199,16 @@ export class ComparisonScene {
 
     const footprintW = Math.max(localMax.x - localMin.x, localMax.z - localMin.z, 0.4)
     const magnitude = itemMagnitude(item)
-    const labelW = Math.max(footprintW * 0.55, magnitude * 0.12, 1.4)
+    // The 1.4 m floor is what a plaque wants; the lane is what the lineup can
+    // spare. Without the clamp, human-scale items packed 0.5 m apart each claim
+    // 1.4 m and their plaques run into each other.
+    const labelW = Math.min(
+      Math.max(footprintW * 0.55, magnitude * 0.12, 1.4),
+      this.plaqueLaneWidth(item.id),
+    )
     const texW = labelW > 20 ? 2048 : 1024
     // Facts add rows, so the plaque deepens to exactly fit them; texture matches.
-    const aspect = plaqueAspect(item, texW)
+    const aspect = plaqueAspect(item, texW, this.units)
     const labelD = labelW * aspect
     const gap = Math.max(labelD * 0.2, footprintW * 0.06, magnitude * 0.02)
     const z = localMin.z - gap - labelD * 0.5
@@ -4171,19 +4265,20 @@ export class ComparisonScene {
 
     // Sizes track texture width so a deeper facts plaque keeps the same type scale.
     const m = plaqueMetrics(texW)
-    const lines = plaqueFactLines(item, texW)
+    const lines = plaqueFactLines(item, texW, this.units)
 
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
 
     if (lines.length === 0) {
+      const dims = this.labelDimensions(item)
       ctx.fillStyle = '#f7f4ef'
-      ctx.font = `600 ${m.titleSize}px "IBM Plex Sans", sans-serif`
+      ctx.font = `600 ${fitFontSize(ctx, item.name, m.factsWidth, m.titleSize, '600')}px "IBM Plex Sans", sans-serif`
       ctx.fillText(item.name, texW / 2, texH * 0.4)
 
       ctx.fillStyle = '#b8c0c6'
-      ctx.font = `${m.dimsSize}px "IBM Plex Sans", sans-serif`
-      ctx.fillText(this.labelDimensions(item), texW / 2, texH * 0.7)
+      ctx.font = `${fitFontSize(ctx, dims, m.factsWidth, m.dimsSize)}px "IBM Plex Sans", sans-serif`
+      ctx.fillText(dims, texW / 2, texH * 0.7)
       tex.update()
       return
     }
@@ -4191,14 +4286,17 @@ export class ComparisonScene {
     // Same running total as plaqueAspect, so the box ends flush with the text.
     let y = m.padY
 
+    // Rows keep their nominal height so the running total still matches
+    // `plaqueAspect`; only the glyphs shrink to fit the plaque width.
+    const dims = this.labelDimensions(item)
     ctx.fillStyle = '#f7f4ef'
-    ctx.font = `600 ${m.titleSize}px "IBM Plex Sans", sans-serif`
+    ctx.font = `600 ${fitFontSize(ctx, item.name, m.factsWidth, m.titleSize, '600')}px "IBM Plex Sans", sans-serif`
     ctx.fillText(item.name, texW / 2, y + m.titleSize / 2)
     y += m.titleSize + m.gapTitle
 
     ctx.fillStyle = '#b8c0c6'
-    ctx.font = `${m.dimsSize}px "IBM Plex Sans", sans-serif`
-    ctx.fillText(this.labelDimensions(item), texW / 2, y + m.dimsSize / 2)
+    ctx.font = `${fitFontSize(ctx, dims, m.factsWidth, m.dimsSize)}px "IBM Plex Sans", sans-serif`
+    ctx.fillText(dims, texW / 2, y + m.dimsSize / 2)
     y += m.dimsSize + m.gapFacts
 
     ctx.fillStyle = '#98a2aa'

@@ -59,6 +59,8 @@ export type PosterSettings = {
   layout: PosterLayout
   view: PosterView
   background: PosterBackground
+  /** Size the toolbar's one-tap download uses; set by picking a size in the panel. */
+  resolution: PosterResolution
 }
 
 /** Headline size for labels: the largest catalog dimension. */

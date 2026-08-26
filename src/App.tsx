@@ -237,6 +237,7 @@ export default function App({ initialSelection: seed }: AppProps = {}) {
         onTourSettingsChange={handleTourSettingsChange}
         displayYawTurns={displayYawTurns}
         onDisplayYawTurns={handleDisplayYawTurns}
+        units={units}
       />
       <main className="viewer-pane">
         <Viewer

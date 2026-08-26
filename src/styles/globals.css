@@ -490,15 +490,6 @@ input {
   color: var(--accent);
 }
 
-.toolbar-deg {
-  min-width: 2.2rem;
-  text-align: center;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-
 .toolbar-divider {
   width: 1px;
   align-self: stretch;
@@ -528,17 +519,18 @@ input {
   right: -0.3rem;
 }
 
-.toolbar-popover-title-spaced {
-  margin-top: 0.7rem;
-}
-
 .toolbar-popover-title {
   margin: 0 0 0.35rem;
   font-size: 0.68rem;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
   color: var(--muted);
+}
+
+/* Must follow `.toolbar-popover-title` — its `margin` shorthand would
+   otherwise reset this offset and butt Units up against Shadows. */
+.toolbar-popover-title-spaced {
+  margin-top: 1.1rem;
 }
 
 .gesture-help {
@@ -883,8 +875,7 @@ input {
 .export-field legend {
   font-size: 0.68rem;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
   color: var(--muted);
   margin-bottom: 0.28rem;
 }
@@ -947,6 +938,62 @@ input {
 .export-download:disabled {
   opacity: 0.55;
   cursor: default;
+}
+
+/* Split control: download on the left, options chevron on the right, reading as
+   one pill inside the toolbar. */
+.toolbar-split {
+  display: flex;
+  align-items: center;
+}
+
+.toolbar-btn-split-main {
+  width: 2rem;
+  border-radius: 999px 0 0 999px;
+}
+
+.toolbar-btn-split-more {
+  /* Narrow, but still a thumb-sized target at the toolbar's 35px height. */
+  width: 1.65rem;
+  border-radius: 0 999px 999px 0;
+  color: var(--muted);
+}
+
+.toolbar-btn-split-more svg {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+.toolbar-btn-split-main:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* Marks which size the toolbar's one-tap download will use. */
+.export-download.is-active {
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+
+/* Spinner in place of the download glyph while a capture runs. */
+.export-busy {
+  width: 0.95rem;
+  height: 0.95rem;
+  border: 2px solid rgba(28, 36, 48, 0.25);
+  border-top-color: var(--ink);
+  border-radius: 999px;
+  animation: export-busy-spin 0.7s linear infinite;
+}
+
+@keyframes export-busy-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .export-busy {
+    animation-duration: 2.4s;
+  }
 }
 
 .export-hint,

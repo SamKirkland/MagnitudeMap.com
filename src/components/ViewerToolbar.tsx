@@ -89,9 +89,6 @@ export function ViewerToolbar({
         >
           <ArrowUturnLeftIcon aria-hidden="true" />
         </button>
-        <span className="toolbar-deg" aria-live="polite">
-          {turns * 90}°
-        </span>
         <button
           type="button"
           className="toolbar-btn"

@@ -1,4 +1,4 @@
-import { ArrowDownTrayIcon } from '@heroicons/react/24/outline'
+import { ArrowDownTrayIcon, ChevronUpIcon } from '@heroicons/react/24/outline'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { trackPosterExported } from '../analytics/mixpanel'
@@ -78,6 +78,9 @@ export function ExportPoster({
     layout: settings.layout,
   }
   const previewActive = open && !disabled
+  const downloadTitle = disabled
+    ? 'Download image'
+    : `Download image (${POSTER_RESOLUTION_META[settings.resolution].label})`
 
   function previewSettings(): PosterPreviewSettings {
     return {
@@ -171,6 +174,8 @@ export function ExportPoster({
 
   async function handleDownload(resolution: PosterResolution) {
     if (disabled || busy) return
+    // The toolbar button repeats whatever size was last downloaded.
+    if (resolution !== settings.resolution) patch({ resolution })
     setBusy(resolution)
     setError(null)
     try {
@@ -195,6 +200,9 @@ export function ExportPoster({
       })
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Download failed')
+      // A one-tap download can fail with the panel shut, where the message
+      // would never be seen.
+      onOpenChange(true)
     } finally {
       setBusy(null)
     }
@@ -216,17 +224,41 @@ export function ExportPoster({
     <>
       {overlayContainer ? createPortal(overlay, overlayContainer) : null}
       <div className="toolbar-item">
-        <button
-          type="button"
-          className={`toolbar-btn ${open ? 'is-open' : ''}`}
-          onClick={() => onOpenChange(!open)}
-          aria-expanded={open}
-          aria-controls="export-poster-panel"
-          title="Download image"
-          aria-label="Download image"
-        >
-          <ArrowDownTrayIcon aria-hidden="true" />
-        </button>
+        {/* One tap downloads at the last-used size; the chevron is the only way
+            into the settings, so the panel stays out of the way on phones. */}
+        <div className="toolbar-split">
+          <button
+            type="button"
+            className="toolbar-btn toolbar-btn-split-main"
+            onClick={() => {
+              if (disabled) {
+                onOpenChange(true)
+                return
+              }
+              void handleDownload(settings.resolution)
+            }}
+            disabled={busy !== null}
+            title={downloadTitle}
+            aria-label={downloadTitle}
+          >
+            {busy ? (
+              <span className="export-busy" aria-hidden="true" />
+            ) : (
+              <ArrowDownTrayIcon aria-hidden="true" />
+            )}
+          </button>
+          <button
+            type="button"
+            className={`toolbar-btn toolbar-btn-split-more ${open ? 'is-open' : ''}`}
+            onClick={() => onOpenChange(!open)}
+            aria-expanded={open}
+            aria-controls="export-poster-panel"
+            title="Image options"
+            aria-label="Image options"
+          >
+            <ChevronUpIcon aria-hidden="true" />
+          </button>
+        </div>
 
         {open && (
           <div
@@ -291,7 +323,7 @@ export function ExportPoster({
             </fieldset>
 
             <fieldset className="export-field export-field-download">
-              <legend>Download</legend>
+              <legend>Download size</legend>
               <div className="export-downloads">
                 {POSTER_RESOLUTIONS.map((resolution) => {
                   const meta = POSTER_RESOLUTION_META[resolution]
@@ -300,10 +332,13 @@ export function ExportPoster({
                     <button
                       key={resolution}
                       type="button"
-                      className="export-download"
+                      className={`export-download ${
+                        resolution === settings.resolution ? 'is-active' : ''
+                      }`}
                       onClick={() => void handleDownload(resolution)}
                       disabled={disabled || busy !== null}
                       title={`${size.width} × ${size.height}`}
+                      aria-pressed={resolution === settings.resolution}
                     >
                       {busy === resolution ? '…' : meta.label}
                     </button>

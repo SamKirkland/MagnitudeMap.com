@@ -78,6 +78,20 @@ export function formatLength(meters: number, units: UnitSystem): string {
   const feet = meters * M_TO_FT
   if (feet >= 100) return `${Math.round(feet)} ft`
   if (feet >= 10) return `${feet.toFixed(1)} ft`
-  if (feet >= 3) return `${feet.toFixed(2)} ft`
+  // Human-scale lengths read as feet and inches, not decimal feet.
+  if (feet >= 1) return formatFeetInches(feet)
   return `${(meters * M_TO_IN).toFixed(1)} in`
+}
+
+/**
+ * Feet and whole inches, the way an imperial reader says a height: `5 ft 7 in`.
+ * Carries 12 in up to a foot, and drops the empty half (`6 ft`, `9 in`).
+ */
+export function formatFeetInches(feet: number): string {
+  const totalInches = Math.round(feet * 12)
+  const wholeFeet = Math.floor(totalInches / 12)
+  const inches = totalInches % 12
+  if (wholeFeet === 0) return `${totalInches} in`
+  if (inches === 0) return `${wholeFeet} ft`
+  return `${wholeFeet} ft ${inches} in`
 }

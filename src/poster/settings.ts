@@ -19,6 +19,7 @@ export const DEFAULT_POSTER_SETTINGS: PosterSettings = {
   layout: 'lineup',
   view: 'side',
   background: 'white',
+  resolution: '4k',
 }
 
 export const POSTER_RESOLUTIONS: PosterResolution[] = ['4k', '8k', '16k']
@@ -75,6 +76,10 @@ function isBackground(value: unknown): value is PosterBackground {
   return value === 'white' || value === 'transparent'
 }
 
+function isResolution(value: unknown): value is PosterResolution {
+  return value === '4k' || value === '8k' || value === '16k'
+}
+
 function isView(value: unknown): value is PosterView {
   return value === 'top' || value === 'side'
 }
@@ -99,6 +104,10 @@ export function loadPosterSettings(): PosterSettings {
       background: isBackground(parsed.background)
         ? parsed.background
         : DEFAULT_POSTER_SETTINGS.background,
+      // Absent in settings saved before one-tap download existed.
+      resolution: isResolution(parsed.resolution)
+        ? parsed.resolution
+        : DEFAULT_POSTER_SETTINGS.resolution,
     }
   } catch {
     return { ...DEFAULT_POSTER_SETTINGS }
