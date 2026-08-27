@@ -46,6 +46,7 @@ export const CATALOG_TAGS: Record<string, string[]> = {
     'reference',
   ],
   iphone: ['phone', 'mobile', 'apple', 'smartphone', 'cellphone', 'reference', 'small'],
+  banana: ['banana', 'fruit', 'food', 'scale', 'reference', 'small', 'meme'],
   firetruck: ['fire', 'engine', 'emergency', 'truck', 'vehicle', 'rescue', 'ladder'],
   'school-bus': ['bus', 'school', 'transit', 'vehicle', 'yellow'],
   'container-20': ['shipping', 'cargo', 'iso', 'freight', 'intermodal', 'box', '40ft'],
@@ -85,6 +86,7 @@ export const CATALOG_TAGS: Record<string, string[]> = {
   tu22m3: ['jet', 'bomber', 'aircraft', 'plane', 'backfire', 'tupolev', 'soviet', 'russia'],
   h20: ['jet', 'bomber', 'aircraft', 'plane', 'xian', 'stealth', 'china', 'pla'],
   a320: ['airliner', 'aircraft', 'plane', 'airbus', 'jet', 'passenger', 'narrowbody'],
+  a380: ['airliner', 'aircraft', 'plane', 'airbus', 'jet', 'passenger', 'widebody', 'superjumbo', 'double-deck'],
   'boeing-737': ['airliner', 'aircraft', 'plane', 'boeing', '737', 'jet', 'passenger'],
   'boeing-747': [
     'airliner',
@@ -101,7 +103,12 @@ export const CATALOG_TAGS: Record<string, string[]> = {
   chinook: ['helicopter', 'transport', 'ch47', 'tandem', 'army', 'military'],
   c18a: ['transport', 'aircraft', 'skylord', 'c17', 'cargo', 'military', 'usaf'],
   c17a: ['transport', 'aircraft', 'globemaster', 'c17', 'cargo', 'military', 'usaf'],
+  c5: ['transport', 'aircraft', 'galaxy', 'c5', 'cargo', 'military', 'usaf', 'airlifter'],
   blackhawk: ['helicopter', 'uh60', 'utility', 'army', 'sikorsky', 'military'],
+  mi26: ['helicopter', 'mi26', 'halo', 'mil', 'transport', 'heavy-lift', 'russia', 'soviet', 'military'],
+  mi10: ['helicopter', 'mi10', 'harke', 'mil', 'crane', 'heavy-lift', 'soviet', 'military'],
+  'pave-low': ['helicopter', 'mh53', 'pave low', 'sikorsky', 'special operations', 'usaf', 'military'],
+  s97: ['helicopter', 's97', 'raider', 'sikorsky', 'coaxial', 'compound', 'prototype', 'military'],
   nimitz: ['carrier', 'navy', 'ship', 'aircraft', 'cvn', 'nimitz', 'warship'],
   'container-ship': [
     'ship',

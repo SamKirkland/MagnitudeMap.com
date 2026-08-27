@@ -1,0 +1,12 @@
+{
+  "id": "mi26",
+  "file": "model.glb",
+  "license": "CC-BY-4.0",
+  "licenseLabel": "CC BY",
+  "author": "manilov.ap",
+  "source": "https://sketchfab.com/3d-models/mi26-99f585ba841742059d1bda2d103ad40d",
+  "sourceAsset": "Mi26",
+  "sketchfabUid": "99f585ba841742059d1bda2d103ad40d",
+  "notes": "Mil Mi-26 Halo by manilov.ap (CC-BY). GLB is authored at real-world metres with the main rotor blades spread, so its bounding box is the fuselage plus rotor disc, not the 40.03 m rotors-fore figure - scaleAxis is width (the 32 m rotor diameter), the dimension this mesh encodes cleanly, and catalog length is the 33.73 m fuselage. Catalog height 12.3 m is measured to the vertical tail-rotor blade tip as modelled; the published overall height of the Mi-26 is 8.145 m to the main rotor head.",
+  "attribution": "Mi26 by manilov.ap on Sketchfab (CC BY) — https://sketchfab.com/3d-models/mi26-99f585ba841742059d1bda2d103ad40d"
+}

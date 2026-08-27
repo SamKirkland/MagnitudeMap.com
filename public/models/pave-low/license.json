@@ -1,0 +1,12 @@
+{
+  "id": "pave-low",
+  "file": "model.glb",
+  "license": "CC-BY-4.0",
+  "licenseLabel": "CC BY",
+  "author": "thientrung2004pr",
+  "source": "https://sketchfab.com/3d-models/call-of-duty-mwii-2022-mh-35-pave-low-909b76aa456a4085afd81558be36be4c",
+  "sourceAsset": "Call of Duty: MWII (2022) MH-35 Pave Low",
+  "sketchfabUid": "909b76aa456a4085afd81558be36be4c",
+  "notes": "Call of Duty MWII 'MH-35 Pave Low' rip by thientrung2004pr (CC-BY) - the game's stand-in for the real Sikorsky MH-53 Pave Low. Listed under the real MH-53J. scaleAxis is width (the 24.08 m rotor diameter): the mesh has its blades spread rather than fore-and-aft, so its bounding length is not the 30.18 m rotors-turning figure, and scaling on length oversized the aircraft by 47 percent. Scaled on the rotor the height lands at 7.55 m against the real 7.60 m, but the game fuselage is short - about 20.5 m nose to tail against the real 26.9 m - so the silhouette reads stubbier than an MH-53J.",
+  "attribution": "Call of Duty: MWII (2022) MH-35 Pave Low by thientrung2004pr on Sketchfab (CC BY) — https://sketchfab.com/3d-models/call-of-duty-mwii-2022-mh-35-pave-low-909b76aa456a4085afd81558be36be4c"
+}

@@ -98,6 +98,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Airbus A320 (CC-BY-NC-SA). Scaled to 37.57 m length in-app. Non-commercial use only."
   },
   {
+    "id": "a380",
+    "catalogName": "Airbus A380-800",
+    "author": "davidmarton1987",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/airbus-a380-49687e726121405d96c7d5be03b5673a",
+    "sourceAsset": "Airbus-A380",
+    "attribution": "Airbus-A380 by davidmarton1987 on Sketchfab (CC BY) — https://sketchfab.com/3d-models/airbus-a380-49687e726121405d96c7d5be03b5673a",
+    "requiresAttribution": true,
+    "notes": "Airbus A380-800 by davidmarton1987 (CC-BY). Scaled to 72.72 m length in-app."
+  },
+  {
     "id": "akira",
     "catalogName": "Akira-class",
     "author": "Wholock",
@@ -135,13 +147,13 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
   },
   {
     "id": "astronaut",
-    "catalogName": "Astronaut",
+    "catalogName": "astronautA.glb",
     "author": "Kenney",
     "license": "CC0-1.0",
     "licenseLabel": "CC0-1.0",
     "source": "https://kenney.nl/assets/space-kit",
     "sourceAsset": "astronautA.glb",
-    "attribution": "Astronaut — astronautA.glb by Kenney (CC0-1.0) — https://kenney.nl/assets/space-kit",
+    "attribution": "astronautA.glb — astronautA.glb by Kenney (CC0-1.0) — https://kenney.nl/assets/space-kit",
     "requiresAttribution": false,
     "notes": "Stylized astronaut. Scaled in-app to 1.9 m height."
   },
@@ -242,6 +254,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "White eagle fast-fly (CC-BY, GremorySaiyan). Scaled to 2.3 m wingspan in-app. Clip plays on camera focus."
   },
   {
+    "id": "banana",
+    "catalogName": "Banana (for scale)",
+    "author": "SanForge Studio",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/3d-banana-01-fb1b6fc41f7e49adbf467e5e5988d190",
+    "sourceAsset": "3D Banana - 01",
+    "attribution": "3D Banana - 01 by SanForge Studio on Sketchfab (CC BY) — https://sketchfab.com/3d-models/3d-banana-01-fb1b6fc41f7e49adbf467e5e5988d190",
+    "requiresAttribution": true,
+    "notes": "Banana for scale. Photoscanned banana by SanForge Studio (CC-BY). GLB is authored standing on end with its long axis on +Y, so the catalog applies pitchDegrees 90 to lay it down along +Z. Scaled to a 0.18 m Cavendish in-app; it rests on its side, curve sweeping sideways (0.066 m across, 0.031 m thick)."
+  },
+  {
     "id": "big-ben",
     "catalogName": "Big Ben",
     "author": "ManySince910",
@@ -324,6 +348,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "C-18A Skylord Military Transport Aircraft by Muhamad Mirza Arrafi on Sketchfab (CC BY) — https://sketchfab.com/3d-models/c-18a-skylord-military-transport-aircraft-392a9149a8af42df95ac7f7e96eb0acf",
     "requiresAttribution": true,
     "notes": "C-18A Skylord by nazidefenseforceofficial (CC-BY; C-17-based concept). Scaled to C-17 size 53 m length in-app."
+  },
+  {
+    "id": "c5",
+    "catalogName": "C-5 Galaxy",
+    "author": "AC1MX",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/galaxy-530ffc703607405e813e5bd20f59d9b2",
+    "sourceAsset": "Galaxy",
+    "attribution": "Galaxy by AC1MX on Sketchfab (CC BY) — https://sketchfab.com/3d-models/galaxy-530ffc703607405e813e5bd20f59d9b2",
+    "requiresAttribution": true,
+    "notes": "Lockheed C-5 Galaxy by AC1MX (CC-BY), the original 2021 upload. The identical mesh is re-uploaded as 'C5 galaxy model' by Sigii (2025); attribution goes to AC1MX. GLB is authored at real-world metres; scaled to 75.31 m length in-app. Landing gear is modelled but RETRACTED (wheels sit 0.17-4.26 m, inside the closed bays, above a belly at 0), so the aircraft grounds belly-down and renders 17.4 m tall against the real 19.84 m gear-down height. Gear and covers are separate named nodes (Landing_Gears / Landing_Gear_Covers) with no animation - a gear-down variant would need a manual edit."
   },
   {
     "id": "spaceship",
@@ -878,6 +914,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "M4 Sherman Tank Challenger (CC-BY). Scaled to 5.89 m length in-app."
   },
   {
+    "id": "pave-low",
+    "catalogName": "MH-53J Pave Low III",
+    "author": "thientrung2004pr",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/call-of-duty-mwii-2022-mh-35-pave-low-909b76aa456a4085afd81558be36be4c",
+    "sourceAsset": "Call of Duty: MWII (2022) MH-35 Pave Low",
+    "attribution": "Call of Duty: MWII (2022) MH-35 Pave Low by thientrung2004pr on Sketchfab (CC BY) — https://sketchfab.com/3d-models/call-of-duty-mwii-2022-mh-35-pave-low-909b76aa456a4085afd81558be36be4c",
+    "requiresAttribution": true,
+    "notes": "Call of Duty MWII 'MH-35 Pave Low' rip by thientrung2004pr (CC-BY) - the game's stand-in for the real Sikorsky MH-53 Pave Low. Listed under the real MH-53J. scaleAxis is width (the 24.08 m rotor diameter): the mesh has its blades spread rather than fore-and-aft, so its bounding length is not the 30.18 m rotors-turning figure, and scaling on length oversized the aircraft by 47 percent. Scaled on the rotor the height lands at 7.55 m against the real 7.60 m, but the game fuselage is short - about 20.5 m nose to tail against the real 26.9 m - so the silhouette reads stubbier than an MH-53J."
+  },
+  {
     "id": "mig23",
     "catalogName": "MiG-23MLD",
     "author": "Tim Samedov",
@@ -900,6 +948,30 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "mig-35-fighter-jet by spacewatermelon on Sketchfab (CC BY) — https://sketchfab.com/3d-models/mig35-53455670e65945fe88553090e27400b5",
     "requiresAttribution": true,
     "notes": "mig-35-fighter-jet (CC-BY, spacewatermelon). Scaled to 17.3 m length in-app."
+  },
+  {
+    "id": "mi10",
+    "catalogName": "Mil Mi-10 Harke",
+    "author": "manilov.ap",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/mi10-b0fc8efb90554c7b8c7a0abc847822c1",
+    "sourceAsset": "Mi10",
+    "attribution": "Mi10 by manilov.ap on Sketchfab (CC BY) — https://sketchfab.com/3d-models/mi10-b0fc8efb90554c7b8c7a0abc847822c1",
+    "requiresAttribution": true,
+    "notes": "Mil Mi-10 Harke flying-crane by manilov.ap (CC-BY). Scaled to 32.86 m fuselage length in-app."
+  },
+  {
+    "id": "mi26",
+    "catalogName": "Mil Mi-26 Halo",
+    "author": "manilov.ap",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/mi26-99f585ba841742059d1bda2d103ad40d",
+    "sourceAsset": "Mi26",
+    "attribution": "Mi26 by manilov.ap on Sketchfab (CC BY) — https://sketchfab.com/3d-models/mi26-99f585ba841742059d1bda2d103ad40d",
+    "requiresAttribution": true,
+    "notes": "Mil Mi-26 Halo by manilov.ap (CC-BY). GLB is authored at real-world metres with the main rotor blades spread, so its bounding box is the fuselage plus rotor disc, not the 40.03 m rotors-fore figure - scaleAxis is width (the 32 m rotor diameter), the dimension this mesh encodes cleanly, and catalog length is the 33.73 m fuselage. Catalog height 12.3 m is measured to the vertical tail-rotor blade tip as modelled; the published overall height of the Mi-26 is 8.145 m to the main rotor head."
   },
   {
     "id": "tealc",
@@ -1142,6 +1214,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Ori warship (CC-BY). ~521k tris; no lower-poly downloadable CC match. Scaled to 1100 m length in-app."
   },
   {
+    "id": "s97",
+    "catalogName": "Sikorsky S-97 Raider",
+    "author": "AF267",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/geofs-official-sikorsky-s-97-raider-6f29f1f167114bb49a872114e7c7d147",
+    "sourceAsset": "GeoFS Official Sikorsky S-97 Raider",
+    "attribution": "GeoFS Official Sikorsky S-97 Raider by AF267 on Sketchfab (CC BY) — https://sketchfab.com/3d-models/geofs-official-sikorsky-s-97-raider-6f29f1f167114bb49a872114e7c7d147",
+    "requiresAttribution": true,
+    "notes": "Sikorsky S-97 Raider coaxial compound demonstrator, GeoFS flight-sim asset by AF267 (CC-BY). A 12.5 m studio floor slab (mesh Object_21) was deleted from the GLB - it inflated the AABB and broke scale. Authoring yaw is 270 deg (native nose is +X). Scaled to 11.0 m length in-app; the airframe renders 2.70 m tall against the 3.35 m spec height because the GeoFS mesh leaves off the mast head and antennas."
+  },
+  {
     "id": "sls",
     "catalogName": "SLS Block 1",
     "author": "OFFhead",
@@ -1224,6 +1308,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "Walking Spinosaurus Maroccanus by Nobilis the Palaeovespa on Sketchfab (CC BY) — https://sketchfab.com/3d-models/walking-spinosaurus-maroccanus-4705e521996a4e0ab9a9e24b5f0f2b51",
     "requiresAttribution": true,
     "notes": "Walking Spinosaurus maroccanus (CC-BY, nobilishornet). Linked GremorySaiyan pack is Standard. Scaled to 14 m length in-app."
+  },
+  {
+    "id": "spitfire",
+    "catalogName": "Spitfire Mk II",
+    "author": "barking_dogo",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/spitfire-a49be5ab6d624e75b55231948a31b1b3",
+    "sourceAsset": "Supermarine Spitfire Mk.IIa",
+    "attribution": "Supermarine Spitfire Mk.IIa by barking_dogo on Sketchfab (CC BY) — https://sketchfab.com/3d-models/spitfire-a49be5ab6d624e75b55231948a31b1b3",
+    "requiresAttribution": true,
+    "notes": "Supermarine Spitfire Mk.IIa (CC-BY, barking_dogo). Scaled to 9.12 m length in-app."
   },
   {
     "id": "sr71",
@@ -1344,18 +1440,6 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "Tanker Ship by Art Blender on Sketchfab (CC BY) — https://sketchfab.com/3d-models/tanker-ship-96ebf61af42b4062ae98a6ad848e1a25",
     "requiresAttribution": true,
     "notes": "Tanker Ship by Art Blender (CC-BY), authored as Suezmax 322 m × 47 m. Scaled to 322 m length; beam follows the GLB (~40 m)."
-  },
-  {
-    "id": "spitfire",
-    "catalogName": "Supermarine Spitfire Mk IIa",
-    "author": "barking_dogo",
-    "license": "CC-BY-4.0",
-    "licenseLabel": "CC BY",
-    "source": "https://sketchfab.com/3d-models/spitfire-a49be5ab6d624e75b55231948a31b1b3",
-    "sourceAsset": "Supermarine Spitfire Mk.IIa",
-    "attribution": "Supermarine Spitfire Mk.IIa by barking_dogo on Sketchfab (CC BY) — https://sketchfab.com/3d-models/spitfire-a49be5ab6d624e75b55231948a31b1b3",
-    "requiresAttribution": true,
-    "notes": "Supermarine Spitfire Mk.IIa (CC-BY, barking_dogo). Scaled to 9.12 m length in-app."
   },
   {
     "id": "sydney-opera-house",

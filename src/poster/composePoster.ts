@@ -118,12 +118,11 @@ function drawLabels(ctx: CanvasRenderingContext2D, opts: PosterOverlayOptions) {
   const fontSize = Math.max(12, Math.round(opts.width * (crowded ? 0.01 : 0.0125)))
   ctx.font = `600 ${fontSize}px "IBM Plex Sans", "Segoe UI", sans-serif`
   const gap = Math.max(8, Math.round(fontSize * 0.45))
+  // Name only. The scale bar carries the measurement; repeating it per item
+  // just crowds the poster.
   const boxes = opts.items.map((item) => {
     const name = item.name
-    const size = formatLength(item.sizeMeters, opts.units)
-    const label = `${name}  —  ${size}`
-    const width = Math.max(ctx.measureText(name).width, ctx.measureText(size).width)
-    return { item, label, name, size, width, fontSize }
+    return { item, name, width: ctx.measureText(name).width, fontSize }
   })
 
   if (opts.layout === 'stacked') {
@@ -135,14 +134,14 @@ function drawLabels(ctx: CanvasRenderingContext2D, opts: PosterOverlayOptions) {
         if (Math.abs(y - other) < fontSize * 1.2) y = other + fontSize * 1.25
       }
       placed.push(y)
-      drawLabelLine(ctx, box.label, x, y, 'left', 'middle', fontSize)
+      drawLabelLine(ctx, box.name, x, y, 'left', 'middle', fontSize)
     }
     return
   }
 
   const lowest = Math.max(...opts.items.map((item) => item.maxY), opts.height * 0.55)
   const bandY = Math.min(opts.height * 0.86, lowest + gap)
-  const rowH = fontSize * 2.35
+  const rowH = fontSize * 1.5
   const placed: Array<{ left: number; right: number; y: number }> = []
   for (const box of boxes.sort((a, b) => a.item.minX - b.item.minX)) {
     const cx = (box.item.minX + box.item.maxX) / 2
@@ -154,7 +153,7 @@ function drawLabels(ctx: CanvasRenderingContext2D, opts: PosterOverlayOptions) {
       if (overlap && Math.abs(y - other.y) < rowH) y = other.y + rowH
     }
     placed.push({ left, right, y })
-    drawStackedCaption(ctx, box.name, box.size, cx, y, fontSize)
+    drawLabelLine(ctx, box.name, cx, y, 'center', 'top', fontSize)
   }
 }
 
@@ -172,24 +171,6 @@ function drawLabelLine(
   ctx.textBaseline = baseline
   ctx.fillStyle = INK
   ctx.fillText(text, x, y)
-}
-
-function drawStackedCaption(
-  ctx: CanvasRenderingContext2D,
-  name: string,
-  size: string,
-  x: number,
-  y: number,
-  fontSize: number,
-) {
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'top'
-  ctx.font = `600 ${fontSize}px "IBM Plex Sans", "Segoe UI", sans-serif`
-  ctx.fillStyle = INK
-  ctx.fillText(name, x, y)
-  ctx.font = `500 ${fontSize}px "IBM Plex Sans", "Segoe UI", sans-serif`
-  ctx.fillStyle = MUTED
-  ctx.fillText(size, x, y + fontSize * 1.15)
 }
 
 function drawScaleBar(

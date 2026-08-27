@@ -1,0 +1,12 @@
+{
+  "id": "banana",
+  "file": "model.glb",
+  "license": "CC-BY-4.0",
+  "licenseLabel": "CC BY",
+  "author": "SanForge Studio",
+  "source": "https://sketchfab.com/3d-models/3d-banana-01-fb1b6fc41f7e49adbf467e5e5988d190",
+  "sourceAsset": "3D Banana - 01",
+  "sketchfabUid": "fb1b6fc41f7e49adbf467e5e5988d190",
+  "notes": "Banana for scale. Photoscanned banana by SanForge Studio (CC-BY). GLB is authored standing on end with its long axis on +Y, so the catalog applies pitchDegrees 90 to lay it down along +Z. Scaled to a 0.18 m Cavendish in-app; it rests on its side, curve sweeping sideways (0.066 m across, 0.031 m thick).",
+  "attribution": "3D Banana - 01 by SanForge Studio on Sketchfab (CC BY) — https://sketchfab.com/3d-models/3d-banana-01-fb1b6fc41f7e49adbf467e5e5988d190"
+}

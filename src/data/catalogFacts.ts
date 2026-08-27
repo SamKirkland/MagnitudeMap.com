@@ -14,11 +14,13 @@ export const CATALOG_FACTS: Record<string, string> = {
   'person-female':
     'Global average adult female height is about 1.59 m; the US average is roughly 1.62 m.',
   'minecraft-player':
-    'Steve stands 2 blocks tall in game — about 1.8 m if a block is 1 m. Minecraft is the best-selling video game ever, with over 300 million copies sold since 2011.',
+    'Steve stands 1.8 blocks tall in game — about 1.8 m if a block is 1 m. Minecraft is the best-selling video game ever, with over 300 million copies sold since 2011.',
   'soldier-ww2':
     'US Army Ranger, 1944. About 16 million Americans served in WWII. A rifleman carried roughly 25–35 kg of kit, and the M1 Garand he shouldered weighed 4.3 kg.',
   'iphone':
     'Apple has sold well over 2 billion iPhones since 2007, making it one of the best-selling products of any kind. A modern handset is about 147 mm tall and 170–230 g.',
+  'banana':
+    'The banana for scale. A supermarket Cavendish runs about 180 mm long and 120 g, and roughly 100 billion bananas are eaten worldwide each year — the world’s most popular fruit, and a single cloned cultivar.',
   'firetruck':
     'A full aerial-ladder truck runs roughly $1–1.5 million, weighs 25–30 t loaded, and carries a ladder reaching 30 m or more.',
   'school-bus':
@@ -83,12 +85,16 @@ export const CATALOG_FACTS: Record<string, string> = {
     'UK/France, 1976–2003. Only 20 built, 14 of them for service, at a development cost of £1.3 billion — roughly £11 billion today, never recouped. Mach 2.04 crossed the Atlantic in under 3 hours, the fuselage stretched about 25 cm from friction heating in cruise, and it was retired after the 2000 Paris crash and the post-9/11 traffic collapse.',
   'a320':
     'Airbus, 1988–present. Over 12,000 A320s delivered and 18,000-plus across the family, rivalling the 737 as the best-selling airliner ever. 150–180 seats, 6,100 km range, roughly $110 million at list. The first airliner with digital fly-by-wire controls.',
+  'a380':
+    'Airbus, 2007–2021. Only 251 built at about $445 million each, ending a decade early. The largest passenger airliner ever flown: two full decks, 79.8 m of wingspan, 575 seats in a typical layout and up to 853 in all-economy.',
   'boeing-737':
     'Boeing, 1998–2020 for the -800. About 5,000 built at roughly $106 million list. 189 seats maximum and 5,400 km range. The 737 family has passed 12,000 deliveries since 1967.',
   'boeing-747':
     'Two VC-25A aircraft have served as Air Force One since 1990. 4,000 ft² of interior space over three decks, aerial refuelling, and an onboard medical suite. The VC-25B replacements are running roughly $5.3 billion for the pair.',
   'c17a':
     'USA, 1993–2015. 279 built at about $218 million each. Carries 77,500 kg — an M1 Abrams fits — yet lands on a 3,500 ft dirt strip and can reverse under its own power on the ground.',
+  'c5':
+    'USA, 1970–present. 131 built; 52 rebuilt as C-5Ms from 2009. Carries 129,300 kg — two M1 Abrams — through nose and tail doors that both open, and it kneels on its landing gear so vehicles can drive straight in.',
   'c18a':
     'A concept heavy-lift transport shown at roughly C-17 scale, about 53 m long. Not a real production aircraft.',
   'v22':
@@ -99,6 +105,14 @@ export const CATALOG_FACTS: Record<string, string> = {
     'USA, 1962–present and still in production after six decades. Over 1,200 built at roughly $38 million each. Lifts 10,900 kg slung beneath it and cruises at 315 km/h — the fastest helicopter in the US Army.',
   'blackhawk':
     'USA, 1979–present. Over 5,000 built, about $21 million for a UH-60M. Carries 11 troops or 3,600 kg slung, and was designed after Vietnam to survive a hard crash landing that would destroy earlier helicopters.',
+  'mi26':
+    'USSR/Russia, 1983–present. Over 300 built. The heaviest and most powerful helicopter ever to reach production: 20,000 kg of cargo — as much as its own empty weight — inside a hold sized like a C-130’s, under an eight-blade 32 m rotor.',
+  'mi10':
+    'USSR, 1963–1970s. Around 55 built. A flying crane derived from the Mi-6: 15,000 kg slung under 3.8 m stilt landing gear tall enough to straddle a loaded cargo platform and drive away with it.',
+  'pave-low':
+    'USA, 1981–2008. 38 converted, about $40 million each. The US Air Force’s biggest and heaviest helicopter, flying special-operations crews at 30 m above the ground at night on terrain-following radar and infrared.',
+  's97':
+    'USA, 2015–present. 2 built as demonstrators. Coaxial rigid rotors plus a pusher propeller let it reach 380 km/h — roughly double a conventional helicopter’s cruise — as Sikorsky’s technology testbed for the US Army.',
 
   // --- Munitions -------------------------------------------------------------
   'tnt':

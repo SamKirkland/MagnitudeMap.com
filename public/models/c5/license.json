@@ -1,0 +1,12 @@
+{
+  "id": "c5",
+  "file": "model.glb",
+  "license": "CC-BY-4.0",
+  "licenseLabel": "CC BY",
+  "author": "AC1MX",
+  "source": "https://sketchfab.com/3d-models/galaxy-530ffc703607405e813e5bd20f59d9b2",
+  "sourceAsset": "Galaxy",
+  "sketchfabUid": "530ffc703607405e813e5bd20f59d9b2",
+  "notes": "Lockheed C-5 Galaxy by AC1MX (CC-BY), the original 2021 upload. The identical mesh is re-uploaded as 'C5 galaxy model' by Sigii (2025); attribution goes to AC1MX. GLB is authored at real-world metres; scaled to 75.31 m length in-app. Landing gear is modelled but RETRACTED (wheels sit 0.17-4.26 m, inside the closed bays, above a belly at 0), so the aircraft grounds belly-down and renders 17.4 m tall against the real 19.84 m gear-down height. Gear and covers are separate named nodes (Landing_Gears / Landing_Gear_Covers) with no animation - a gear-down variant would need a manual edit.",
+  "attribution": "Galaxy by AC1MX on Sketchfab (CC BY) — https://sketchfab.com/3d-models/galaxy-530ffc703607405e813e5bd20f59d9b2"
+}

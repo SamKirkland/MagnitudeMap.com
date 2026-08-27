@@ -15,27 +15,19 @@ import { MODEL_ATTRIBUTIONS, type ModelAttribution } from '../data/attributions'
 import { licenseDeedUrl, shortLicenseLabel } from '../data/licenseDisplay'
 import { searchItems } from '../librarySearch'
 import { presetHref } from '../selectionUrl'
-import { SPREAD_MAX, SPREAD_MIN, type TourSettings } from '../tourSettings'
 import { UNOFFICIAL_DISCLAIMER } from '../siteMeta'
 import { convertUnitsInText } from '../unitText'
 import type { UnitSystem } from '../units'
 import { PresetIcon } from './PresetIcons'
-import { FacingControls } from './FacingControls'
 
 type SidebarProps = {
   activeItemIds: string[]
   activePresetId: string | null
   /** Relative prefix for lineup hrefs; see `relativeSiteBase`. */
   linkBase: string
-  tourPlaying: boolean
-  tourSettings: TourSettings
   onToggleItem: (itemId: string) => void
   onApplyPreset: (presetId: string) => void
   onClear: () => void
-  onToggleTour: () => void
-  onTourSettingsChange: (patch: Partial<TourSettings>) => void
-  displayYawTurns: number
-  onDisplayYawTurns: (turns: number) => void
   /** Descriptions are authored in metric and converted for imperial readers. */
   units: UnitSystem
 }
@@ -135,19 +127,12 @@ export function Sidebar({
   activeItemIds,
   activePresetId,
   linkBase,
-  tourPlaying,
-  tourSettings,
   onToggleItem,
   onApplyPreset,
   onClear,
-  onToggleTour,
-  onTourSettingsChange,
-  displayYawTurns,
-  onDisplayYawTurns,
   units,
 }: SidebarProps) {
   const [showCredits, setShowCredits] = useState(false)
-  const [showTourOptions, setShowTourOptions] = useState(false)
   const [libraryQuery, setLibraryQuery] = useState('')
   const [lineupQuery, setLineupQuery] = useState('')
   /** Mobile-only accordion: which section body is expanded. Desktop ignores this. */
@@ -156,7 +141,6 @@ export function Sidebar({
   const deferredQuery = useDeferredValue(libraryQuery.trim())
   const deferredLineupQuery = useDeferredValue(lineupQuery.trim())
   const activeSet = new Set(activeItemIds)
-  const canTour = activeItemIds.length > 0
   const lineupsOpen = !isMobileLayout || mobilePanel === 'lineups'
   const libraryOpen = !isMobileLayout || mobilePanel === 'library'
   const creditsById = useMemo(
@@ -207,110 +191,7 @@ export function Sidebar({
             <h2>Lineups</h2>
             <ChevronDownIcon className="section-accordion-chevron" aria-hidden="true" />
           </button>
-          <div className="section-heading-actions">
-            <div className="tour-controls">
-              <button
-                type="button"
-                className={`text-btn tour-btn ${tourPlaying ? 'is-active' : ''}`}
-                onClick={onToggleTour}
-                disabled={!canTour}
-              >
-                {tourPlaying ? 'Pause' : 'Play'}
-              </button>
-              <button
-                type="button"
-                className={`tour-options-toggle ${showTourOptions ? 'is-open' : ''}`}
-                onClick={() => setShowTourOptions((open) => !open)}
-                aria-expanded={showTourOptions}
-                aria-controls="tour-options"
-                title="Play options"
-                aria-label={showTourOptions ? 'Hide play options' : 'Show play options'}
-              >
-                <ChevronDownIcon aria-hidden="true" />
-              </button>
-            </div>
-            <button type="button" className="text-btn" onClick={onClear}>
-              Clear
-            </button>
-          </div>
         </div>
-
-        {showTourOptions && (
-          <div id="tour-options" className="tour-options" role="region" aria-label="Play options">
-            <div className="tour-option-row">
-              <span className="tour-option-label" id="tour-frame-label">
-                In frame
-              </span>
-              <div className="tour-seg" role="group" aria-labelledby="tour-frame-label">
-                <button
-                  type="button"
-                  className={tourSettings.frameMode === 'pair' ? 'is-active' : ''}
-                  aria-pressed={tourSettings.frameMode === 'pair'}
-                  onClick={() => onTourSettingsChange({ frameMode: 'pair' })}
-                >
-                  Latest two
-                </button>
-                <button
-                  type="button"
-                  className={tourSettings.frameMode === 'all' ? 'is-active' : ''}
-                  aria-pressed={tourSettings.frameMode === 'all'}
-                  onClick={() => onTourSettingsChange({ frameMode: 'all' })}
-                >
-                  All so far
-                </button>
-              </div>
-            </div>
-
-            <div className="tour-option-row">
-              <label className="tour-option-label" htmlFor="tour-spread">
-                Spacing
-              </label>
-              <input
-                id="tour-spread"
-                className="tour-options-slider"
-                type="range"
-                min={SPREAD_MIN}
-                max={SPREAD_MAX}
-                step={0.05}
-                value={tourSettings.spread}
-                onChange={(event) =>
-                  onTourSettingsChange({ spread: Number(event.target.value) })
-                }
-              />
-              <div className="tour-slider-meta">
-                <span>Tight</span>
-                <span>Wide</span>
-              </div>
-            </div>
-
-            <div className="tour-option-row">
-              <label className="tour-option-label" htmlFor="tour-yaw">
-                Angle
-              </label>
-              <input
-                id="tour-yaw"
-                className="tour-options-slider"
-                type="range"
-                min={-1}
-                max={1}
-                step={0.05}
-                value={tourSettings.yaw}
-                onChange={(event) =>
-                  onTourSettingsChange({ yaw: Number(event.target.value) })
-                }
-              />
-              <div className="tour-slider-meta">
-                <span>Left</span>
-                <span>Right</span>
-              </div>
-            </div>
-
-            <FacingControls
-              yawTurns={displayYawTurns}
-              onChange={onDisplayYawTurns}
-            />
-          </div>
-        )}
 
         <div id="sidebar-lineups-body" className="sidebar-section-body">
           <label className="library-search">
@@ -391,6 +272,14 @@ export function Sidebar({
             <ChevronDownIcon className="section-accordion-chevron" aria-hidden="true" />
           </button>
           <div className="section-heading-actions library-heading-actions">
+            <button
+              type="button"
+              className="btn btn-clear"
+              onClick={onClear}
+              disabled={activeItemIds.length === 0}
+            >
+              Clear
+            </button>
             <button
               type="button"
               className={`credits-icon-btn ${showCredits ? 'is-active' : ''}`}

@@ -286,57 +286,42 @@ input {
   text-decoration: none;
 }
 
-.tour-btn.is-active {
-  font-weight: 600;
-}
-
-.tour-controls {
-  display: inline-flex;
-  align-items: center;
-  /* Enough gap that adjacent 24px targets do not fail the neighbour spacing
-     half of the `target-size` rule. */
-  gap: 0.35rem;
-}
-
-.tour-options-toggle {
+/* Solid button for a real action in a section heading, as opposed to the
+   underlined `.text-btn` link style. */
+.btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  /* 24px minimum target; the glyph inside stays 0.9rem. */
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: var(--accent);
-  cursor: pointer;
-  border-radius: 4px;
-}
-
-.tour-options-toggle svg {
-  width: 0.9rem;
-  height: 0.9rem;
-  transition: transform 140ms ease;
-}
-
-.tour-options-toggle:hover {
-  background: var(--accent-soft);
-}
-
-.tour-options-toggle.is-open svg {
-  transform: rotate(180deg);
-}
-
-.tour-options {
-  display: flex;
-  flex-direction: column;
-  gap: 0.7rem;
-  margin: 0 0.35rem;
-  padding: 0.65rem 0.7rem 0.7rem;
+  min-height: 24px;
+  padding: 0.2rem 0.6rem;
   border: 1px solid var(--panel-border);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.62);
-  flex: 0 0 auto;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* The play options now render inside `.toolbar-popover`, which supplies the
+   frame; these rows only need stacking and a readable minimum width. */
+#toolbar-tour-panel {
+  min-width: 190px;
+}
+
+#toolbar-tour-panel .tour-option-row + .tour-option-row {
+  margin-top: 0.7rem;
 }
 
 .tour-option-row {
@@ -962,6 +947,11 @@ input {
 .toolbar-btn-split-more svg {
   width: 0.85rem;
   height: 0.85rem;
+}
+
+.toolbar-btn-split-main.is-playing {
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 .toolbar-btn-split-main:disabled {

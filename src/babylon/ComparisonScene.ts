@@ -149,10 +149,6 @@ type PlacedObject = {
   body: TransformNode
   labelTex: DynamicTexture | null
   animationGroups: AnimationGroup[]
-  waveTimer: number | null
-  waveArm: TransformNode | null
-  waving: boolean
-  waveGen: number
   clipPlaying: boolean
 }
 
@@ -418,7 +414,6 @@ export class ComparisonScene {
   private renderNeeded = true
   private heldIdle = false
   private idleSettleTimer: number | null = null
-  private personWaveCount = 0
   private clipPlayingCount = 0
   private cameraMoveGen = 0
   private rendersThisSecond = 0
@@ -636,7 +631,7 @@ export class ComparisonScene {
     )
     const itemId = this.sortedItems[this.stepIndex]?.id
     this.playFocusMotion(itemId)
-    this.applyPose(pose, animate, CAMERA_ANIM_FRAMES, () => this.waveIfPerson(itemId))
+    this.applyPose(pose, animate, CAMERA_ANIM_FRAMES)
     this.emitTour()
   }
 
@@ -733,7 +728,7 @@ export class ComparisonScene {
         beta: 1.05,
       },
     )
-    this.applyPose(pose, animate, CAMERA_FOCUS_FRAMES, () => this.waveIfPerson(itemId))
+    this.applyPose(pose, animate, CAMERA_FOCUS_FRAMES)
     this.playFocusMotion(itemId)
     this.emitTour()
   }
@@ -2556,7 +2551,6 @@ export class ComparisonScene {
       this.playing ||
       this.cameraStillGliding() ||
       this.hasActiveCameraAnimation() ||
-      this.personWaveCount > 0 ||
       this.clipPlayingCount > 0
     )
   }
@@ -3021,16 +3015,10 @@ export class ComparisonScene {
   }
 
   private disposePlacement(placement: PlacedObject) {
-    if (placement.waving) {
-      placement.waving = false
-      placement.waveGen += 1
-      this.personWaveCount = Math.max(0, this.personWaveCount - 1)
-    }
     if (placement.clipPlaying) {
       placement.clipPlaying = false
       this.clipPlayingCount = Math.max(0, this.clipPlayingCount - 1)
     }
-    this.clearWaveTimer(placement)
     for (const group of placement.animationGroups) {
       try {
         group.stop()
@@ -3042,13 +3030,6 @@ export class ComparisonScene {
     placement.animationGroups = []
     if (!placement.root.isDisposed()) {
       placement.root.dispose(false, true)
-    }
-  }
-
-  private clearWaveTimer(placement: PlacedObject) {
-    if (placement.waveTimer != null) {
-      window.clearTimeout(placement.waveTimer)
-      placement.waveTimer = null
     }
   }
 
@@ -3114,10 +3095,6 @@ export class ComparisonScene {
       body,
       labelTex,
       animationGroups,
-      waveTimer: null,
-      waveArm: null,
-      waving: false,
-      waveGen: 0,
       clipPlaying: false,
     }
 
@@ -3391,13 +3368,11 @@ export class ComparisonScene {
     }
   }
 
-  /** Rest pose only — waves run once on click-focus or that person's tour step. */
+  /** Rest pose only; imported clips play on select via `playFocusMotion`. */
   private preparePersonRestPose(placement: PlacedObject, skeletons: Skeleton[]) {
     const ambient =
       placement.animationGroups.find((group) => /idle(?!\.001)/i.test(group.name)) ??
       placement.animationGroups.find((group) => /idle/i.test(group.name))
-    const arm = this.findWaveArm(placement.body, skeletons)
-    placement.waveArm = arm
     if (!ambient) this.relaxTPoseArms(skeletons)
   }
 
@@ -3475,44 +3450,6 @@ export class ComparisonScene {
     )
   }
 
-  private waveIfPerson(itemId: string | undefined) {
-    if (!itemId) return
-    const placement = [...this.placements.values()].find((p) => p.itemId === itemId)
-    if (!placement) return
-    this.triggerPersonWave(placement)
-  }
-
-  private triggerPersonWave(placement: PlacedObject) {
-    const item = CATALOG_BY_ID[placement.itemId]
-    const arm = placement.waveArm
-    if (item?.shape !== 'person' || !arm || arm.isDisposed() || placement.root.isDisposed()) {
-      return
-    }
-
-    this.heldIdle = false
-    this.scene.stopAnimation(arm)
-    placement.waveGen += 1
-    const gen = placement.waveGen
-    if (!placement.waving) {
-      placement.waving = true
-      this.personWaveCount += 1
-    }
-    for (const group of placement.animationGroups) {
-      try {
-        group.stop()
-      } catch {
-        // ignore
-      }
-    }
-    this.playProceduralWave(arm, () => {
-      if (this.disposed || placement.waveGen !== gen) return
-      placement.waving = false
-      this.personWaveCount = Math.max(0, this.personWaveCount - 1)
-      this.armIdleSettle()
-    })
-    this.markDirty()
-  }
-
   private relaxTPoseArms(skeletons: Skeleton[]) {
     const left = this.findArmNode(skeletons, 'left')
     const right = this.findArmNode(skeletons, 'right')
@@ -3547,106 +3484,6 @@ export class ComparisonScene {
       node.rotationQuaternion = null
     }
     node.rotation.addInPlace(delta)
-  }
-
-  private findWaveArm(
-    root: TransformNode,
-    skeletons: Skeleton[],
-  ): TransformNode | null {
-    return (
-      this.findArmNode(skeletons, 'right') ??
-      this.findArmNodeFromHierarchy(root, 'right') ??
-      this.findArmNodeByPose(skeletons, 'right')
-    )
-  }
-
-  /** When bones are unnamed (e.g. Perfect Steve), pick the lateral upper limb. */
-  private findArmNodeByPose(
-    skeletons: Skeleton[],
-    side: 'left' | 'right',
-  ): TransformNode | null {
-    type Candidate = { node: TransformNode; x: number; y: number }
-    const candidates: Candidate[] = []
-
-    for (const skeleton of skeletons) {
-      for (const bone of skeleton.bones) {
-        const name = bone.name ?? ''
-        if (/root|end/i.test(name)) continue
-        const node = bone.getTransformNode()
-        if (!node) continue
-        // Prefer bones that have a child (upper arm → forearm).
-        if (bone.children.length === 0) continue
-        node.computeWorldMatrix(true)
-        const pos = node.getAbsolutePosition()
-        candidates.push({ node, x: pos.x, y: pos.y })
-      }
-    }
-
-    if (candidates.length === 0) return null
-
-    const ys = candidates.map((c) => c.y).sort((a, b) => a - b)
-    const midY = ys[Math.floor(ys.length / 2)] ?? 0
-    // Arms sit around mid/upper height — drop feet and very top (head).
-    const mid = candidates.filter((c) => c.y >= midY * 0.55 && c.y <= midY * 1.55)
-    const pool = mid.length ? mid : candidates
-    pool.sort((a, b) => (side === 'right' ? b.x - a.x : a.x - b.x))
-    return pool[0]?.node ?? null
-  }
-
-  private findArmNodeFromHierarchy(
-    root: TransformNode,
-    side: 'left' | 'right',
-  ): TransformNode | null {
-    const prefer =
-      side === 'right'
-        ? [/^RightArm(_|$)/i, /^Right_Arm(_|$)/i, /^right_arm$/i, /RightArm/i]
-        : [/^LeftArm(_|$)/i, /^Left_Arm(_|$)/i, /^left_arm$/i, /LeftArm/i]
-    const reject = /thumb|index|middle|ring|pinky|hand|fore|lower|end|shoulder/i
-    const candidates = root.getChildTransformNodes(true)
-    for (const pattern of prefer) {
-      const hit = candidates.find((node) => pattern.test(node.name) && !reject.test(node.name))
-      if (hit) return hit
-    }
-    return null
-  }
-
-  private playProceduralWave(arm: TransformNode, onDone: () => void) {
-    // glTF nodes often use quaternions — switch to Euler for a short procedural clip.
-    if (arm.rotationQuaternion) {
-      arm.rotation = arm.rotationQuaternion.toEulerAngles()
-      arm.rotationQuaternion = null
-    }
-
-    const rest = arm.rotation.clone()
-    // Lift the already-relaxed arm and wiggle.
-    const lift = rest.add(new Vector3(0.2, 0, -0.95))
-    const wigA = lift.add(new Vector3(0.55, 0, 0))
-    const wigB = lift.add(new Vector3(-0.45, 0, 0))
-
-    const anim = new Animation(
-      `wave-${arm.uniqueId}`,
-      'rotation',
-      30,
-      Animation.ANIMATIONTYPE_VECTOR3,
-      Animation.ANIMATIONLOOPMODE_CONSTANT,
-    )
-    anim.setKeys([
-      { frame: 0, value: rest },
-      { frame: 10, value: lift },
-      { frame: 18, value: wigA },
-      { frame: 26, value: wigB },
-      { frame: 34, value: wigA },
-      { frame: 42, value: wigB },
-      { frame: 50, value: lift },
-      { frame: 62, value: rest },
-    ])
-
-    arm.animations = [anim]
-    this.scene.beginAnimation(arm, 0, 62, false, 1, () => {
-      arm.rotation.copyFrom(rest)
-      arm.animations = []
-      onDone()
-    })
   }
 
   /**

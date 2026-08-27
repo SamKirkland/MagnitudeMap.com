@@ -1,0 +1,12 @@
+{
+  "id": "s97",
+  "file": "model.glb",
+  "license": "CC-BY-4.0",
+  "licenseLabel": "CC BY",
+  "author": "AF267",
+  "source": "https://sketchfab.com/3d-models/geofs-official-sikorsky-s-97-raider-6f29f1f167114bb49a872114e7c7d147",
+  "sourceAsset": "GeoFS Official Sikorsky S-97 Raider",
+  "sketchfabUid": "6f29f1f167114bb49a872114e7c7d147",
+  "notes": "Sikorsky S-97 Raider coaxial compound demonstrator, GeoFS flight-sim asset by AF267 (CC-BY). A 12.5 m studio floor slab (mesh Object_21) was deleted from the GLB - it inflated the AABB and broke scale. Authoring yaw is 270 deg (native nose is +X). Scaled to 11.0 m length in-app; the airframe renders 2.70 m tall against the 3.35 m spec height because the GeoFS mesh leaves off the mast head and antennas.",
+  "attribution": "GeoFS Official Sikorsky S-97 Raider by AF267 on Sketchfab (CC BY) — https://sketchfab.com/3d-models/geofs-official-sikorsky-s-97-raider-6f29f1f167114bb49a872114e7c7d147"
+}

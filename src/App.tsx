@@ -228,15 +228,9 @@ export default function App({ initialSelection: seed }: AppProps = {}) {
         linkBase={linkBase}
         activeItemIds={activeItemIds}
         activePresetId={shownPresetId}
-        tourPlaying={tourPlaying}
-        tourSettings={tourSettings}
         onToggleItem={handleToggleItem}
         onApplyPreset={handleApplyPreset}
         onClear={handleClear}
-        onToggleTour={() => tourToggleRef.current?.()}
-        onTourSettingsChange={handleTourSettingsChange}
-        displayYawTurns={displayYawTurns}
-        onDisplayYawTurns={handleDisplayYawTurns}
         units={units}
       />
       <main className="viewer-pane">
@@ -256,6 +250,9 @@ export default function App({ initialSelection: seed }: AppProps = {}) {
           shadowsEnabled={shadowsEnabled}
           onShadowsEnabledChange={handleShadowsEnabled}
           onTourState={handleTourState}
+          tourPlaying={tourPlaying}
+          onToggleTour={() => tourToggleRef.current?.()}
+          onTourSettingsChange={handleTourSettingsChange}
           tourToggleRef={tourToggleRef}
           debugToggleRef={debugToggleRef}
           onSecretDebugToggle={() => debugToggleRef.current?.()}

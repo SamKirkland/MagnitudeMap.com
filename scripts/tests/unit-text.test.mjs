@@ -162,3 +162,40 @@ test('non-measurements are left alone', () => {
     assert.equal(convertUnitsInText(text, 'imperial'), text, text)
   }
 })
+
+/**
+ * Every catalog item should be reachable from at least one lineup — the lineup
+ * cards are the only crawl path to the `/c/` pages, and an item in no lineup is
+ * findable only by searching the library for it by name. Importing a model
+ * without adding it to a lineup fails here; see the checklist in AGENTS.md.
+ */
+test('every catalog item belongs to at least one lineup', () => {
+  const placed = new Set()
+  for (const preset of COMPARISON_PRESETS) {
+    for (const id of preset.itemIds) placed.add(id)
+  }
+  const homeless = CATALOG.filter((item) => !placed.has(item.id)).map((item) => item.id)
+  assert.deepEqual(homeless, [], `not in any lineup: ${homeless.join(', ')}`)
+})
+
+test('lineups only reference real catalog ids, with no repeats', () => {
+  const ids = new Set(CATALOG.map((item) => item.id))
+  for (const preset of COMPARISON_PRESETS) {
+    for (const id of preset.itemIds) {
+      assert.ok(ids.has(id), `lineup ${preset.id} references unknown item ${id}`)
+    }
+    const seen = new Set()
+    const dupes = preset.itemIds.filter((id) => seen.size === seen.add(id).size)
+    assert.deepEqual(dupes, [], `lineup ${preset.id} repeats: ${dupes.join(', ')}`)
+  }
+})
+
+/** Lineup URLs are the slugified name, so two lineups may not share one. */
+test('lineup slugs are unique', () => {
+  const slugs = COMPARISON_PRESETS.map((preset) =>
+    preset.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''),
+  )
+  const seen = new Set()
+  const dupes = slugs.filter((slug) => seen.size === seen.add(slug).size)
+  assert.deepEqual(dupes, [], `duplicate lineup slugs: ${dupes.join(', ')}`)
+})

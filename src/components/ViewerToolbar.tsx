@@ -1,16 +1,20 @@
 import {
   ArrowUturnLeftIcon,
   ArrowUturnRightIcon,
+  ChevronUpIcon,
   Cog6ToothIcon,
   MapIcon,
 } from '@heroicons/react/24/outline'
+// Transport controls read better filled; the rest of the bar stays outline.
+import { PauseIcon, PlayIcon } from '@heroicons/react/24/solid'
 import { useEffect, useRef, type ReactNode } from 'react'
+import { SPREAD_MAX, SPREAD_MIN, type TourSettings } from '../tourSettings'
 import { GROUND_PLATES, type GroundPlateId } from '../data/groundPlates'
 import { normalizeYawTurns } from '../modelOrientation'
 import type { UnitSystem } from '../units'
 
 /** Which popover the bar currently has open, if any. */
-export type ToolbarPopover = 'map' | 'download' | 'settings'
+export type ToolbarPopover = 'map' | 'download' | 'settings' | 'tour'
 
 type ViewerToolbarProps = {
   yawTurns: number
@@ -25,6 +29,12 @@ type ViewerToolbarProps = {
   onOpenPopover: (popover: ToolbarPopover | null) => void
   /** The download button and its panel, supplied by `ExportPoster`. */
   downloadItem: ReactNode
+  tourPlaying: boolean
+  /** False with an empty lineup — there is nothing to play through. */
+  canTour: boolean
+  onToggleTour: () => void
+  tourSettings: TourSettings
+  onTourSettingsChange: (patch: Partial<TourSettings>) => void
 }
 
 const PLATE_HINTS: Record<GroundPlateId, string> = {
@@ -44,6 +54,11 @@ export function ViewerToolbar({
   openPopover,
   onOpenPopover,
   downloadItem,
+  tourPlaying,
+  canTour,
+  onToggleTour,
+  tourSettings,
+  onTourSettingsChange,
 }: ViewerToolbarProps) {
   const turns = normalizeYawTurns(yawTurns)
   const barRef = useRef<HTMLDivElement>(null)
@@ -79,6 +94,114 @@ export function ViewerToolbar({
       role="toolbar"
       aria-label="Viewer controls"
     >
+      <div className="toolbar-item">
+        {/* Split like the download button: the main half plays, the chevron is
+            the only way into the settings. */}
+        <div className="toolbar-split">
+          <button
+            type="button"
+            className={`toolbar-btn toolbar-btn-split-main ${tourPlaying ? 'is-playing' : ''}`}
+            onClick={onToggleTour}
+            disabled={!canTour}
+            title={tourPlaying ? 'Pause' : 'Play'}
+            aria-label={tourPlaying ? 'Pause the lineup' : 'Play the lineup'}
+          >
+            {tourPlaying ? <PauseIcon aria-hidden="true" /> : <PlayIcon aria-hidden="true" />}
+          </button>
+          <button
+            type="button"
+            className={`toolbar-btn toolbar-btn-split-more ${openPopover === 'tour' ? 'is-open' : ''}`}
+            onClick={() => toggle('tour')}
+            aria-expanded={openPopover === 'tour'}
+            aria-controls="toolbar-tour-panel"
+            title="Play options"
+            aria-label="Play options"
+          >
+            <ChevronUpIcon aria-hidden="true" />
+          </button>
+        </div>
+
+        {openPopover === 'tour' && (
+          <div
+            id="toolbar-tour-panel"
+            className="toolbar-popover toolbar-popover-start"
+            role="group"
+            aria-label="Play options"
+          >
+            <p className="toolbar-popover-title">Play options</p>
+            <div className="tour-option-row">
+              <span className="tour-option-label" id="tour-frame-label">
+                In frame
+              </span>
+              <div className="tour-seg" role="group" aria-labelledby="tour-frame-label">
+                <button
+                  type="button"
+                  className={tourSettings.frameMode === 'pair' ? 'is-active' : ''}
+                  aria-pressed={tourSettings.frameMode === 'pair'}
+                  onClick={() => onTourSettingsChange({ frameMode: 'pair' })}
+                >
+                  Latest two
+                </button>
+                <button
+                  type="button"
+                  className={tourSettings.frameMode === 'all' ? 'is-active' : ''}
+                  aria-pressed={tourSettings.frameMode === 'all'}
+                  onClick={() => onTourSettingsChange({ frameMode: 'all' })}
+                >
+                  All so far
+                </button>
+              </div>
+            </div>
+
+            <div className="tour-option-row">
+              <label className="tour-option-label" htmlFor="tour-spread">
+                Spacing
+              </label>
+              <input
+                id="tour-spread"
+                className="tour-options-slider"
+                type="range"
+                min={SPREAD_MIN}
+                max={SPREAD_MAX}
+                step={0.05}
+                value={tourSettings.spread}
+                onChange={(event) =>
+                  onTourSettingsChange({ spread: Number(event.target.value) })
+                }
+              />
+              <div className="tour-slider-meta">
+                <span>Tight</span>
+                <span>Wide</span>
+              </div>
+            </div>
+
+            <div className="tour-option-row">
+              <label className="tour-option-label" htmlFor="tour-yaw">
+                Angle
+              </label>
+              <input
+                id="tour-yaw"
+                className="tour-options-slider"
+                type="range"
+                min={-1}
+                max={1}
+                step={0.05}
+                value={tourSettings.yaw}
+                onChange={(event) =>
+                  onTourSettingsChange({ yaw: Number(event.target.value) })
+                }
+              />
+              <div className="tour-slider-meta">
+                <span>Left</span>
+                <span>Right</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <span className="toolbar-divider" aria-hidden="true" />
+
       <div className="toolbar-rotate" role="group" aria-label="Rotate all models">
         <button
           type="button"

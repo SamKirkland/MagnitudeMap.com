@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type MutableRefObject } from 'react'
 import type { ComparisonScene, TourUiState } from '../babylon/ComparisonScene'
 import type { DetonationMode } from '../data/blastEffects'
-import type { TourSettings } from '../tourSettings'
+import { DEFAULT_TOUR_SETTINGS, type TourSettings } from '../tourSettings'
 import type { PosterOverlayState, PosterPreviewSettings } from '../poster/types'
 import { SITE_ORIGIN } from '../siteMeta'
 import type { UnitSystem } from '../units'
@@ -35,6 +35,9 @@ type ViewerProps = {
   shadowsEnabled?: boolean
   onShadowsEnabledChange?: (enabled: boolean) => void
   onTourState?: (tour: TourUiState) => void
+  tourPlaying?: boolean
+  onToggleTour?: () => void
+  onTourSettingsChange?: (patch: Partial<TourSettings>) => void
   tourToggleRef?: MutableRefObject<TourToggle | null>
   debugToggleRef?: MutableRefObject<DebugToggle | null>
   onSecretDebugToggle?: () => void
@@ -58,6 +61,9 @@ export function Viewer({
   shadowsEnabled = DEFAULT_SHADOWS_ENABLED,
   onShadowsEnabledChange,
   onTourState,
+  tourPlaying = false,
+  onToggleTour,
+  onTourSettingsChange,
   tourToggleRef,
   debugToggleRef,
   onSecretDebugToggle,
@@ -228,6 +234,11 @@ export function Viewer({
         onUnitsChange={onUnitsChange}
         openPopover={openPopover}
         onOpenPopover={setOpenPopover}
+        tourPlaying={tourPlaying}
+        canTour={activeItemIds.length > 0}
+        onToggleTour={() => onToggleTour?.()}
+        tourSettings={tourSettings ?? DEFAULT_TOUR_SETTINGS}
+        onTourSettingsChange={(patch) => onTourSettingsChange?.(patch)}
         downloadItem={
           <ExportPoster
             disabled={activeItemIds.length === 0}
