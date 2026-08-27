@@ -190,6 +190,15 @@ type PosterAxes = {
   depth: 0 | 1 | 2
 }
 
+/** Reported while a lineup loads; null once the scene is settled. */
+export type SceneLoadProgress = {
+  /** Objects standing on the stage. */
+  loaded: number
+  total: number
+  /** 0–1, counting the in-flight download of each object that is still coming. */
+  fraction: number
+}
+
 export type TourUiState = {
   sortedItemIds: string[]
   stepIndex: number
@@ -430,6 +439,12 @@ export class ComparisonScene {
   private mode: TourUiState['mode'] = 'overview'
   private tourTimer: number | null = null
   private listeners = new Set<TourListener>()
+  private readonly loadListeners = new Set<(state: SceneLoadProgress | null) => void>()
+  private loadProgress: SceneLoadProgress | null = null
+  /** Per-object download fraction for whatever is still coming. */
+  private readonly loadInFlight = new Map<string, number>()
+  private loadDone = 0
+  private loadTotal = 0
   private pointerDownPos: { x: number; y: number } | null = null
   /** Live touch points on the canvas, keyed by pointerId. Touch only — a mouse
    *  never enters here, so the gesture layer is inert on desktop. */
@@ -816,6 +831,23 @@ export class ComparisonScene {
     return out
   }
 
+  /**
+   * Load progress for the current lineup. Fires with null when nothing is
+   * outstanding, so a subscriber can hide its indicator on the same signal.
+   */
+  subscribeLoadProgress(listener: (state: SceneLoadProgress | null) => void) {
+    this.loadListeners.add(listener)
+    listener(this.loadProgress)
+    return () => {
+      this.loadListeners.delete(listener)
+    }
+  }
+
+  private emitLoadProgress(state: SceneLoadProgress | null) {
+    this.loadProgress = state
+    for (const listener of this.loadListeners) listener(state)
+  }
+
   async setActiveItems(
     itemIds: string[],
     opts: { camera?: 'overview' | 'preserve'; animate?: boolean } = {},
@@ -886,48 +918,51 @@ export class ComparisonScene {
     const toLoad = sorted.filter(
       (item) => !existingByItem.has(item.id) || removingIds.has(item.id),
     )
-    const loaded = await Promise.all(
-      toLoad.map(async (item) => {
-        if (this.disposed || generation !== this.loadGeneration) return null
-        const placement = await this.createPlacement(item, {
-          x: xs.get(item.id) ?? 0,
-          hidden: true,
-        })
-        if (this.disposed || generation !== this.loadGeneration) {
-          this.disposePlacement(placement)
-          return null
-        }
-        return placement
-      }),
-    )
 
-    if (this.disposed || generation !== this.loadGeneration) return
-
-    // Swap only after the new set is ready — avoids empty flashes + origin piles.
+    // The outgoing lineup goes now, not after the load: incoming objects take
+    // its slots along X, so leaving it up would overlap two lineups for as
+    // long as the slowest model takes.
     for (const [, placement] of toRemove) {
       this.removePlacement(placement.instanceId)
       existingByItem.delete(placement.itemId)
     }
 
-    for (const placement of loaded) {
-      if (!placement) continue
-      this.placements.set(placement.instanceId, placement)
-      existingByItem.set(placement.itemId, placement)
-      placement.root.setEnabled(true)
+    // Frame the lineup from catalog sizes before anything has loaded, so
+    // objects appear inside the shot instead of the camera chasing them.
+    // Snap rather than ease: there is nothing on stage yet to follow, and the
+    // ease at the end covers catalog-vs-measured size differences.
+    if (toLoad.length > 0 && cameraMode === 'overview') {
+      this.showOverview(false)
     }
 
-    // Catalog width is body diameter; pack again from real mesh AABBs so
-    // Tight never overlaps fins / legs / wings.
-    this.relayoutLineup()
+    this.startLoadProgress(generation, sorted.length, toLoad.length)
+    await Promise.all(
+      toLoad.map(async (item) => {
+        if (this.disposed || generation !== this.loadGeneration) return
+        const placement = await this.createPlacement(item, {
+          x: xs.get(item.id) ?? 0,
+          hidden: true,
+          onProgress: (fraction) =>
+            this.noteItemLoadProgress(generation, item.id, fraction),
+        })
+        if (this.disposed || generation !== this.loadGeneration) {
+          this.disposePlacement(placement)
+          return
+        }
+        // Reveal on arrival. Everything that follows is per-object work the
+        // old all-at-once swap did in one batch.
+        this.placements.set(placement.instanceId, placement)
+        existingByItem.set(placement.itemId, placement)
+        placement.root.setEnabled(true)
+        this.settleLineup()
+        this.noteItemLoaded(generation, item.id)
+      }),
+    )
 
-    // Re-seat plaques in root-local space (fixes offsets from lineup moves /
-    // older world-space placement bugs).
-    for (const placement of this.placements.values()) {
-      this.relayoutPlaque(placement)
-    }
+    if (this.disposed || generation !== this.loadGeneration) return
+    this.emitLoadProgress(null)
 
-    this.resizeGroundToContent()
-    this.freezeStaticScene()
+    this.settleLineup()
     this.stepIndex = Math.max(0, this.sortedItems.length - 1)
 
     if (this.posterPreview) {
@@ -946,6 +981,70 @@ export class ComparisonScene {
       this.emitTour()
     }
     this.markDirty()
+  }
+
+  /**
+   * Repack and re-dress the lineup around whatever is currently standing.
+   * Runs once per arrival during a load and once more at the end.
+   */
+  private settleLineup() {
+    // Catalog width is body diameter; pack again from real mesh AABBs so
+    // Tight never overlaps fins / legs / wings.
+    this.relayoutLineup()
+
+    // Re-seat plaques in root-local space (fixes offsets from lineup moves /
+    // older world-space placement bugs).
+    for (const placement of this.placements.values()) {
+      this.relayoutPlaque(placement)
+    }
+
+    this.resizeGroundToContent()
+    this.freezeStaticScene()
+    this.markDirty()
+  }
+
+  private startLoadProgress(generation: number, total: number, pending: number) {
+    this.loadInFlight.clear()
+    if (pending === 0 || total === 0) {
+      this.loadTotal = 0
+      this.emitLoadProgress(null)
+      return
+    }
+    this.loadDone = total - pending
+    this.loadTotal = total
+    this.publishLoadProgress(generation)
+  }
+
+  private noteItemLoadProgress(generation: number, itemId: string, fraction: number) {
+    if (generation !== this.loadGeneration) return
+    const clamped = Math.min(Math.max(fraction, 0), 1)
+    const previous = this.loadInFlight.get(itemId) ?? 0
+    // Byte events land in the hundreds; only redraw on a visible step.
+    if (clamped - previous < 0.02 && clamped < 1) return
+    this.loadInFlight.set(itemId, clamped)
+    this.publishLoadProgress(generation)
+  }
+
+  private noteItemLoaded(generation: number, itemId: string) {
+    if (generation !== this.loadGeneration) return
+    this.loadInFlight.delete(itemId)
+    this.loadDone += 1
+    this.publishLoadProgress(generation)
+  }
+
+  /**
+   * Each object is worth one slot; one still downloading is worth its own
+   * fraction of a slot, so the bar keeps moving through a single big model.
+   */
+  private publishLoadProgress(generation: number) {
+    if (generation !== this.loadGeneration || this.loadTotal === 0) return
+    let partial = 0
+    for (const fraction of this.loadInFlight.values()) partial += fraction
+    this.emitLoadProgress({
+      loaded: this.loadDone,
+      total: this.loadTotal,
+      fraction: Math.min((this.loadDone + partial) / this.loadTotal, 1),
+    })
   }
 
   /**
@@ -2421,6 +2520,7 @@ export class ComparisonScene {
     this.cityLoadGen += 1
     this.posterPreview = null
     this.posterOverlayListeners.clear()
+    this.loadListeners.clear()
     this.disposePosterFigures()
     this.clearHover()
     this.clearTourTimer()
@@ -3540,7 +3640,12 @@ export class ComparisonScene {
 
   private async createPlacement(
     item: CatalogItem,
-    opts: { x?: number; hidden?: boolean } = {},
+    opts: {
+      x?: number
+      hidden?: boolean
+      /** 0–1 of the model file downloaded, when the server reports a length. */
+      onProgress?: (fraction: number) => void
+    } = {},
   ): Promise<PlacedObject> {
     const instanceId = `${item.id}-${crypto.randomUUID()}`
     const root = new TransformNode(`root-${instanceId}`, this.scene)
@@ -3561,7 +3666,7 @@ export class ComparisonScene {
       }
     } else if (item.model) {
       try {
-        const loaded = await this.loadScaledModel(item, instanceId)
+        const loaded = await this.loadScaledModel(item, instanceId, opts.onProgress)
         body = loaded.container
         animationGroups = loaded.animationGroups
         skeletons = loaded.skeletons
@@ -3637,6 +3742,7 @@ export class ComparisonScene {
   private async loadScaledModel(
     item: CatalogItem,
     instanceId: string,
+    onProgress?: (fraction: number) => void,
   ): Promise<{
     container: TransformNode
     animationGroups: AnimationGroup[]
@@ -3645,7 +3751,19 @@ export class ComparisonScene {
     const model = item.model!
     const { rootUrl, filename } = this.resolveModelUrl(model.path)
 
-    const result = await SceneLoader.ImportMeshAsync('', rootUrl, filename, this.scene)
+    const result = await SceneLoader.ImportMeshAsync(
+      '',
+      rootUrl,
+      filename,
+      this.scene,
+      onProgress
+        ? (event) => {
+            // A cached file reports no length; it lands as a completion instead.
+            if (!event.lengthComputable || event.total <= 0) return
+            onProgress(event.loaded / event.total)
+          }
+        : undefined,
+    )
     // Hide immediately — ImportMesh drops meshes at the world origin before parenting.
     for (const mesh of result.meshes) {
       mesh.isVisible = false

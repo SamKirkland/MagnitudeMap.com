@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useRef, useState, type MutableRefObject } from 'react'
-import type { ComparisonScene, TourUiState } from '../babylon/ComparisonScene'
+import type {
+  ComparisonScene,
+  SceneLoadProgress,
+  TourUiState,
+} from '../babylon/ComparisonScene'
 import type { DetonationMode } from '../data/blastEffects'
 import { DEFAULT_TOUR_SETTINGS, type TourSettings } from '../tourSettings'
 import type { PosterOverlayState, PosterPreviewSettings } from '../poster/types'
@@ -11,6 +15,33 @@ import { MagnitudeMapLogo } from './MagnitudeMapLogo'
 import { ViewerToolbar, type ToolbarPopover } from './ViewerToolbar'
 import { DEFAULT_GROUND_PLATE, type GroundPlateId } from '../data/groundPlates'
 import { DEFAULT_SHADOWS_ENABLED } from '../shadows'
+
+/**
+ * Determinate loading strip across the top of the stage. Objects reveal as they
+ * land, so this answers "how much is still coming" rather than blocking on it.
+ */
+function LoadProgress({ progress }: { progress: SceneLoadProgress | null }) {
+  if (!progress) return null
+  const percent = Math.round(progress.fraction * 100)
+  return (
+    <div
+      className="viewer-loading"
+      role="progressbar"
+      aria-label="Loading objects"
+      aria-valuemin={0}
+      aria-valuemax={progress.total}
+      aria-valuenow={progress.loaded}
+      aria-valuetext={`${progress.loaded} of ${progress.total} objects loaded`}
+    >
+      <div className="viewer-loading-track">
+        <div className="viewer-loading-fill" style={{ width: `${percent}%` }} />
+      </div>
+      <span className="viewer-loading-count">
+        {progress.loaded} / {progress.total}
+      </span>
+    </div>
+  )
+}
 
 export type TourToggle = () => void
 export type DebugToggle = () => void
@@ -83,6 +114,7 @@ export function Viewer({
   const activeItemIdsRef = useRef(activeItemIds)
   const brandClicksRef = useRef<number[]>([])
   const [posterPreviewActive, setPosterPreviewActive] = useState(false)
+  const [loadProgress, setLoadProgress] = useState<SceneLoadProgress | null>(null)
   const [openPopover, setOpenPopover] = useState<ToolbarPopover | null>(null)
   // The poster overlay portals into the viewer stack; state (not a ref) so the
   // first render with a mounted node re-renders the portal target.
@@ -117,6 +149,7 @@ export function Viewer({
     let cancelled = false
     let scene: ComparisonScene | null = null
     let unsubscribe: (() => void) | null = null
+    let unsubscribeLoad: (() => void) | null = null
 
     void (async () => {
       const { ComparisonScene: Scene } = await import('../babylon/ComparisonScene')
@@ -132,6 +165,7 @@ export function Viewer({
       unsubscribe = scene.subscribeTour((state) => {
         onTourStateRef.current?.(state)
       })
+      unsubscribeLoad = scene.subscribeLoadProgress(setLoadProgress)
       // Prop-driven effects below already ran against a null scene; replay the
       // one that carries state the constructor does not take.
       void scene.setActiveItems(activeItemIdsRef.current, {
@@ -153,6 +187,8 @@ export function Viewer({
       if (tourToggleRef) tourToggleRef.current = null
       if (debugToggleRef) debugToggleRef.current = null
       unsubscribe?.()
+      unsubscribeLoad?.()
+      setLoadProgress(null)
       scene?.dispose()
       sceneRef.current = null
     }
@@ -209,6 +245,7 @@ export function Viewer({
         className="viewer-canvas"
         aria-label="MagnitudeMap 3D comparison viewer"
       />
+      <LoadProgress progress={posterPreviewActive ? null : loadProgress} />
       <button
         type="button"
         className="map-brand"

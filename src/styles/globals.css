@@ -823,6 +823,57 @@ input {
   height: auto;
 }
 
+/* Loading strip: top-centre, clear of the brand in the top-left corner. */
+.viewer-loading {
+  position: absolute;
+  top: max(0.85rem, env(safe-area-inset-top, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  background: var(--panel);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  font-size: 0.78rem;
+  color: var(--muted);
+  pointer-events: none;
+  animation: viewer-loading-in 160ms ease-out;
+}
+
+.viewer-loading-track {
+  width: min(160px, 34vw);
+  height: 4px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  overflow: hidden;
+}
+
+.viewer-loading-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 180ms ease-out;
+}
+
+.viewer-loading-count {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes viewer-loading-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -4px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
 .export-capture-veil {
   position: absolute;
   inset: 0;
@@ -983,6 +1034,14 @@ input {
 @media (prefers-reduced-motion: reduce) {
   .export-busy {
     animation-duration: 2.4s;
+  }
+
+  .viewer-loading {
+    animation: none;
+  }
+
+  .viewer-loading-fill {
+    transition: none;
   }
 }
 
