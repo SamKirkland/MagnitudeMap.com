@@ -1,5 +1,6 @@
 import { SITE_NAME } from '../siteMeta'
 import { formatLength, niceScaleMeters, type UnitSystem } from '../units'
+import { posterLabelFontSize } from './settings'
 import type { PosterBackground, PosterItemProjection, PosterLayout } from './types'
 
 const INK = '#1c2430'
@@ -113,48 +114,176 @@ function drawMagnitudeMapLogo(
   ctx.restore()
 }
 
-function drawLabels(ctx: CanvasRenderingContext2D, opts: PosterOverlayOptions) {
-  const crowded = opts.items.length > 8
-  const fontSize = Math.max(12, Math.round(opts.width * (crowded ? 0.01 : 0.0125)))
-  ctx.font = `600 ${fontSize}px "IBM Plex Sans", "Segoe UI", sans-serif`
-  const gap = Math.max(8, Math.round(fontSize * 0.45))
-  // Name only. The scale bar carries the measurement; repeating it per item
-  // just crowds the poster.
-  const boxes = opts.items.map((item) => {
-    const name = item.name
-    return { item, name, width: ctx.measureText(name).width, fontSize }
-  })
+function labelFont(fontSize: number): string {
+  return `600 ${fontSize}px "IBM Plex Sans", "Segoe UI", sans-serif`
+}
 
+type FittedLabel = { text: string; fontSize: number; width: number }
+
+/**
+ * Shrink (to 72% of the base size) then ellipsize until the name fits its slot.
+ * Clamping to the slot is what keeps neighbouring labels from colliding.
+ */
+function fitLabel(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+  baseSize: number,
+): FittedLabel {
+  const floor = Math.max(10, Math.round(baseSize * 0.72))
+  let fontSize = baseSize
+  ctx.font = labelFont(fontSize)
+  let width = ctx.measureText(text).width
+  while (width > maxWidth && fontSize > floor) {
+    fontSize = Math.max(floor, fontSize - 1)
+    ctx.font = labelFont(fontSize)
+    width = ctx.measureText(text).width
+  }
+  if (width <= maxWidth) return { text, fontSize, width }
+
+  let clipped = text
+  while (clipped.length > 1) {
+    clipped = clipped.slice(0, -1)
+    width = ctx.measureText(`${clipped}…`).width
+    if (width <= maxWidth) break
+  }
+  return { text: `${clipped}…`, fontSize, width }
+}
+
+/** Items grouped by the row/column the scene laid them out in, in reading order. */
+function labelRows(items: PosterItemProjection[]): PosterItemProjection[][] {
+  const byRow = new Map<number, PosterItemProjection[]>()
+  for (const item of items) {
+    const row = Number.isFinite(item.row) ? item.row : 0
+    const bucket = byRow.get(row)
+    if (bucket) bucket.push(item)
+    else byRow.set(row, [item])
+  }
+  return [...byRow.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([, bucket]) => bucket)
+}
+
+function drawLabels(ctx: CanvasRenderingContext2D, opts: PosterOverlayOptions) {
+  if (opts.items.length === 0) return
+  const fontSize = posterLabelFontSize(opts.width, opts.items.length)
   if (opts.layout === 'stacked') {
+    drawStackedLabels(ctx, opts, fontSize)
+    return
+  }
+  drawLineupLabels(ctx, opts, fontSize)
+}
+
+/**
+ * A name under every object, banded beneath its own row. Two alternating lines
+ * are used when the row is packed tighter than the names are wide and there is
+ * vertical room before the next row starts.
+ */
+function drawLineupLabels(
+  ctx: CanvasRenderingContext2D,
+  opts: PosterOverlayOptions,
+  fontSize: number,
+) {
+  const gap = Math.max(8, Math.round(fontSize * 0.45))
+  const lineH = Math.round(fontSize * 1.35)
+  const rows = labelRows(opts.items).map((row) =>
+    [...row].sort((a, b) => a.minX - b.minX),
+  )
+
+  for (let r = 0; r < rows.length; r++) {
+    const row = rows[r]
+    const next = rows[r + 1]
+    const bandY = Math.max(...row.map((item) => item.maxY)) + gap
+    const limit = next
+      ? Math.min(...next.map((item) => item.minY)) - gap * 0.5
+      : opts.height - gap
+    const lines = Math.max(1, Math.min(2, Math.floor((limit - bandY) / lineH)))
+
+    // Slots first at one line; if any name has to be cut, stagger onto two.
+    const single = slotWidths(row, opts.width, 1)
+    const cramped = row.some(
+      (item, i) => measureName(ctx, item.name, fontSize) > single[i],
+    )
+    const useTwo = lines >= 2 && cramped
+    const widths = useTwo ? slotWidths(row, opts.width, 2) : single
+
+    for (let i = 0; i < row.length; i++) {
+      const item = row[i]
+      const cx = (item.minX + item.maxX) / 2
+      const y = bandY + (useTwo ? (i % 2) * lineH : 0)
+      const fitted = fitLabel(ctx, item.name, widths[i], fontSize)
+      drawLabelLine(ctx, fitted.text, cx, y, 'center', 'top', fitted.fontSize)
+    }
+  }
+}
+
+function measureName(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  fontSize: number,
+): number {
+  ctx.font = labelFont(fontSize)
+  return ctx.measureText(text).width
+}
+
+/**
+ * Horizontal room each label may claim: half the distance to whichever
+ * neighbour shares its line, so no two names can ever meet.
+ */
+function slotWidths(
+  row: PosterItemProjection[],
+  width: number,
+  lines: number,
+): number[] {
+  const margin = Math.max(6, width * 0.004)
+  return row.map((item, i) => {
+    const cx = (item.minX + item.maxX) / 2
+    const before = row[i - lines]
+    const after = row[i + lines]
+    const left = before ? (before.maxX + item.minX) / 2 : 0
+    const right = after ? (item.maxX + after.minX) / 2 : width
+    const room = Math.min(cx - left, right - cx) * 2 - margin * 2
+    // Never collapse to nothing: a heavily overlapped item still gets a stub.
+    return Math.max(room, width * 0.05)
+  })
+}
+
+/** Stacked posters label to the right, clamped to the next column's edge. */
+function drawStackedLabels(
+  ctx: CanvasRenderingContext2D,
+  opts: PosterOverlayOptions,
+  fontSize: number,
+) {
+  const pad = Math.max(16, opts.width * 0.012)
+  for (const column of labelRows(opts.items)) {
     const placed: number[] = []
-    for (const box of boxes) {
-      const x = box.item.maxX + Math.max(16, opts.width * 0.018)
-      let y = (box.item.minY + box.item.maxY) / 2
+    for (const item of [...column].sort((a, b) => a.minY - b.minY)) {
+      const x = item.maxX + pad
+      let y = (item.minY + item.maxY) / 2
       for (const other of placed) {
         if (Math.abs(y - other) < fontSize * 1.2) y = other + fontSize * 1.25
       }
       placed.push(y)
-      drawLabelLine(ctx, box.name, x, y, 'left', 'middle', fontSize)
+      const fitted = fitLabel(ctx, item.name, gutterWidth(opts, item, x, pad), fontSize)
+      drawLabelLine(ctx, fitted.text, x, y, 'left', 'middle', fitted.fontSize)
     }
-    return
   }
+}
 
-  const lowest = Math.max(...opts.items.map((item) => item.maxY), opts.height * 0.55)
-  const bandY = Math.min(opts.height * 0.86, lowest + gap)
-  const rowH = fontSize * 1.5
-  const placed: Array<{ left: number; right: number; y: number }> = []
-  for (const box of boxes.sort((a, b) => a.item.minX - b.item.minX)) {
-    const cx = (box.item.minX + box.item.maxX) / 2
-    let y = bandY
-    const left = cx - box.width / 2
-    const right = cx + box.width / 2
-    for (const other of placed) {
-      const overlap = left < other.right + 12 && right > other.left - 12
-      if (overlap && Math.abs(y - other.y) < rowH) y = other.y + rowH
-    }
-    placed.push({ left, right, y })
-    drawLabelLine(ctx, box.name, cx, y, 'center', 'top', fontSize)
+/** Space between an item's right edge and whatever sits beside it. */
+function gutterWidth(
+  opts: PosterOverlayOptions,
+  item: PosterItemProjection,
+  x: number,
+  pad: number,
+): number {
+  let right = opts.width - pad
+  for (const other of opts.items) {
+    if (other === item || other.minX <= item.maxX) continue
+    const overlaps = other.minY < item.maxY && other.maxY > item.minY
+    if (overlaps) right = Math.min(right, other.minX - pad * 0.5)
   }
+  return Math.max(right - x, opts.width * 0.05)
 }
 
 function drawLabelLine(
@@ -166,7 +295,7 @@ function drawLabelLine(
   baseline: CanvasTextBaseline,
   fontSize: number,
 ) {
-  ctx.font = `600 ${fontSize}px "IBM Plex Sans", "Segoe UI", sans-serif`
+  ctx.font = labelFont(fontSize)
   ctx.textAlign = align
   ctx.textBaseline = baseline
   ctx.fillStyle = INK

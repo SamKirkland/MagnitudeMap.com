@@ -1,0 +1,12 @@
+{
+  "id": "mi-24",
+  "file": "model.glb",
+  "license": "CC-BY-4.0",
+  "licenseLabel": "CC BY",
+  "author": "42manako",
+  "source": "https://sketchfab.com/3d-models/ukrainian-mil-mi-24p-2d8a8f13daae4757be0ff95195a6d6f3",
+  "sourceAsset": "Ukrainian Mil Mi-24P",
+  "sketchfabUid": "2d8a8f13daae4757be0ff95195a6d6f3",
+  "notes": "Requested model. Blades are modelled spread, so the app scales on width (17.3 m rotor diameter) per the helicopter rule; rendered length/height run ~10% over the catalog figures because of the spread blades.",
+  "attribution": "Ukrainian Mil Mi-24P by 42manako on Sketchfab (CC BY) — https://sketchfab.com/3d-models/ukrainian-mil-mi-24p-2d8a8f13daae4757be0ff95195a6d6f3"
+}

@@ -15,6 +15,8 @@ export async function buildPosterImage(args: {
   units: UnitSystem
   title: string
   shareUrl: string
+  /** Objects in the comparison — decides how much of the frame labels claim. */
+  itemCount: number
 }): Promise<Blob> {
   const size = posterPixelSize(args.settings.layout, args.resolution)
   const result = await args.capture({
@@ -23,7 +25,7 @@ export async function buildPosterImage(args: {
     layout: args.settings.layout,
     view: args.settings.view,
     background: args.settings.background,
-    contentRect: posterContentRect(args.settings.layout),
+    contentRect: posterContentRect(args.settings.layout, args.itemCount),
   })
   return composePoster({
     render: result.image,

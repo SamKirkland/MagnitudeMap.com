@@ -43,6 +43,11 @@ export type CatalogModelRef = {
   /** Prefer a clip whose name matches this regex when the camera focuses the item. */
   clipPrefer?: string
   /**
+   * Freeze the import on the last frame of its clips instead of playing them
+   * (F-22: gear down, boarding ladder deployed). Applied before measuring.
+   */
+  poseAtClipEnd?: boolean
+  /**
    * Paint mesh by world-space height after scale (e.g. N1 olive / off-white stages).
    * `split` is the fraction of height from the base where the upper color begins.
    */
@@ -265,7 +270,7 @@ const CATALOG_SEED: CatalogSeed[] = [
       path: 'models/banana/model.glb',
       scaleAxis: 'length',
       yawDegrees: 180,
-      pitchDegrees: 90,
+      pitchDegrees: -90,
     },
   },
   {
@@ -442,8 +447,10 @@ const CATALOG_SEED: CatalogSeed[] = [
     model: {
       path: 'models/f22/model.glb',
       scaleAxis: 'length',
-      // Native nose is +Z. 180° points at the plaque (-Z).
+      // Native nose is -Z; 180 points it down the lineup like the other jets.
       yawDegrees: 180,
+      // Parked pose: gear down and boarding ladder out, the end of the GLB clip.
+      poseAtClipEnd: true,
     },
   },
   {
@@ -871,6 +878,22 @@ const CATALOG_SEED: CatalogSeed[] = [
       scaleAxis: 'length',
       // Native nose is +Z. 180° points at the plaque (-Z).
       yawDegrees: 180,
+    },
+  },
+  {
+    id: 'mi-24',
+    name: 'Mil Mi-24P Hind',
+    category: 'military',
+    length: 21.35,
+    width: 17.3,
+    height: 6.5,
+    shape: 'box',
+    color: '#4a5340',
+    blurb: 'Mil Mi-24P Hind gunship — attack helicopter and troop carrier (~17.3 m rotor).',
+    model: {
+      path: 'models/mi-24/model.glb',
+      // Blades are modelled spread, so the box never matches rotors-turning length.
+      scaleAxis: 'width',
     },
   },
   {
@@ -2191,6 +2214,72 @@ const CATALOG_SEED: CatalogSeed[] = [
     },
   },
   {
+    id: 'godzilla',
+    name: 'Godzilla (Legendary)',
+    category: 'fiction',
+    length: 167.6,
+    width: 66.0,
+    height: 119.8,
+    shape: 'box',
+    color: '#3a3f45',
+    blurb: 'Legendary MonsterVerse Godzilla (119.8 m tall). Moves when focused.',
+    playClips: true,
+    model: {
+      path: 'models/godzilla/model.glb',
+      scaleAxis: 'height',
+      // Authored facing -Z; 180 puts the head on +Z at Facing 0.
+      yawDegrees: 180,
+      clipPrefer: 'walk|roar|idle|armature',
+    },
+  },
+  {
+    id: 'warthog',
+    name: 'M12 Warthog (Halo)',
+    category: 'fiction',
+    length: 6.0,
+    width: 3.31,
+    height: 3.06,
+    shape: 'box',
+    color: '#4a5a3f',
+    blurb: 'M12 Force Application Vehicle — the Halo Warthog (6.0 m long).',
+    model: {
+      path: 'models/warthog/model.glb',
+      scaleAxis: 'length',
+      // Authored with the length on X; 90 puts the nose on +Z.
+      yawDegrees: 90,
+    },
+  },
+  {
+    id: 'halo-wraith',
+    name: 'Type-26 Wraith (Halo)',
+    category: 'fiction',
+    length: 9.0,
+    width: 8.5,
+    height: 4.7,
+    shape: 'box',
+    color: '#5b4a7a',
+    blurb: 'Type-26 Assault Gun Carriage — the Covenant Wraith (9.0 m long).',
+    model: {
+      path: 'models/halo-wraith/model.glb',
+      scaleAxis: 'length',
+    },
+  },
+  {
+    id: 'pelican',
+    name: 'D77-TC Pelican (Halo)',
+    category: 'fiction',
+    length: 30.5,
+    width: 25.6,
+    height: 10.6,
+    shape: 'box',
+    color: '#4b5348',
+    blurb: 'D77-TC Pelican dropship (30.5 m long).',
+    model: {
+      path: 'models/pelican/model.glb',
+      scaleAxis: 'length',
+    },
+  },
+  {
     id: 'rabbit',
     name: 'Rabbit',
     category: 'animal',
@@ -2603,6 +2692,7 @@ export const COMPARISON_PRESETS: ComparisonPreset[] = [
       'person-male',
       's97',
       'apache',
+      'mi-24',
       'blackhawk',
       'v22',
       'chinook',
@@ -2767,6 +2857,18 @@ export const COMPARISON_PRESETS: ComparisonPreset[] = [
     ],
   },
   {
+    id: 'halo',
+    name: 'Halo',
+    description: 'Warthog through the Pelican dropship.',
+    tags: ['halo', 'fiction', 'ships', 'warthog', 'pelican', 'covenant', 'sci-fi'],
+    itemIds: [
+      'person-male',
+      'warthog',
+      'halo-wraith',
+      'pelican',
+    ],
+  },
+  {
     id: 'startrek',
     name: 'Star Trek',
     description: 'Shuttlepod through Earth Spacedock.',
@@ -2836,6 +2938,7 @@ export const COMPARISON_PRESETS: ComparisonPreset[] = [
       'eiffel',
       'great-pyramids',
       'burj',
+      'godzilla',
     ],
   },
   {

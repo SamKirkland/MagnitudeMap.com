@@ -506,6 +506,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "CR-90 corvette (CC-BY). Scaled to 150 m length in-app."
   },
   {
+    "id": "pelican",
+    "catalogName": "D77-TC Pelican (Halo)",
+    "author": "Marr Velz",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/d77-tc-pelican-7c75ec48e02c4113ab202a628266ca7b",
+    "sourceAsset": "D77-TC Pelican",
+    "attribution": "D77-TC Pelican by Marr Velz on Sketchfab (CC BY) — https://sketchfab.com/3d-models/d77-tc-pelican-7c75ec48e02c4113ab202a628266ca7b",
+    "requiresAttribution": true,
+    "notes": "Requested model. Fan-made Halo D77-TC Pelican. Scaled to the canon 30.5 m length; width and height match within a few percent."
+  },
+  {
     "id": "daedalus",
     "catalogName": "Daedalus (BC-304)",
     "author": "3D Sci-Fi",
@@ -616,14 +628,14 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
   {
     "id": "f22",
     "catalogName": "F-22 Raptor",
-    "author": "Jan Esch",
+    "author": "NLM",
     "license": "CC-BY-4.0",
     "licenseLabel": "CC BY",
-    "source": "https://sketchfab.com/3d-models/f22-raptor-03a2651804344ebc930e01cc945bf07d",
-    "sourceAsset": "F22 Raptor",
-    "attribution": "F22 Raptor by Jan Esch on Sketchfab (CC BY) — https://sketchfab.com/3d-models/f22-raptor-03a2651804344ebc930e01cc945bf07d",
+    "source": "https://sketchfab.com/3d-models/f22-raptor-free-2a64abf0866a405c865466c7642ca689",
+    "sourceAsset": "F22 Raptor FREE",
+    "attribution": "F22 Raptor FREE by NLM on Sketchfab (CC BY) — https://sketchfab.com/3d-models/f22-raptor-free-2a64abf0866a405c865466c7642ca689",
     "requiresAttribution": true,
-    "notes": "Requested WTigerTw F-22A (ea657ca469424ad68c4b9e013b993c46) is Sketchfab Standard (not redistributable). CC-BY stand-in: Njan F-22 Raptor. Scaled to 18.92 m length in-app."
+    "notes": "Requested replacement for the earlier Jan Esch F-22. Ships one clip; the catalog sets poseAtClipEnd so the viewer freezes on the last frame (gear down, canopy open, boarding ladder deployed) instead of playing it. verify-models measures the GLB rest pose, so its static width (18.8 m) and its ground-plate flag on the thin wing mesh Object_101 are both false alarms; the rendered pose measures L 18.9 m / W 13.8 m / H 4.80 m against catalog 18.92 / 13.56 / 5.08."
   },
   {
     "id": "f35",
@@ -732,6 +744,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "Giger walk by PAndras on Sketchfab (CC BY) — https://sketchfab.com/3d-models/giger-walk-a4eca4b015f5407e90120836ff77e661",
     "requiresAttribution": true,
     "notes": "Giganotosaurus walk (CC-BY, PusztaiAndras). Linked GremorySaiyan pack is Standard. Scaled to 12.5 m length in-app."
+  },
+  {
+    "id": "godzilla",
+    "catalogName": "Godzilla (Legendary)",
+    "author": "Pumpkin (savounited)",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/godzilla-ca862e19cad04f95af49263405ee04dd",
+    "sourceAsset": "Godzilla",
+    "attribution": "Godzilla by Pumpkin on Sketchfab (CC BY) — https://sketchfab.com/3d-models/godzilla-ca862e19cad04f95af49263405ee04dd",
+    "requiresAttribution": true,
+    "notes": "Requested model. Rigged with one clip. Scaled on height to the Legendary MonsterVerse figure of 119.8 m; the mesh tail is proportionally longer than canon, so the rendered snout-to-tail box is about 236 m against the catalog's canon 167.6 m length."
   },
   {
     "id": "great-pyramids",
@@ -890,6 +914,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Little Boy (CC-BY-SA). Scaled to 3.0 m length in-app."
   },
   {
+    "id": "warthog",
+    "catalogName": "M12 Warthog (Halo)",
+    "author": "pinto36",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/halo-warthog-bd3403bc06884260ac31d0e98eed81e4",
+    "sourceAsset": "Halo Warthog",
+    "attribution": "Halo Warthog by pinto36 on Sketchfab (CC BY) — https://sketchfab.com/3d-models/halo-warthog-bd3403bc06884260ac31d0e98eed81e4",
+    "requiresAttribution": true,
+    "notes": "Requested model. Fan-made Halo M12 Warthog, authored with the length on X (yawDegrees 90). Scaled to the canon 6.0 m length."
+  },
+  {
     "id": "abrams",
     "catalogName": "M1A2 Abrams",
     "author": "Muhamad Mirza Arrafi",
@@ -960,6 +996,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "Mi10 by manilov.ap on Sketchfab (CC BY) — https://sketchfab.com/3d-models/mi10-b0fc8efb90554c7b8c7a0abc847822c1",
     "requiresAttribution": true,
     "notes": "Mil Mi-10 Harke flying-crane by manilov.ap (CC-BY). Scaled to 32.86 m fuselage length in-app."
+  },
+  {
+    "id": "mi-24",
+    "catalogName": "Mil Mi-24P Hind",
+    "author": "42manako",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/ukrainian-mil-mi-24p-2d8a8f13daae4757be0ff95195a6d6f3",
+    "sourceAsset": "Ukrainian Mil Mi-24P",
+    "attribution": "Ukrainian Mil Mi-24P by 42manako on Sketchfab (CC BY) — https://sketchfab.com/3d-models/ukrainian-mil-mi-24p-2d8a8f13daae4757be0ff95195a6d6f3",
+    "requiresAttribution": true,
+    "notes": "Requested model. Blades are modelled spread, so the app scales on width (17.3 m rotor diameter) per the helicopter rule; rendered length/height run ~10% over the catalog figures because of the spread blades."
   },
   {
     "id": "mi26",
@@ -1524,6 +1572,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "TYPE-45 DESTROYER CLASS by Muhamad Mirza Arrafi on Sketchfab (CC BY) — https://sketchfab.com/3d-models/type-45-destroyer-class-a471949e73d04c838416fca2f7813c8e",
     "requiresAttribution": true,
     "notes": "Type 45 destroyer by nazidefenseforceofficial (CC-BY). Scaled to 152.4 m length in-app."
+  },
+  {
+    "id": "halo-wraith",
+    "catalogName": "Type-26 Wraith (Halo)",
+    "author": "TechF0rge3D",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/halo-wraith-a8845d17eb684d15ac53e680824291a0",
+    "sourceAsset": "Halo Wraith",
+    "attribution": "Halo Wraith by TechF0rge3D on Sketchfab (CC BY) — https://sketchfab.com/3d-models/halo-wraith-a8845d17eb684d15ac53e680824291a0",
+    "requiresAttribution": true,
+    "notes": "Requested model. Fan-made Covenant Type-26 Wraith. Scaled to the canon 9.0 m length; the mesh's side wings are proportionally wider than canon, so it renders about 11.8 m across against the catalog's 8.5 m width."
   },
   {
     "id": "blackhawk",

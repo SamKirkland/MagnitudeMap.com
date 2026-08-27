@@ -48,6 +48,10 @@ import '@babylonjs/core/Lights/Shadows/shadowGeneratorSceneComponent'
 // picking API as a side-effect augmentation, so without this import every
 // scene.pick() throws and click-to-focus and hover silently do nothing.
 import '@babylonjs/core/Culling/ray'
+// Installs AbstractMesh.enableEdgesRendering. Same story as picking above: the
+// ES6 build only patches the prototype when this module is imported, so the
+// hover cage threw here and killed the outline plus its dimension labels.
+import '@babylonjs/core/Rendering/edgesRenderer'
 import { CreateScreenshotUsingRenderTargetAsync } from '@babylonjs/core/Misc/screenshotTools'
 // glTF 2.0 only. The bare '@babylonjs/loaders/glTF' entry also registers the
 // glTF 1.0 loader, which nothing here loads.
@@ -74,6 +78,7 @@ import {
   facingExtentAlongX,
   itemMagnitude,
   layoutRevealPositions,
+  pairSpacingGap,
   poseForItems,
   poseForTourStep,
   poseForWorldBounds,
@@ -121,10 +126,11 @@ import {
   type PosterCaptureResult,
   type PosterFrameRequest,
   type PosterItemProjection,
-  type PosterLayout,
   type PosterOverlayState,
   type PosterPreviewSettings,
+  type PosterView,
 } from '../poster/types'
+import { posterLabelBandPx, posterLabelFontSize, posterUsesGrid } from '../poster/settings'
 import {
   distantHelperCutoff,
   isHelperLabel,
@@ -150,6 +156,38 @@ type PlacedObject = {
   labelTex: DynamicTexture | null
   animationGroups: AnimationGroup[]
   clipPlaying: boolean
+}
+
+/**
+ * Poster scale figures. Instead of leaving the user's "Adult" pick in the
+ * lineup, the poster hides it and drops a black silhouette beside every few
+ * objects — the architectural-drawing convention, and far easier to read.
+ */
+const POSTER_SCALE_FIGURE_ID = 'person-male'
+const POSTER_SCALE_REFERENCE_IDS = new Set(['person-male', 'person-female'])
+/** Objects smaller than this get no figure: it would dwarf them. */
+const POSTER_SCALE_FIGURE_MIN_SIZE_M = 3
+const POSTER_SCALE_FIGURE_EVERY = 3
+const POSTER_SCALE_FIGURE_MAX = 6
+/** Air kept around a figure, as a multiple of its own width. */
+const POSTER_SCALE_FIGURE_SLOT = 2.2
+/** Rows/columns the poster will wrap into at most. */
+const POSTER_MAX_GROUPS = 6
+
+type PosterEntry = {
+  item: CatalogItem
+  placement: PlacedObject
+  min: Vector3
+  max: Vector3
+  /** Reserve room for a scale figure to this object's left. */
+  figure: boolean
+}
+
+type PosterAxes = {
+  /** World axis index that runs up the poster image. */
+  up: 0 | 1 | 2
+  /** World axis index pointing at the camera. */
+  depth: 0 | 1 | 2
 }
 
 export type TourUiState = {
@@ -430,6 +468,17 @@ export class ComparisonScene {
   private readonly posterOverlayListeners = new Set<
     (state: PosterOverlayState | null) => void
   >()
+  /** Silhouettes reused across every poster in the session. */
+  private posterFigures: TransformNode[] = []
+  private posterFigureWork: Promise<void> | null = null
+  private posterFigureFailed = false
+  /** True for the whole of capturePosterRender: the poster owns the camera. */
+  private posterCapturing = false
+  private posterFigureMaterial: StandardMaterial | null = null
+  /** Scale references swapped out for silhouettes while the poster is up. */
+  private posterHiddenItemIds = new Set<string>()
+  /** Row (lineup) or column (stacked) each object landed in. */
+  private readonly posterRowByItem = new Map<string, number>()
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -956,6 +1005,10 @@ export class ComparisonScene {
     this.camera.animations = []
     this.cameraMoveGen += 1
     this.clearHover()
+    // Before anything is torn down: this awaits model imports, and the live
+    // preview may have the same load already in flight.
+    await this.ensurePosterFigures(this.posterFigureDemand())
+    this.posterCapturing = true
 
     const camera = this.camera
     const saved = {
@@ -987,8 +1040,6 @@ export class ComparisonScene {
           ? new Color4(0, 0, 0, 0)
           : new Color4(1, 1, 1, 1)
       this.scene.autoClear = true
-      this.applyPosterItemLayout(request.layout)
-
       const maxTex = this.engine.getCaps().maxTextureSize ?? 8192
       const sized = this.clampPosterPixelSize(
         request.width,
@@ -1000,7 +1051,7 @@ export class ComparisonScene {
       this.engine.setHardwareScalingLevel(1)
       this.setPosterCaptureBackbuffer(captureRequest.width, captureRequest.height)
       this.setMaterialsLogarithmicDepth(false)
-      this.framePosterCamera(captureRequest)
+      this.layoutAndFramePoster(captureRequest)
 
       this.heldIdle = false
       this.renderNeeded = true
@@ -1048,6 +1099,7 @@ export class ComparisonScene {
         items,
       }
     } finally {
+      this.posterCapturing = false
       this.engine.setHardwareScalingLevel(saved.scaling)
       this.setMaterialsLogarithmicDepth(true)
       this.applyResolutionCap()
@@ -1062,6 +1114,7 @@ export class ComparisonScene {
           this.thawPlacement(placement)
           placement.root.position.copyFrom(pos)
         }
+        this.clearPosterScaleReferences()
         this.setPosterStageEnabled(true)
         this.scene.clearColor.copyFrom(saved.clearColor)
         this.scene.autoClear = saved.autoClear
@@ -1128,6 +1181,7 @@ export class ComparisonScene {
     if (!this.posterPreview) return
     const saved = this.posterPreview.saved
     this.posterPreview = null
+    this.clearPosterScaleReferences()
     this.restoreInteractive(saved)
     this.emitPosterOverlay()
   }
@@ -1138,9 +1192,8 @@ export class ComparisonScene {
     this.scene.autoClear = true
     this.applyPosterPreviewResolution()
     this.engine.resize()
-    this.applyPosterItemLayout(settings.layout)
-    const size = this.canvasCssSize()
-    this.framePosterCamera({ ...settings, ...size })
+    this.requestPosterFigures()
+    this.layoutAndFramePoster({ ...settings, ...this.canvasCssSize() })
     this.freezeStaticScene()
     this.markDirty()
     this.emitPosterOverlay()
@@ -1258,63 +1311,474 @@ export class ComparisonScene {
     }
   }
 
-  /** Pack the lineup at Tight so the poster reads as a comparison, not a tour. */
-  private applyPosterItemLayout(layout: PosterLayout) {
-    const xs = layoutRevealPositions(this.sortedItems, {
-      spread: SPREAD_MIN,
-      yawTurns: this.displayYawTurns,
-      facingExtents: this.measuredFacingExtents(),
-    })
+  /**
+   * Lay the comparison out for the poster. One packed row (or column) while it
+   * still reads as one; past that it wraps into a grid whose aspect matches the
+   * image, so a long list stops turning into a hairline ribbon.
+   * `labelGap` / `labelGutter` are the world-space strips each row keeps free
+   * for its names.
+   */
+  private applyPosterItemLayout(
+    request: PosterFrameRequest,
+    labelGap: number,
+    labelGutter: number,
+  ) {
+    // Silhouettes only earn their place in the side view: from directly above
+    // a standing person is an unreadable blob.
+    const useFigures = request.layout === 'lineup' && request.view === 'side'
+    this.applyPosterScaleReferences(useFigures)
+    this.posterRowByItem.clear()
+    const entries = this.posterEntries(useFigures)
+    if (entries.length === 0) {
+      this.showPosterFigures([])
+      return
+    }
+    const axes = this.posterAxes(request.view)
+    if (request.layout === 'stacked') {
+      this.layoutPosterStacked(entries, axes, request, labelGutter)
+    } else {
+      this.layoutPosterLineup(entries, axes, request, labelGap)
+    }
+  }
+
+  /** Screen axes of a poster view: what runs up the image, what faces us. */
+  private posterAxes(view: PosterView): PosterAxes {
+    // Top-down looks along -Y with the tiny tilt toward -Z, so +Z is up-screen.
+    if (view === 'top') return { up: 2, depth: 1 }
+    return { up: 1, depth: 2 }
+  }
+
+  private posterEntries(useFigures: boolean): PosterEntry[] {
+    const entries: PosterEntry[] = []
     for (const item of this.sortedItems) {
+      if (this.posterHiddenItemIds.has(item.id)) continue
       const placement = this.placementForItem(item.id)
       if (!placement) continue
       this.thawPlacement(placement)
-      placement.root.position.set(xs.get(item.id) ?? 0, 0, 0)
+      placement.body.computeWorldMatrix(true)
+      const box = this.visualBounds(placement.body)
+      entries.push({ item, placement, min: box.min, max: box.max, figure: false })
     }
-    if (layout === 'stacked') this.applyStackedPosterLayout()
+    if (useFigures) this.assignPosterFigures(entries)
+    return entries
   }
 
-  private applyStackedPosterLayout() {
-    const rows = [...this.sortedItems]
-      .reverse()
-      .map((item) => {
-        const placement = [...this.placements.values()].find(
-          (entry) => entry.itemId === item.id,
-        )
-        if (!placement) return null
-        this.thawPlacement(placement)
-        placement.body.computeWorldMatrix(true)
-        const box = this.visualBounds(placement.body)
-        return {
-          placement,
-          box,
-          h: Math.max(box.max.y - box.min.y, 0.01),
-        }
-      })
-      .filter((row): row is NonNullable<typeof row> => Boolean(row))
+  /** A silhouette next to every few objects, skipping ones it would dwarf. */
+  private assignPosterFigures(entries: PosterEntry[]) {
+    const budget = Math.min(this.posterFigures.length, POSTER_SCALE_FIGURE_MAX)
+    if (budget === 0) return
+    let used = 0
+    let since = POSTER_SCALE_FIGURE_EVERY - 1
+    for (const entry of entries) {
+      if (used >= budget) break
+      if (!this.posterFigureFits(entry.item)) continue
+      if (since < POSTER_SCALE_FIGURE_EVERY - 1) {
+        since += 1
+        continue
+      }
+      entry.figure = true
+      used += 1
+      since = 0
+    }
+  }
 
-    const gaps = rows.map((row, index) => {
-      const next = rows[index + 1]
-      if (!next) return 0
-      return Math.max(row.h, next.h) * 0.12
-    })
+  private posterFigureFits(item: CatalogItem): boolean {
+    if (item.shape === 'person') return false
+    return headlineSizeMeters(item) >= POSTER_SCALE_FIGURE_MIN_SIZE_M
+  }
 
+  private posterFigureFootprint() {
+    const person = CATALOG_BY_ID[POSTER_SCALE_FIGURE_ID]
+    return {
+      width: person?.width ?? 0.55,
+      length: person?.length ?? 0.55,
+      height: person?.height ?? 1.75,
+    }
+  }
+
+  private axisValue(v: Vector3, axis: 0 | 1 | 2): number {
+    return axis === 0 ? v.x : axis === 1 ? v.y : v.z
+  }
+
+  private addOnAxis(v: Vector3, axis: 0 | 1 | 2, amount: number) {
+    if (axis === 0) v.x += amount
+    else if (axis === 1) v.y += amount
+    else v.z += amount
+  }
+
+  /** Space this entry claims along the row, including any reserved figure. */
+  private posterRunLength(entry: PosterEntry, figureWidth: number): number {
+    const own = Math.max(entry.max.x - entry.min.x, 0.01)
+    return own + (entry.figure ? figureWidth * POSTER_SCALE_FIGURE_SLOT : 0)
+  }
+
+  private layoutPosterLineup(
+    entries: PosterEntry[],
+    axes: PosterAxes,
+    request: PosterFrameRequest,
+    labelGap: number,
+  ) {
+    const figure = this.posterFigureFootprint()
+    const facing = this.measuredFacingExtents()
+    const lengths = entries.map((entry) => this.posterRunLength(entry, figure.width))
+    const thickness = entries.map((entry) =>
+      Math.max(
+        this.axisValue(entry.max, axes.up) - this.axisValue(entry.min, axes.up),
+        0.01,
+      ),
+    )
+    const gaps = entries.map((entry, i) =>
+      i === entries.length - 1
+        ? 0
+        : pairSpacingGap(
+            entry.item,
+            entries[i + 1].item,
+            SPREAD_MIN,
+            this.displayYawTurns,
+            facing,
+          ),
+    )
+    const runs = lengths.map((length, i) => length + gaps[i])
+    const rowGap = Math.max(...thickness) * 0.14 + labelGap
+    const rows = this.planPosterGroups(
+      entries.length,
+      runs,
+      thickness,
+      rowGap,
+      request,
+      'rows',
+    )
+
+    const figures: Vector3[] = []
     let top = 0
-    for (let i = rows.length - 1; i >= 0; i--) {
-      top += rows[i].h
-      if (i > 0) top += gaps[i - 1]
-    }
+    for (let r = 0; r < rows.length; r++) {
+      const row = rows[r]
+      const rowThickness = Math.max(...row.map((i) => thickness[i]))
+      const baseline = top - rowThickness
+      const rowLength =
+        row.reduce((sum, i) => sum + lengths[i], 0) +
+        row.slice(0, -1).reduce((sum, i) => sum + gaps[i], 0)
 
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i]
-      const targetMinY = top - row.h
-      const dx = -row.box.min.x
-      const dy = targetMinY - row.box.min.y
-      const dz = -((row.box.min.z + row.box.max.z) / 2)
-      row.placement.root.position.addInPlace(new Vector3(dx, dy, dz))
-      row.placement.root.computeWorldMatrix(true)
-      top = targetMinY - gaps[i]
+      let x = -rowLength / 2
+      for (const i of row) {
+        const entry = entries[i]
+        if (entry.figure) {
+          figures.push(this.posterFigurePosition(x + figure.width / 2, baseline, axes))
+          x += figure.width * POSTER_SCALE_FIGURE_SLOT
+        }
+        const width = entry.max.x - entry.min.x
+        this.movePosterEntry(entry, axes, x, baseline)
+        this.posterRowByItem.set(entry.item.id, r)
+        x += width + gaps[i]
+      }
+      top = baseline - rowGap
     }
+    this.showPosterFigures(figures)
+  }
+
+  private layoutPosterStacked(
+    entries: PosterEntry[],
+    axes: PosterAxes,
+    request: PosterFrameRequest,
+    labelGutter: number,
+  ) {
+    // Biggest first: a stacked poster reads top-down.
+    const ordered = [...entries].reverse()
+    const heights = ordered.map((entry) =>
+      Math.max(
+        this.axisValue(entry.max, axes.up) - this.axisValue(entry.min, axes.up),
+        0.01,
+      ),
+    )
+    const widths = ordered.map((entry) => Math.max(entry.max.x - entry.min.x, 0.01))
+    const gaps = heights.map((h, i) =>
+      i === heights.length - 1 ? 0 : Math.max(h, heights[i + 1]) * 0.12,
+    )
+    const runs = heights.map((h, i) => h + gaps[i])
+    const columns = this.planPosterGroups(
+      ordered.length,
+      runs,
+      widths,
+      Math.max(...widths) * 0.08 + labelGutter,
+      request,
+      'columns',
+    )
+    // A single column labels into the frame's reserved right strip; only a
+    // multi-column poster has to carry that gutter inside the layout.
+    const gutter = columns.length > 1 ? labelGutter : 0
+
+    let x = 0
+    for (let c = 0; c < columns.length; c++) {
+      const column = columns[c]
+      const columnWidth = Math.max(...column.map((i) => widths[i]))
+      let top = 0
+      for (const i of column) {
+        const entry = ordered[i]
+        const baseline = top - heights[i]
+        this.movePosterEntry(entry, axes, x, baseline)
+        this.posterRowByItem.set(entry.item.id, c)
+        top = baseline - gaps[i]
+      }
+      x += columnWidth * 1.08 + gutter
+    }
+    this.showPosterFigures([])
+  }
+
+  /**
+   * Pick the row/column count whose packed bounding box best matches the
+   * image's aspect, then split the run into that many balanced chunks.
+   */
+  private planPosterGroups(
+    count: number,
+    runs: number[],
+    thickness: number[],
+    groupGap: number,
+    request: PosterFrameRequest,
+    orientation: 'rows' | 'columns',
+  ): number[][] {
+    const single = [Array.from({ length: count }, (_, i) => i)]
+    if (!posterUsesGrid(count)) return single
+
+    const rect = request.contentRect
+    const target =
+      ((rect.right - rect.left) * request.width) /
+      Math.max((rect.bottom - rect.top) * request.height, 1)
+
+    let best = single
+    let bestScore = Infinity
+    for (let groups = 1; groups <= Math.min(count, POSTER_MAX_GROUPS); groups++) {
+      const chunks = this.chunkPosterRun(runs, groups)
+      let along = 0
+      let across = 0
+      for (const chunk of chunks) {
+        along = Math.max(
+          along,
+          chunk.reduce((sum, i) => sum + runs[i], 0),
+        )
+        across += Math.max(...chunk.map((i) => thickness[i]))
+      }
+      across += groupGap * Math.max(0, chunks.length - 1)
+      const width = orientation === 'rows' ? along : across
+      const height = orientation === 'rows' ? across : along
+      const score = Math.abs(
+        Math.log(width / Math.max(height, 1e-6) / Math.max(target, 1e-6)),
+      )
+      if (score < bestScore) {
+        bestScore = score
+        best = chunks
+      }
+    }
+    return best
+  }
+
+  /** Greedy split into `groups` chunks of roughly equal packed length. */
+  private chunkPosterRun(runs: number[], groups: number): number[][] {
+    if (groups <= 1) return [runs.map((_, i) => i)]
+    const target = runs.reduce((sum, run) => sum + run, 0) / groups
+    const chunks: number[][] = []
+    let current: number[] = []
+    let acc = 0
+    for (let i = 0; i < runs.length; i++) {
+      const slotsLeft = groups - chunks.length
+      // Never strand a chunk: keep one item in reserve for each slot left.
+      const mustBreak = current.length > 0 && runs.length - i < slotsLeft
+      const full =
+        current.length > 0 && acc + runs[i] / 2 > target && chunks.length < groups - 1
+      if (mustBreak || full) {
+        chunks.push(current)
+        current = []
+        acc = 0
+      }
+      current.push(i)
+      acc += runs[i]
+    }
+    if (current.length > 0) chunks.push(current)
+    return chunks
+  }
+
+  /**
+   * Slide an object so its left edge sits at `x` and its bottom edge on the
+   * row baseline, squared up on the axis facing the camera.
+   */
+  private movePosterEntry(
+    entry: PosterEntry,
+    axes: PosterAxes,
+    x: number,
+    baseline: number,
+  ) {
+    const delta = new Vector3(x - entry.min.x, 0, 0)
+    this.addOnAxis(delta, axes.up, baseline - this.axisValue(entry.min, axes.up))
+    if (axes.depth === 1) {
+      // Top-down: keep everything sitting on the ground plane.
+      delta.y += -entry.min.y
+    } else {
+      delta.z += -((entry.min.z + entry.max.z) / 2)
+    }
+    entry.placement.root.position.addInPlace(delta)
+    entry.placement.root.computeWorldMatrix(true)
+    entry.min.addInPlace(delta)
+    entry.max.addInPlace(delta)
+  }
+
+  private posterFigurePosition(
+    centerX: number,
+    baseline: number,
+    axes: PosterAxes,
+  ): Vector3 {
+    const figure = this.posterFigureFootprint()
+    const position = new Vector3(centerX, 0, 0)
+    // The silhouette is centred on X/Z with its feet at local y = 0.
+    if (axes.up === 1) position.y = baseline
+    else position.z = baseline + figure.length / 2
+    return position
+  }
+
+  /**
+   * Drop the user's own "Adult" reference out of the poster once silhouettes
+   * are available — the silhouettes say the same thing without eating a slot.
+   */
+  private applyPosterScaleReferences(useFigures: boolean) {
+    const references = this.sortedItems.filter((item) =>
+      POSTER_SCALE_REFERENCE_IDS.has(item.id),
+    )
+    const others = this.sortedItems.length - references.length
+    const hide =
+      useFigures && this.posterFigures.length > 0 && others > 0
+        ? references.map((item) => item.id)
+        : []
+    this.posterHiddenItemIds = new Set(hide)
+    for (const placement of this.placements.values()) {
+      const wanted = !this.posterHiddenItemIds.has(placement.itemId)
+      if (placement.root.isEnabled() !== wanted) placement.root.setEnabled(wanted)
+    }
+  }
+
+  /** Put every scale reference back in the scene when the poster is dismissed. */
+  private clearPosterScaleReferences() {
+    for (const placement of this.placements.values()) {
+      if (!this.posterHiddenItemIds.has(placement.itemId)) continue
+      placement.root.setEnabled(true)
+    }
+    this.posterHiddenItemIds = new Set()
+    this.showPosterFigures([])
+  }
+
+  private showPosterFigures(positions: Vector3[]) {
+    for (let i = 0; i < this.posterFigures.length; i++) {
+      const node = this.posterFigures[i]
+      const position = positions[i]
+      if (!position) {
+        node.setEnabled(false)
+        continue
+      }
+      node.setEnabled(true)
+      node.position.copyFrom(position)
+      node.computeWorldMatrix(true)
+    }
+  }
+
+  /** How many silhouettes this comparison could use, before any are loaded. */
+  private posterFigureDemand(): number {
+    const eligible = this.sortedItems.filter((item) => this.posterFigureFits(item))
+    if (eligible.length === 0) return 0
+    return Math.min(
+      POSTER_SCALE_FIGURE_MAX,
+      Math.max(1, Math.ceil(eligible.length / POSTER_SCALE_FIGURE_EVERY)),
+    )
+  }
+
+  /** Load silhouettes in the background, then re-lay the live preview. */
+  private requestPosterFigures() {
+    if (this.posterFigures.length >= this.posterFigureDemand()) return
+    void this.ensurePosterFigures(this.posterFigureDemand()).then(() => {
+      // A capture does its own layout and owns the camera and backbuffer until
+      // it is done — re-laying the preview underneath it blanks the render.
+      if (this.disposed || this.posterCapturing || !this.posterPreview) return
+      this.applyPosterLook(this.posterPreview.settings)
+    })
+  }
+
+  /**
+   * Silhouettes, up to `count`. Loads are chained rather than run side by side,
+   * so a download that lands mid-preview waits on the same work instead of
+   * importing a second copy of every avatar.
+   */
+  private ensurePosterFigures(count: number): Promise<void> {
+    const want = Math.min(count, POSTER_SCALE_FIGURE_MAX)
+    if (this.posterFigureFailed || this.posterFigures.length >= want) {
+      return this.posterFigureWork ?? Promise.resolve()
+    }
+    const chain = (this.posterFigureWork ?? Promise.resolve())
+      .then(() => this.loadPosterFiguresUpTo(want))
+      .catch(() => undefined)
+    this.posterFigureWork = chain.finally(() => {
+      if (this.posterFigureWork === chain) this.posterFigureWork = null
+    })
+    return this.posterFigureWork
+  }
+
+  private async loadPosterFiguresUpTo(want: number): Promise<void> {
+    while (!this.disposed && !this.posterFigureFailed && this.posterFigures.length < want) {
+      const figure = await this.buildPosterFigure()
+      if (!figure) {
+        // One failure means the avatar is unreachable; stop asking for more.
+        this.posterFigureFailed = true
+        return
+      }
+      if (this.disposed) {
+        figure.dispose(false, true)
+        return
+      }
+      this.posterFigures.push(figure)
+    }
+  }
+
+  /** One adult, painted flat black so it reads as a silhouette at any size. */
+  private async buildPosterFigure(): Promise<TransformNode | null> {
+    const item = CATALOG_BY_ID[POSTER_SCALE_FIGURE_ID]
+    if (!item?.model) return null
+    const instanceId = `poster-figure-${crypto.randomUUID()}`
+    try {
+      const loaded = await this.loadScaledModel(item, instanceId)
+      const root = new TransformNode(`root-${instanceId}`, this.scene)
+      loaded.container.parent = root
+      // Arms all the way down: a silhouette wants a clean outline, and at
+      // poster scale spread arms just read as a smudge.
+      this.relaxTPoseArms(loaded.skeletons, 0.47)
+      this.disposeImportedAnimations(loaded.animationGroups)
+      this.paintPosterFigure(root)
+      root.setEnabled(false)
+      return root
+    } catch (error) {
+      console.warn('Poster scale figure failed to load.', error)
+      return null
+    }
+  }
+
+  private paintPosterFigure(root: TransformNode) {
+    if (!this.posterFigureMaterial) {
+      const material = new StandardMaterial('poster-scale-figure', this.scene)
+      material.disableLighting = true
+      material.diffuseColor = Color3.Black()
+      material.specularColor = Color3.Black()
+      material.emissiveColor = Color3.Black()
+      material.ambientColor = Color3.Black()
+      this.posterFigureMaterial = material
+    }
+    for (const mesh of root.getChildMeshes(false)) {
+      mesh.material = this.posterFigureMaterial
+      mesh.isPickable = false
+      mesh.receiveShadows = false
+    }
+  }
+
+  private disposePosterFigures() {
+    for (const figure of this.posterFigures) {
+      if (!figure.isDisposed()) figure.dispose(false, true)
+    }
+    this.posterFigures = []
+    this.posterFigureMaterial?.dispose()
+    this.posterFigureMaterial = null
   }
 
   private posterVisualBounds(): { min: Vector3; max: Vector3 } | null {
@@ -1322,6 +1786,7 @@ export class ComparisonScene {
     const max = new Vector3(-Infinity, -Infinity, -Infinity)
     let found = false
     for (const placement of this.placements.values()) {
+      if (this.posterHiddenItemIds.has(placement.itemId)) continue
       this.thawPlacement(placement)
       placement.body.computeWorldMatrix(true)
       const box = this.visualBounds(placement.body)
@@ -1329,8 +1794,45 @@ export class ComparisonScene {
       Vector3.CheckExtends(box.max, min, max)
       found = true
     }
+    for (const figure of this.posterFigures) {
+      if (!figure.isEnabled()) continue
+      const box = this.visualBounds(figure)
+      Vector3.CheckExtends(box.min, min, max)
+      Vector3.CheckExtends(box.max, min, max)
+    }
     if (!found || !Number.isFinite(min.x)) return null
     return { min, max }
+  }
+
+  /**
+   * Lay out, frame, then do it again once the pixels-per-metre is known: row
+   * gaps and label gutters are pixel-sized strips, and the first pass is the
+   * only way to learn the scale they have to be reserved at.
+   */
+  private layoutAndFramePoster(request: PosterFrameRequest) {
+    this.applyPosterItemLayout(request, 0, 0)
+    this.framePosterCamera(request)
+
+    const ppm = this.measurePixelsPerMeter(request.width, request.height)
+    if (!Number.isFinite(ppm) || ppm <= 0) return
+    const count = this.sortedItems.length
+    this.applyPosterItemLayout(
+      request,
+      posterLabelBandPx(request.width, count) / ppm,
+      this.posterLabelGutterPx(request.width, count) / ppm,
+    )
+    this.framePosterCamera(request)
+  }
+
+  /** Room the longest name needs beside a stacked column, in pixels. */
+  private posterLabelGutterPx(width: number, count: number): number {
+    const fontSize = posterLabelFontSize(width, count)
+    const chars = this.sortedItems.reduce(
+      (longest, item) => Math.max(longest, item.name.length),
+      0,
+    )
+    // Plex Sans Semibold averages a little over half an em per character.
+    return Math.min(chars * fontSize * 0.55 + fontSize, width * 0.28)
   }
 
   private framePosterCamera(request: PosterFrameRequest) {
@@ -1503,9 +2005,8 @@ export class ComparisonScene {
     const transform = this.camera.getTransformationMatrix()
     const items: PosterItemProjection[] = []
     for (const item of this.sortedItems) {
-      const placement = [...this.placements.values()].find(
-        (entry) => entry.itemId === item.id,
-      )
+      if (this.posterHiddenItemIds.has(item.id)) continue
+      const placement = this.placementForItem(item.id)
       if (!placement) continue
       const box = this.visualBounds(placement.body)
       let minX = Infinity
@@ -1528,6 +2029,7 @@ export class ComparisonScene {
         itemId: item.id,
         name: item.name,
         sizeMeters: headlineSizeMeters(item),
+        row: this.posterRowByItem.get(item.id) ?? 0,
         minX,
         minY,
         maxX,
@@ -1919,6 +2421,7 @@ export class ComparisonScene {
     this.cityLoadGen += 1
     this.posterPreview = null
     this.posterOverlayListeners.clear()
+    this.disposePosterFigures()
     this.clearHover()
     this.clearTourTimer()
     this.listeners.clear()
@@ -2452,7 +2955,9 @@ export class ComparisonScene {
     const vertCount = slab.getTotalVertices()
     slab.subMeshes = []
     for (let i = 0; i < 6; i++) {
-      slab.subMeshes.push(new SubMesh(i, 0, vertCount, i * 6, 6, slab))
+      // The constructor attaches itself to the mesh, so do not push as well:
+      // that gave the slab 12 submeshes and drew every face twice.
+      new SubMesh(i, 0, vertCount, i * 6, 6, slab)
     }
 
     slab.computeWorldMatrix(true)
@@ -3174,7 +3679,10 @@ export class ComparisonScene {
       this.preparePersonMaterials(container, item.id)
     }
     const keepClips = Boolean(item.playClips || item.shape === 'person')
-    if (!keepClips) {
+    if (model.poseAtClipEnd) {
+      // Hold the last frame (F-22: gear down, boarding ladder out) and never play.
+      this.holdClipEndPose(result.animationGroups)
+    } else if (!keepClips) {
       // Stop sim "hide" clips (B-21 teleports GBUs to y≈-8192) before measuring.
       for (const skeleton of result.skeletons ?? []) {
         try {
@@ -3212,7 +3720,7 @@ export class ComparisonScene {
     }
     return {
       container,
-      animationGroups: keepClips ? (result.animationGroups ?? []) : [],
+      animationGroups: keepClips && !model.poseAtClipEnd ? (result.animationGroups ?? []) : [],
       skeletons: result.skeletons ?? [],
     }
   }
@@ -3450,12 +3958,12 @@ export class ComparisonScene {
     )
   }
 
-  private relaxTPoseArms(skeletons: Skeleton[]) {
+  private relaxTPoseArms(skeletons: Skeleton[], turns = 0.42) {
     const left = this.findArmNode(skeletons, 'left')
     const right = this.findArmNode(skeletons, 'right')
     // Drop from horizontal T-pose toward the hips (local Z on Mixamo-style arms).
-    if (left) this.nudgeEuler(left, new Vector3(0, 0, Math.PI * 0.42))
-    if (right) this.nudgeEuler(right, new Vector3(0, 0, -Math.PI * 0.42))
+    if (left) this.nudgeEuler(left, new Vector3(0, 0, Math.PI * turns))
+    if (right) this.nudgeEuler(right, new Vector3(0, 0, -Math.PI * turns))
   }
 
   private findArmNode(skeletons: Skeleton[], side: 'left' | 'right'): TransformNode | null {
@@ -3575,6 +4083,31 @@ export class ComparisonScene {
       if (!(mat instanceof PBRMaterial)) continue
 
       const name = `${mat.name ?? ''} ${mesh.name ?? ''}`.toLowerCase()
+
+      // Untinted glass (white base color, no texture) reads as solid white windows.
+      // Give it a dark, slightly transparent tint so cockpit/cabin glazing reads as glass.
+      if (
+        !mat.albedoTexture &&
+        (name.includes('glass') ||
+          name.includes('window') ||
+          name.includes('windshield') ||
+          name.includes('windscreen') ||
+          name.includes('canopy') ||
+          name.includes('glazing'))
+      ) {
+        mat.albedoColor = new Color3(0.06, 0.08, 0.1)
+        mat.metallic = 0.1
+        mat.roughness = 0.15
+        mat.alpha = Math.min(mat.alpha ?? 1, 0.72)
+        mat.transparencyMode = PBRMaterial.PBRMATERIAL_ALPHABLEND
+        mat.backFaceCulling = true
+        if (mat.subSurface) {
+          mat.subSurface.isRefractionEnabled = false
+          mat.subSurface.isTranslucencyEnabled = false
+        }
+        mat.markDirty?.()
+        continue
+      }
 
       // Hide refractive tear/wet-eye films — they read as ghostly transparency.
       if (name.includes('tear')) {
@@ -3719,6 +4252,24 @@ export class ComparisonScene {
     return {
       rootUrl: href.slice(0, slash + 1),
       filename: decodeURIComponent(href.slice(slash + 1)),
+    }
+  }
+
+  /**
+   * Freeze an import on the final frame of its clips. Used for GLBs whose
+   * animation ends in the pose we want on the ramp rather than the rest pose.
+   * Runs before the bounds are measured so scale and ground contact use it.
+   */
+  private holdClipEndPose(groups: AnimationGroup[] | undefined) {
+    for (const group of groups ?? []) {
+      try {
+        group.stop()
+        group.start(false, 1, group.to, group.to, false)
+        group.goToFrame(group.to)
+        group.pause()
+      } catch {
+        // A clip with no keys leaves the rest pose alone.
+      }
     }
   }
 
@@ -4220,33 +4771,58 @@ export class ComparisonScene {
     this.hoverRoot = root
     this.hoverItemId = itemId
 
-    const box = MeshBuilder.CreateBox(
-      `hover-box-${itemId}`,
-      {
-        width: boxWidth,
-        height: boxHeight,
-        depth: boxDepth,
-      },
-      this.scene,
-    )
-    box.parent = root
-    box.position.copyFrom(boxCenter)
-    box.isPickable = false
-    // Same depth pass as models so the cage occludes / is occluded in physical space.
-    // (Group 1+ auto-clears depth, which made edges always paint over the mesh.)
-    box.renderingGroupId = 0
+    // The cage is real geometry, not edges rendering. Babylon's line shader has
+    // no vertex-side logarithmic depth, and the whole scene draws with log depth
+    // on, so an edges-rendered cage lands at the wrong depth and either sinks
+    // under the ground or has to be overlaid on top of everything. Thin boxes on
+    // a StandardMaterial share the models' depth path and occlude correctly.
+    const edgeMat = new StandardMaterial(`hover-edge-mat-${itemId}`, this.scene)
+    edgeMat.diffuseColor = Color3.Black()
+    edgeMat.specularColor = Color3.Black()
+    edgeMat.emissiveColor = new Color3(0.12, 0.85, 0.72)
+    edgeMat.disableLighting = true
+    edgeMat.useLogarithmicDepth = true
 
-    const boxMat = new StandardMaterial(`hover-box-mat-${itemId}`, this.scene)
-    boxMat.diffuseColor = new Color3(0.12, 0.78, 0.68)
-    boxMat.specularColor = Color3.Black()
-    boxMat.alpha = 0
-    boxMat.transparencyMode = StandardMaterial.MATERIAL_ALPHABLEND
-    boxMat.disableDepthWrite = true
-    boxMat.useLogarithmicDepth = true
-    box.material = boxMat
-    box.enableEdgesRendering(0.999)
-    box.edgesWidth = Math.min(Math.max(magnitude * 0.12, 3), 14)
-    box.edgesColor = new Color4(0.12, 0.85, 0.72, 1)
+    const span = Math.max(boxWidth, boxHeight, boxDepth)
+    const thickness = Math.max(span * 0.004, magnitude * 0.002)
+    const x0 = boxCenter.x - boxWidth / 2
+    const x1 = boxCenter.x + boxWidth / 2
+    const y0 = boxBottom
+    const y1 = boxTop
+    const z0 = boxCenter.z - boxDepth / 2
+    const z1 = boxCenter.z + boxDepth / 2
+
+    for (const y of [y0, y1]) {
+      for (const z of [z0, z1]) {
+        this.addHoverEdge(
+          root,
+          edgeMat,
+          new Vector3(boxCenter.x, y, z),
+          new Vector3(boxWidth + thickness, thickness, thickness),
+        )
+      }
+    }
+    for (const x of [x0, x1]) {
+      for (const z of [z0, z1]) {
+        this.addHoverEdge(
+          root,
+          edgeMat,
+          new Vector3(x, (y0 + y1) / 2, z),
+          new Vector3(thickness, boxHeight, thickness),
+        )
+      }
+    }
+    for (const x of [x0, x1]) {
+      for (const y of [y0, y1]) {
+        this.addHoverEdge(
+          root,
+          edgeMat,
+          new Vector3(x, y, boxCenter.z),
+          new Vector3(thickness, thickness, boxDepth + thickness),
+        )
+      }
+    }
+    root.onDisposeObservable.add(() => edgeMat.dispose())
 
     const labelScale = Math.max(magnitude * 0.055, 0.55)
     const midY = boxCenter.y
@@ -4276,6 +4852,25 @@ export class ComparisonScene {
       labelScale * 0.7,
     )
     this.markDirty()
+  }
+
+  /** One bar of the hover cage. Same depth pass as the models so it occludes. */
+  private addHoverEdge(
+    parent: TransformNode,
+    material: StandardMaterial,
+    position: Vector3,
+    size: Vector3,
+  ) {
+    const bar = MeshBuilder.CreateBox(
+      'hover-edge',
+      { width: size.x, height: size.y, depth: size.z },
+      this.scene,
+    )
+    bar.parent = parent
+    bar.position.copyFrom(position)
+    bar.isPickable = false
+    bar.renderingGroupId = 0
+    bar.material = material
   }
 
   private addHoverDimLabel(

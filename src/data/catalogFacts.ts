@@ -101,6 +101,16 @@ export const CATALOG_FACTS: Record<string, string> = {
     'USA, 2007–present. About 400 built at roughly $75 million each. Tilts its rotors to take off like a helicopter and cruise at 509 km/h like a turboprop — twice a helicopter’s speed — carrying 24 troops.',
   'apache':
     'USA, 1986–present. Over 2,700 built. An AH-64E costs about $52 million and carries a 30 mm chain gun plus up to 16 Hellfire missiles. Its mast-mounted radar tracks 128 targets and lets it pop up to fire from behind cover.',
+  'mi-24':
+    'Soviet Union, 1972–present. Over 2,600 built. The Hind is the rare gunship that also carries eight troops in a cabin behind the cockpit, which is why crews call it the flying tank. The Mi-24P swaps the nose turret for a fixed 30 mm twin cannon on the fuselage side, and the type cruises at 270 km/h.',
+  'godzilla':
+    'Japan, 1954–present, and the longest-running film franchise in the world. The original suit-actor Godzilla stood 50 m; Legendary’s MonsterVerse version reached 119.8 m by 2021, tall enough to look over most city skylines. The 2023 film Godzilla Minus One won the visual-effects Oscar on a budget under $15 million.',
+  'warthog':
+    'Halo, 2001–present. The M12 Warthog has been the series’ signature vehicle since the first game, a 3-seat 4x4 with a rear gun mount and four-wheel steering. Bungie built the driving model before the shooter around it.',
+  'halo-wraith':
+    'Halo, 2001–present. The Covenant Type-26 hovers on an antigravity drive instead of tracks and lobs plasma mortars in a high arc, which is why it outranges most UNSC armour but struggles against anything close.',
+  'pelican':
+    'Halo, 2001–present. The D77-TC Pelican carries roughly 10 troops or a slung Warthog and flies both in atmosphere and in vacuum. It is the ride that opens or closes most missions in the series.',
   'chinook':
     'USA, 1962–present and still in production after six decades. Over 1,200 built at roughly $38 million each. Lifts 10,900 kg slung beneath it and cruises at 315 km/h — the fastest helicopter in the US Army.',
   'blackhawk':

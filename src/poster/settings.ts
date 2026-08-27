@@ -60,12 +60,45 @@ function pixelSizeForLongEdge(
   }
 }
 
+/**
+ * Above this many objects a single row (or column) reads as a thin ribbon in a
+ * 16:9 frame, so the poster wraps into a grid instead.
+ */
+export const POSTER_GRID_MIN_ITEMS = 8
+
+export function posterUsesGrid(itemCount: number): boolean {
+  return itemCount >= POSTER_GRID_MIN_ITEMS
+}
+
 /** Image region (y-down fractions) reserved for the 3D models. */
-export function posterContentRect(layout: PosterLayout): PosterContentRect {
+export function posterContentRect(
+  layout: PosterLayout,
+  itemCount = 0,
+): PosterContentRect {
+  const grid = posterUsesGrid(itemCount)
   if (layout === 'stacked') {
-    return { left: 0.06, right: 0.70, top: 0.09, bottom: 0.88 }
+    // Grid mode carries a label gutter inside every column, so the reserved
+    // strip on the right only has to hold the last column's names.
+    return grid
+      ? { left: 0.05, right: 0.86, top: 0.07, bottom: 0.90 }
+      : { left: 0.06, right: 0.70, top: 0.09, bottom: 0.88 }
   }
-  return { left: 0.05, right: 0.95, top: 0.09, bottom: 0.80 }
+  // Grid rows label in place, so only the bottom row needs a strip under it.
+  return grid
+    ? { left: 0.05, right: 0.95, top: 0.07, bottom: 0.86 }
+    : { left: 0.05, right: 0.95, top: 0.09, bottom: 0.80 }
+}
+
+/** Label type size, shared by the layout planner and the overlay painter. */
+export function posterLabelFontSize(width: number, itemCount: number): number {
+  const crowded = itemCount > 8
+  return Math.max(12, Math.round(width * (crowded ? 0.01 : 0.0125)))
+}
+
+/** Vertical strip one row of labels needs, in pixels. */
+export function posterLabelBandPx(width: number, itemCount: number): number {
+  const fontSize = posterLabelFontSize(width, itemCount)
+  return Math.round(fontSize * 1.9)
 }
 
 function isLayout(value: unknown): value is PosterLayout {

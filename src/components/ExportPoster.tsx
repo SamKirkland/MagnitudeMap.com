@@ -86,7 +86,7 @@ export function ExportPoster({
     return {
       layout: settings.layout,
       view: settings.view,
-      contentRect: posterContentRect(settings.layout),
+      contentRect: posterContentRect(settings.layout, itemIds.length),
     }
   }
 
@@ -186,6 +186,7 @@ export function ExportPoster({
         units,
         title,
         shareUrl,
+        itemCount: itemIds.length,
       })
       downloadBlob(posterFilename(title), blob)
       trackPosterExported({

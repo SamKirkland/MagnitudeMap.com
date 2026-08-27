@@ -1,12 +1,12 @@
-﻿{
+{
   "id": "f22",
   "file": "model.glb",
   "license": "CC-BY-4.0",
   "licenseLabel": "CC BY",
-  "author": "Jan Esch",
-  "source": "https://sketchfab.com/3d-models/f22-raptor-03a2651804344ebc930e01cc945bf07d",
-  "sourceAsset": "F22 Raptor",
-  "sketchfabUid": "03a2651804344ebc930e01cc945bf07d",
-  "notes": "Requested WTigerTw F-22A (ea657ca469424ad68c4b9e013b993c46) is Sketchfab Standard (not redistributable). CC-BY stand-in: Njan F-22 Raptor. Scaled to 18.92 m length in-app.",
-  "attribution": "F22 Raptor by Jan Esch on Sketchfab (CC BY) — https://sketchfab.com/3d-models/f22-raptor-03a2651804344ebc930e01cc945bf07d"
+  "author": "NLM",
+  "source": "https://sketchfab.com/3d-models/f22-raptor-free-2a64abf0866a405c865466c7642ca689",
+  "sourceAsset": "F22 Raptor FREE",
+  "sketchfabUid": "2a64abf0866a405c865466c7642ca689",
+  "notes": "Requested replacement for the earlier Jan Esch F-22. Ships one clip; the catalog sets poseAtClipEnd so the viewer freezes on the last frame (gear down, canopy open, boarding ladder deployed) instead of playing it. verify-models measures the GLB rest pose, so its static width (18.8 m) and its ground-plate flag on the thin wing mesh Object_101 are both false alarms; the rendered pose measures L 18.9 m / W 13.8 m / H 4.80 m against catalog 18.92 / 13.56 / 5.08.",
+  "attribution": "F22 Raptor FREE by NLM on Sketchfab (CC BY) — https://sketchfab.com/3d-models/f22-raptor-free-2a64abf0866a405c865466c7642ca689"
 }

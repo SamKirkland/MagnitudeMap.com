@@ -40,6 +40,11 @@ export type PosterItemProjection = {
   itemId: string
   name: string
   sizeMeters: number
+  /**
+   * Which poster row (lineup) or column (stacked) the item was laid out in.
+   * Labels band per row instead of one shared strip at the bottom.
+   */
+  row: number
   minX: number
   minY: number
   maxX: number
