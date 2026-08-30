@@ -1,0 +1,12 @@
+{
+  "id": "hindenburg",
+  "file": "model.glb",
+  "license": "CC-BY-4.0",
+  "licenseLabel": "CC BY",
+  "author": "hank2",
+  "source": "https://sketchfab.com/3d-models/hindenburg-airship-b347e808f561465dab568fa61734e262",
+  "sourceAsset": "Hindenburg airship",
+  "sketchfabUid": "b347e808f561465dab568fa61734e262",
+  "notes": "LZ 129 Hindenburg. The Nazi party flags on the upper and lower tail fins (three coplanar meshes: red field, white disc, black swastika) were deleted from the GLB; the hull, gondola, engine cars and D-LZ129 registration are untouched. Scaled to 245 m length in-app.",
+  "attribution": "Hindenburg airship by hank2 on Sketchfab (CC BY) — https://sketchfab.com/3d-models/hindenburg-airship-b347e808f561465dab568fa61734e262"
+}

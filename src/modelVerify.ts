@@ -162,6 +162,10 @@ export function isThinGroundPlate(size: Vec3, combined: Vec3): boolean {
   const horiz = Math.max(size.x, size.z)
   const combinedHoriz = Math.max(combined.x, combined.z)
   if (horiz < 0.5 || combinedHoriz < 0.5) return false
+  // A floor or shadow slab covers the footprint in both directions. A wing is
+  // just as wide and just as thin, but only a sixth as deep (Wright Flyer:
+  // 1197 x 206) -- do not call that scenery.
+  if (Math.min(size.x, size.z) < 0.35 * horiz) return false
   return size.y < 0.03 * horiz && horiz > 0.7 * combinedHoriz
 }
 

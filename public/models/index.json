@@ -2,7 +2,6 @@
   "version": 1,
   "models": [
     "rifle",
-    "spaceship",
     "astronaut"
   ]
 }

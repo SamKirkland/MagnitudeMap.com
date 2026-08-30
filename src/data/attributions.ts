@@ -134,6 +134,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Ankylosaurus (CC-BY, kenchoo). Linked GremorySaiyan pack is Standard. Scaled to 7.5 m length in-app."
   },
   {
+    "id": "apollo-lm",
+    "catalogName": "Apollo Lunar Module",
+    "author": "BlackProject",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/moon-landing-67e8a3ea5fbe42f4a6cb6c96cf406df4",
+    "sourceAsset": "🌙 Moon Landing",
+    "attribution": "🌙 Moon Landing by BlackProject on Sketchfab (CC BY) — https://sketchfab.com/3d-models/moon-landing-67e8a3ea5fbe42f4a6cb6c96cf406df4",
+    "requiresAttribution": true,
+    "notes": "Apollo Lunar Module extracted from the source scene: the moon surface, rocks, flag and both astronaut figures were deleted so only the spacecraft ships. Scaled to 7.04 m height in-app; the mesh splays the landing gear about 14% wider than the real 9.4 m footpad span, so height is the trusted axis. Yaw 45 puts the legs on the view axes."
+  },
+  {
     "id": "arleigh-burke",
     "catalogName": "Arleigh Burke-class destroyer",
     "author": "Yi Tsung Lee",
@@ -360,18 +372,6 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "Galaxy by AC1MX on Sketchfab (CC BY) — https://sketchfab.com/3d-models/galaxy-530ffc703607405e813e5bd20f59d9b2",
     "requiresAttribution": true,
     "notes": "Lockheed C-5 Galaxy by AC1MX (CC-BY), the original 2021 upload. The identical mesh is re-uploaded as 'C5 galaxy model' by Sigii (2025); attribution goes to AC1MX. GLB is authored at real-world metres; scaled to 75.31 m length in-app. Landing gear is modelled but RETRACTED (wheels sit 0.17-4.26 m, inside the closed bays, above a belly at 0), so the aircraft grounds belly-down and renders 17.4 m tall against the real 19.84 m gear-down height. Gear and covers are separate named nodes (Landing_Gears / Landing_Gear_Covers) with no animation - a gear-down variant would need a manual edit."
-  },
-  {
-    "id": "spaceship",
-    "catalogName": "Cargo craft",
-    "author": "Kenney",
-    "license": "CC0-1.0",
-    "licenseLabel": "CC0-1.0",
-    "source": "https://kenney.nl/assets/space-kit",
-    "sourceAsset": "craft_cargoA.glb",
-    "attribution": "Cargo craft — craft_cargoA.glb by Kenney (CC0-1.0) — https://kenney.nl/assets/space-kit",
-    "requiresAttribution": false,
-    "notes": "Stylized cargo craft. Scaled in-app to 18 m length."
   },
   {
     "id": "carnotaurus",
@@ -710,6 +710,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Fireball energy sphere by DaBoRi (CC-BY). Air-blast stand-in for linked tomparsons fireball. Random yaw; keep upright."
   },
   {
+    "id": "wright-flyer",
+    "catalogName": "Flyer",
+    "author": "manilov.ap",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/flyer-7d9d037fda1f412ba8625277d0b26777",
+    "sourceAsset": "Flyer",
+    "attribution": "Flyer by manilov.ap on Sketchfab (CC BY) — https://sketchfab.com/3d-models/flyer-7d9d037fda1f412ba8625277d0b26777",
+    "requiresAttribution": true,
+    "notes": "1903 Wright Flyer with pilot. The source GLB is authored on a 50 degree diagonal, which inflates every axis-aligned bounding box; a 50 degree yaw is baked into the committed GLB so catalog yaw is 0. Scaled to the 12.29 m wingspan in-app; the mesh stands 3.1 m tall against the published 2.74 m."
+  },
+  {
     "id": "ford-carrier",
     "catalogName": "Ford-class carrier",
     "author": "Muhamad Mirza Arrafi",
@@ -794,6 +806,30 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Grogu / Baby Yoda (CC-BY). Scaled to 0.42 m height in-app."
   },
   {
+    "id": "hindenburg",
+    "catalogName": "Hindenburg",
+    "author": "hank2",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/hindenburg-airship-b347e808f561465dab568fa61734e262",
+    "sourceAsset": "Hindenburg airship",
+    "attribution": "Hindenburg airship by hank2 on Sketchfab (CC BY) — https://sketchfab.com/3d-models/hindenburg-airship-b347e808f561465dab568fa61734e262",
+    "requiresAttribution": true,
+    "notes": "LZ 129 Hindenburg. The Nazi party flags on the upper and lower tail fins (three coplanar meshes: red field, white disc, black swastika) were deleted from the GLB; the hull, gondola, engine cars and D-LZ129 registration are untouched. Scaled to 245 m length in-app."
+  },
+  {
+    "id": "hubble",
+    "catalogName": "Hubble Space Telescope",
+    "author": "Cybertron B-127",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/hubble-space-telescope-e22236fab9634c959c0525c7ab9c83d7",
+    "sourceAsset": "Hubble space telescope",
+    "attribution": "Hubble space telescope by Cybertron B-127 on Sketchfab (CC BY) — https://sketchfab.com/3d-models/hubble-space-telescope-e22236fab9634c959c0525c7ab9c83d7",
+    "requiresAttribution": true,
+    "notes": "Hubble Space Telescope with the solar arrays furled against the hull. Scaled to 13.2 m length in-app."
+  },
+  {
     "id": "isd-ii",
     "catalogName": "Imperial II Star Destroyer",
     "author": "Daniel",
@@ -852,6 +888,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "Apple iPhone based mobile phone by Rescue3D Assets on Sketchfab (CC BY) — https://sketchfab.com/3d-models/apple-iphone-based-mobile-phone-ae46f6a92de042d8bc8082226f7d3489",
     "requiresAttribution": true,
     "notes": "Apple iPhone based mobile phone by Rescue3D (CC-BY). Scaled to 0.147 m height in-app."
+  },
+  {
+    "id": "jwst",
+    "catalogName": "James Webb Space Telescope",
+    "author": "Paul (Sketchfab)",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/jwst-james-webb-space-telescope-6c92c08a672640afb58ee44d248fd0fe",
+    "sourceAsset": "JWST (james webb space telescope)",
+    "attribution": "JWST (james webb space telescope) by Paul (Sketchfab) on Sketchfab (CC BY) — https://sketchfab.com/3d-models/jwst-james-webb-space-telescope-6c92c08a672640afb58ee44d248fd0fe",
+    "requiresAttribution": true,
+    "notes": "James Webb Space Telescope, fully deployed. Scaled to the 21.2 m sunshield long axis in-app."
   },
   {
     "id": "k2so",
@@ -1106,6 +1154,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Soviet N1 moon rocket (CC-BY, ~135k tris). Scaled to 105.3 m height in-app. Paint: olive lower stages + off-white upper."
   },
   {
+    "id": "roman-telescope",
+    "catalogName": "Nancy Grace Roman Space Telescope",
+    "author": "ehnoixmanu",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/nancy-grace-roman-space-telescope-3d-v01-58d173cad9b84d23b0f0c25f1f339ea7",
+    "sourceAsset": "Nancy Grace Roman Space Telescope 3D v01",
+    "attribution": "Nancy Grace Roman Space Telescope 3D v01 by ehnoixmanu on Sketchfab (CC BY) — https://sketchfab.com/3d-models/nancy-grace-roman-space-telescope-3d-v01-58d173cad9b84d23b0f0c25f1f339ea7",
+    "requiresAttribution": true,
+    "notes": "NASA Nancy Grace Roman Space Telescope, deployed. Scaled to 12.7 m length in-app. Width/height follow the mesh proportions of the deployed solar arrays."
+  },
+  {
     "id": "new-glenn",
     "catalogName": "New Glenn",
     "author": "AllThingsSpace",
@@ -1310,8 +1370,8 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Star Trek Online | Sovereign Class (CC-BY). Scaled to 685 m length (Sovereign class)."
   },
   {
-    "id": "soyuz-tma",
-    "catalogName": "Soyuz TMA",
+    "id": "soyuz-rocket",
+    "catalogName": "Soyuz rocket",
     "author": "TwilightSparkleX",
     "license": "CC-BY-4.0",
     "licenseLabel": "CC BY",
@@ -1319,7 +1379,7 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "sourceAsset": "Soyuz TMA",
     "attribution": "Soyuz TMA by TwilightSparkleX on Sketchfab (CC BY) — https://sketchfab.com/3d-models/soyuz-tma-1ac2fad9da5242b9bf7c78872410c79e",
     "requiresAttribution": true,
-    "notes": "Soyuz TMA spacecraft (CC-BY). Scaled to 7.48 m length in-app."
+    "notes": "Soyuz launch vehicle, crewed configuration with escape tower (CC-BY). The asset is titled \"Soyuz TMA\" but models the whole rocket, not the capsule; scaled to 49.5 m height in-app."
   },
   {
     "id": "shuttle-atlantis",
@@ -1634,6 +1694,30 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Star Trek Online | USS Enterprise D (CC-BY). Scaled to 642.5 m length (Galaxy class)."
   },
   {
+    "id": "v1-flying-bomb",
+    "catalogName": "V-1 flying bomb",
+    "author": "warrior3d",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/fi-103-ae37027c564b40e3b38b27bcab36e135",
+    "sourceAsset": "Fi-103",
+    "attribution": "Fi-103 by warrior3d on Sketchfab (CC BY) — https://sketchfab.com/3d-models/fi-103-ae37027c564b40e3b38b27bcab36e135",
+    "requiresAttribution": true,
+    "notes": "Fieseler Fi 103 / V-1 flying bomb. The source mesh draws the wing and tailplane about 46% too long for the fuselage; the wing node (\"krilo\") is scaled 0.683 in X in the committed GLB so the span matches the real 5.37 m at the 8.32 m length. Scaled to 8.32 m length in-app."
+  },
+  {
+    "id": "v2-rocket",
+    "catalogName": "V-2 rocket",
+    "author": "Diccbudd",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/v2-rocket-c12726a34e534e53af7134e22b1f9cca",
+    "sourceAsset": "V2 Rocket",
+    "attribution": "V2 Rocket by Diccbudd on Sketchfab (CC BY) — https://sketchfab.com/3d-models/v2-rocket-c12726a34e534e53af7134e22b1f9cca",
+    "requiresAttribution": true,
+    "notes": "Aggregat 4 / V-2 ballistic missile. Scaled to 14.03 m height in-app."
+  },
+  {
     "id": "v22",
     "catalogName": "V-22 Osprey",
     "author": "Muhamad Mirza Arrafi",
@@ -1752,6 +1836,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "Wraith cruiser by tomkranis on Sketchfab (CC BY) — https://sketchfab.com/3d-models/wraith-cruiser-f8853716bf6f479da530eea8d2ed671e",
     "requiresAttribution": true,
     "notes": "Wraith cruiser (CC-BY). Scaled to 3200 m length in-app."
+  },
+  {
+    "id": "da-vinci-ornithopter",
+    "catalogName": "Wright Flyer",
+    "author": "vanessalani",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/da-vincis-flying-machine-ac60c0bc847e4929bf8aa9772ac49b1a",
+    "sourceAsset": "Da Vinci's - Flying Machine",
+    "attribution": "Da Vinci's - Flying Machine by vanessalani on Sketchfab (CC BY) — https://sketchfab.com/3d-models/da-vincis-flying-machine-ac60c0bc847e4929bf8aa9772ac49b1a",
+    "requiresAttribution": true,
+    "notes": "Leonardo da Vinci ornithopter, a modern reconstruction of the Codex Atlanticus drawings. Scaled to an 11 m wingspan in-app; no authoritative dimensions exist for a machine that was never built."
   },
   {
     "id": "soldier-ww2",

@@ -1,0 +1,12 @@
+{
+  "id": "apollo-lm",
+  "file": "model.glb",
+  "license": "CC-BY-4.0",
+  "licenseLabel": "CC BY",
+  "author": "BlackProject",
+  "source": "https://sketchfab.com/3d-models/moon-landing-67e8a3ea5fbe42f4a6cb6c96cf406df4",
+  "sourceAsset": "🌙 Moon Landing",
+  "sketchfabUid": "67e8a3ea5fbe42f4a6cb6c96cf406df4",
+  "notes": "Apollo Lunar Module extracted from the source scene: the moon surface, rocks, flag and both astronaut figures were deleted so only the spacecraft ships. Scaled to 7.04 m height in-app; the mesh splays the landing gear about 14% wider than the real 9.4 m footpad span, so height is the trusted axis. Yaw 45 puts the legs on the view axes.",
+  "attribution": "🌙 Moon Landing by BlackProject on Sketchfab (CC BY) — https://sketchfab.com/3d-models/moon-landing-67e8a3ea5fbe42f4a6cb6c96cf406df4"
+}

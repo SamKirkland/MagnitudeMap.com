@@ -1,0 +1,12 @@
+{
+  "id": "v1-flying-bomb",
+  "file": "model.glb",
+  "license": "CC-BY-4.0",
+  "licenseLabel": "CC BY",
+  "author": "warrior3d",
+  "source": "https://sketchfab.com/3d-models/fi-103-ae37027c564b40e3b38b27bcab36e135",
+  "sourceAsset": "Fi-103",
+  "sketchfabUid": "ae37027c564b40e3b38b27bcab36e135",
+  "notes": "Fieseler Fi 103 / V-1 flying bomb. The source mesh draws the wing and tailplane about 46% too long for the fuselage; the wing node (\"krilo\") is scaled 0.683 in X in the committed GLB so the span matches the real 5.37 m at the 8.32 m length. Scaled to 8.32 m length in-app.",
+  "attribution": "Fi-103 by warrior3d on Sketchfab (CC BY) — https://sketchfab.com/3d-models/fi-103-ae37027c564b40e3b38b27bcab36e135"
+}

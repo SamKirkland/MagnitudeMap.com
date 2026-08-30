@@ -31,9 +31,11 @@ export function findPresetBySlug(slug: string): ComparisonPreset | undefined {
   )
 }
 
-/** Old Kenney `person` id → Ready Player Me male. */
+/** Retired ids that still appear in shared links. */
 const ID_ALIASES: Record<string, string> = {
   person: 'person-male',
+  // The GLB was always the whole launch vehicle, not the TMA capsule.
+  'soyuz-tma': 'soyuz-rocket',
 }
 
 function uniqueValidIds(ids: string[]): string[] {

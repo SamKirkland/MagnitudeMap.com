@@ -1,5 +1,5 @@
 {
-  "id": "soyuz-tma",
+  "id": "soyuz-rocket",
   "file": "model.glb",
   "license": "CC-BY-4.0",
   "licenseLabel": "CC BY",
@@ -7,6 +7,6 @@
   "source": "https://sketchfab.com/3d-models/soyuz-tma-1ac2fad9da5242b9bf7c78872410c79e",
   "sourceAsset": "Soyuz TMA",
   "sketchfabUid": "1ac2fad9da5242b9bf7c78872410c79e",
-  "notes": "Soyuz TMA spacecraft (CC-BY). Scaled to 7.48 m length in-app.",
+  "notes": "Soyuz launch vehicle, crewed configuration with escape tower (CC-BY). The asset is titled \"Soyuz TMA\" but models the whole rocket, not the capsule; scaled to 49.5 m height in-app.",
   "attribution": "Soyuz TMA by TwilightSparkleX on Sketchfab (CC BY) — https://sketchfab.com/3d-models/soyuz-tma-1ac2fad9da5242b9bf7c78872410c79e"
 }

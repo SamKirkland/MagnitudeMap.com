@@ -137,14 +137,12 @@ export const CATALOG_FACTS: Record<string, string> = {
     'Soviet Union, tested over Novaya Zemlya on 30 October 1961. 50 megatons — over 3,000 Hiroshimas, and still the largest explosion ever produced by humans. The fireball was 8 km across, the cloud rose 67 km, and the shockwave circled the Earth three times. It was deliberately halved in yield; the full design was 100 Mt.',
 
   // --- Spaceflight -----------------------------------------------------------
-  'spaceship':
-    'A stylised cargo craft at 18 m long, roughly the size of a real resupply vehicle such as Cygnus or ATV.',
   'electron':
     'Rocket Lab, 2017–present. 300 kg to low Earth orbit for about $7.5 million. Carbon-composite tanks and 3D-printed, battery-fed Rutherford engines; boosters have been recovered by parachute after ocean splashdown.',
   'falcon-9':
     'SpaceX, 2010–present. 22.8 t to low Earth orbit for a list price of about $70 million. Individual boosters have flown more than 20 times each, and the fleet has passed 400 launches — in recent years more than the rest of the world combined.',
-  'soyuz-tma':
-    'Russia, 2002–2012. 33 flown, each carrying three crew. Between the Shuttle’s retirement in 2011 and 2020 it was the only ride to the ISS, and NASA paid up to about $90 million per seat.',
+  'soyuz-rocket':
+    'The R-7 family has flown since 1957 and is the most-launched rocket design in history, past 1,900 flights. The crewed Soyuz stands 49.5 m tall, spans 10.3 m across its four strap-on boosters, and weighs 305 t fuelled to put 7 t in low Earth orbit. Between the Shuttle’s retirement in 2011 and 2020 it was the only ride to the ISS, and NASA paid up to about $90 million per seat.',
   'shuttle-discovery':
     'OV-103 flew 39 missions between 1984 and 2011, more than any other spacecraft. It deployed the Hubble Space Telescope and returned Americans to flight after both the Challenger and Columbia losses. Now on display at the Udvar-Hazy Center.',
   'shuttle-atlantis':
@@ -333,4 +331,22 @@ export const CATALOG_FACTS: Record<string, string> = {
     'About 10,000 t of $100 bills — heavier than the Eiffel Tower, and enough to buy the entire Apollo programme several times over in today’s money.',
   'money-us-debt':
     'US federal debt, around $39.9 trillion as of August 2026. In $100 bills it would weigh roughly 400,000 t — about four Ford-class carriers’ worth of paper.',
+  'da-vinci-ornithopter':
+    'Leonardo da Vinci sketched his flapping-wing flying machines around 1485–1490 in the Codex Atlanticus, four centuries before anyone flew. No full-size original was ever built, and the reconstruction here spans about 11 m — a wing area a human could never have flapped, since a pilot puts out roughly 0.3 kW against the 1.5 kW the design needed.',
+  'wright-flyer':
+    'Kitty Hawk, North Carolina, 17 December 1903. The first flight covered 37 m in 12 seconds; the fourth that day reached 260 m. The Flyer spanned 12.29 m, weighed 274 kg empty, and its purpose-built engine made only 12 hp — the brothers cast it themselves after no manufacturer would supply one light enough.',
+  'hindenburg':
+    'LZ 129 Hindenburg, 1936–1937, was 245 m long and the largest aircraft ever to fly — about four times the length of a Boeing 747. It carried 50–72 passengers across the Atlantic in two and a half days, held 200,000 m³ of hydrogen, and burned in 34 seconds at Lakehurst on 6 May 1937, killing 36 of the 97 aboard.',
+  'v1-flying-bomb':
+    'The Fieseler Fi 103, launched from June 1944, was the first cruise missile: a 900 kg warhead on an 8.32 m airframe, flying at 640 km/h until a counter cut the engine. Germany fired more than 9,500 at London and 6,500 at Antwerp, and about 30,000 were built at roughly a hundredth the cost of a bomber sortie.',
+  'v2-rocket':
+    'The A4, better known as the V-2, was the first object to reach space — a 1944 test passed 176 km. It stood 14.03 m tall, weighed 12.5 t fuelled, and carried a 1 t warhead 320 km at 5,760 km/h. Over 3,000 were fired in combat, and more people died building it in the Mittelbau-Dora camps than were killed by it.',
+  'apollo-lm':
+    'The only crewed vehicle ever to land on another world. Six landed between 1969 and 1972, each 7.04 m tall on a 9.4 m footpad span and weighing 15.2 t fuelled. Its skin was in places as thin as 0.3 mm, and its guidance computer ran on 4 KB of memory.',
+  'hubble':
+    'Launched in 1990 and 13.2 m long — built to the width of the shuttle payload bay that carried it. Its 2.4 m mirror was ground 2.2 micrometres too flat, and five servicing missions between 1993 and 2009 corrected it and kept it running. Hubble has returned over 1.6 million observations from 540 km up.',
+  'jwst':
+    'Launched December 2021 to a point 1.5 million km from Earth. Its 6.5 m segmented mirror gathers about six times the light Hubble does, and the five-layer sunshield unfolds to 21.2 m by 14.2 m — the size of a tennis court — holding the instruments near 40 K. It cost about $10 billion and took 25 years to build.',
+  'roman-telescope':
+    'NASA’s Nancy Grace Roman Space Telescope carries a Hubble-class 2.4 m mirror behind a camera with 100 times Hubble’s field of view, so a survey Hubble would need centuries to finish takes months. The observatory is about 12.7 m long and is built to study dark energy, exoplanets, and infrared surveys of the whole sky.',
 }

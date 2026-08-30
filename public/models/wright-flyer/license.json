@@ -1,0 +1,12 @@
+{
+  "id": "wright-flyer",
+  "file": "model.glb",
+  "license": "CC-BY-4.0",
+  "licenseLabel": "CC BY",
+  "author": "manilov.ap",
+  "source": "https://sketchfab.com/3d-models/flyer-7d9d037fda1f412ba8625277d0b26777",
+  "sourceAsset": "Flyer",
+  "sketchfabUid": "7d9d037fda1f412ba8625277d0b26777",
+  "notes": "1903 Wright Flyer with pilot. The source GLB is authored on a 50 degree diagonal, which inflates every axis-aligned bounding box; a 50 degree yaw is baked into the committed GLB so catalog yaw is 0. Scaled to the 12.29 m wingspan in-app; the mesh stands 3.1 m tall against the published 2.74 m.",
+  "attribution": "Flyer by manilov.ap on Sketchfab (CC BY) — https://sketchfab.com/3d-models/flyer-7d9d037fda1f412ba8625277d0b26777"
+}

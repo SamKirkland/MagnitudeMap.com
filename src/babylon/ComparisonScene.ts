@@ -56,6 +56,11 @@ import { CreateScreenshotUsingRenderTargetAsync } from '@babylonjs/core/Misc/scr
 // glTF 2.0 only. The bare '@babylonjs/loaders/glTF' entry also registers the
 // glTF 1.0 loader, which nothing here loads.
 import '@babylonjs/loaders/glTF/2.0'
+import { DracoDecoder } from '@babylonjs/core/Meshes/Compression/dracoDecoder'
+// Vite emits these as hashed assets; they are never parsed as modules.
+import dracoWrapperUrl from '@babylonjs/core/assets/Draco/draco_wasm_wrapper_gltf.js?url'
+import dracoWasmUrl from '@babylonjs/core/assets/Draco/draco_decoder_gltf.wasm?url'
+import dracoFallbackUrl from '@babylonjs/core/assets/Draco/draco_decoder_gltf.js?url'
 import {
   CATALOG_BY_ID,
   type CatalogItem,
@@ -142,6 +147,28 @@ import {
 export type ComparisonSceneOptions = {
   /** OG capture: perspective screenshot, no plaques or camera controls. */
   capture?: boolean
+}
+
+/**
+ * Every model in the catalog is Draco-compressed, and Babylon's stock
+ * configuration pulls the decoder from cdn.babylonjs.com — a third-party origin
+ * that is only discovered once the first model has already downloaded. Serve it
+ * from our own bundle instead: no extra DNS/TLS, no runtime dependency on
+ * someone else's CDN, and it can be warmed in parallel with the models.
+ */
+DracoDecoder.DefaultConfiguration = {
+  wasmUrl: dracoWrapperUrl,
+  wasmBinaryUrl: dracoWasmUrl,
+  fallbackUrl: dracoFallbackUrl,
+}
+
+/** Fetch and compile the decoder now, alongside the first models' download. */
+function warmDracoDecoder() {
+  try {
+    void DracoDecoder.Default.whenReadyAsync().catch(() => undefined)
+  } catch {
+    // Decoding still works; it just pays for the fetch on the first model.
+  }
 }
 
 type PlacedObject = {
@@ -513,6 +540,7 @@ export class ComparisonScene {
       canvasTabIndex: 0,
     })
     this.applyResolutionCap()
+    warmDracoDecoder()
 
     this.scene = new Scene(this.engine)
     this.scene.clearColor = new Color4(0.894, 0.933, 0.945, 1)
