@@ -35,6 +35,9 @@ export function createNeighborhoodTexture(scene: Scene): DynamicTexture {
   tex.wrapU = Texture.WRAP_ADDRESSMODE
   tex.wrapV = Texture.WRAP_ADDRESSMODE
   tex.hasAlpha = false
+  // Tiled at true scale over km-wide slabs: mipmaps fade distant blocks into
+  // their average colour, and anisotropy keeps grazing views from smearing.
+  tex.anisotropicFilteringLevel = 16
 
   const ctx = tex.getContext() as CanvasRenderingContext2D
   const pxPerM = TEX_SIZE / NEIGHBORHOOD_TILE_METERS
@@ -157,6 +160,32 @@ export function createNeighborhoodTexture(scene: Scene): DynamicTexture {
 
   tex.update()
   return tex
+}
+
+/**
+ * Mean colour of a painted texture, 0–1 per channel. This is what its smallest
+ * mip converges to, so a flat fill in this colour matches the tiled pattern
+ * seen from far away.
+ */
+export function textureAverageColor(tex: DynamicTexture): [number, number, number] {
+  const source = (tex.getContext() as CanvasRenderingContext2D).canvas
+  const sample = document.createElement('canvas')
+  sample.width = 32
+  sample.height = 32
+  const ctx = sample.getContext('2d')
+  if (!ctx) return [0.4, 0.45, 0.38]
+  ctx.drawImage(source as CanvasImageSource, 0, 0, 32, 32)
+  const data = ctx.getImageData(0, 0, 32, 32).data
+  let r = 0
+  let g = 0
+  let b = 0
+  for (let i = 0; i < data.length; i += 4) {
+    r += data[i]
+    g += data[i + 1]
+    b += data[i + 2]
+  }
+  const n = (data.length / 4) * 255
+  return [r / n, g / n, b / n]
 }
 
 /** Minecraft-ish dirt side face: grass rim on top, brown dirt below. */

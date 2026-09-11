@@ -338,6 +338,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Burj Khalifa Dubai (CC-BY). Scaled to 828 m height in-app."
   },
   {
+    "id": "c130j",
+    "catalogName": "C-130J Super Hercules",
+    "author": "KOG_THORNS",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/lockheed-martin-c130jsuper-hercules-reupload-223b4ff4abb945038fe35726bedd0db1",
+    "sourceAsset": "Lockheed Martin C130J\"Super Hercules\" (REUPLOAD)",
+    "attribution": "Lockheed Martin C130J\"Super Hercules\" (REUPLOAD) by KOG_THORNS on Sketchfab (CC BY) — https://sketchfab.com/3d-models/lockheed-martin-c130jsuper-hercules-reupload-223b4ff4abb945038fe35726bedd0db1",
+    "requiresAttribution": true,
+    "notes": "C-130J Super Hercules by KOG_THORNS (CC-BY). Modified: Brazilian flags, serial numbers, C-130 lettering and fin stripes painted out of the tail texture. Scaled to 29.79 m length in-app."
+  },
+  {
     "id": "c17a",
     "catalogName": "C-17A Globemaster III",
     "author": "Yi Tsung Lee",
@@ -590,6 +602,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Rocket Lab Electron (CC-BY, ~53k tris). Scaled to 18 m height in-app."
   },
   {
+    "id": "stadium",
+    "catalogName": "Estadio Único Madre de Ciudades",
+    "author": "A1905",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/estadio-unico-madre-de-ciudades-35ff110e81ea45dfb5294803dd13c3da",
+    "sourceAsset": "Estadio Único Madre de Ciudades",
+    "attribution": "Estadio Único Madre de Ciudades by A1905 on Sketchfab (CC BY) — https://sketchfab.com/3d-models/estadio-unico-madre-de-ciudades-35ff110e81ea45dfb5294803dd13c3da",
+    "requiresAttribution": true,
+    "notes": "Estadio Único Madre de Ciudades, Santiago del Estero, Argentina. Authored in real metres (105 x 68 m pitch), so the plate loads at native scale. Stray site props more than 320 m from the pitch were dropped — they stretched the footprint over 1.5 km — and the playing surface mesh is renamed `pitch-anchor`, which seats the lineup on the grass. Optional ground plate, not a catalog item."
+  },
+  {
     "id": "nuclear-explosion",
     "catalogName": "Explosion",
     "author": "Jungle Jim",
@@ -696,18 +720,6 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "Red fire truck with ladder by Chenzoss on Sketchfab (CC BY) — https://sketchfab.com/3d-models/red-fire-truck-with-ladder-5c8d876d997f4eaa939a4778cedcfbfa",
     "requiresAttribution": true,
     "notes": "Red fire truck with ladder (CC-BY, Chenzoss). Linked Rescue3D model is Store-only. Scaled to 12 m length in-app."
-  },
-  {
-    "id": "nuclear-fireball",
-    "catalogName": "Fireball | energy sphere",
-    "author": "dabori",
-    "license": "CC-BY-4.0",
-    "licenseLabel": "CC BY",
-    "source": "https://sketchfab.com/3d-models/fireball-energy-sphere-4d8f95f28398453d8d5620fe301d39f8",
-    "sourceAsset": "Fireball | energy sphere",
-    "attribution": "Fireball | energy sphere by dabori on Sketchfab (CC BY) — https://sketchfab.com/3d-models/fireball-energy-sphere-4d8f95f28398453d8d5620fe301d39f8",
-    "requiresAttribution": true,
-    "notes": "Fireball energy sphere by DaBoRi (CC-BY). Air-blast stand-in for linked tomparsons fireball. Random yaw; keep upright."
   },
   {
     "id": "wright-flyer",
@@ -830,16 +842,28 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Hubble Space Telescope with the solar arrays furled against the hull. Scaled to 13.2 m length in-app."
   },
   {
-    "id": "isd-ii",
-    "catalogName": "Imperial II Star Destroyer",
-    "author": "Daniel",
+    "id": "humpback-whale",
+    "catalogName": "Humpback whale",
+    "author": "Bohdan Lvov",
     "license": "CC-BY-4.0",
     "licenseLabel": "CC BY",
-    "source": "https://sketchfab.com/3d-models/star-wars-imperial-ii-star-destroyer-b8bd2d35f7604670ab85242c06c6d280",
-    "sourceAsset": "Star Wars: Imperial II Star Destroyer",
-    "attribution": "Star Wars: Imperial II Star Destroyer by Daniel on Sketchfab (CC BY) — https://sketchfab.com/3d-models/star-wars-imperial-ii-star-destroyer-b8bd2d35f7604670ab85242c06c6d280",
+    "source": "https://sketchfab.com/3d-models/blue-whale-textured-d24d19021c724c3a9134eebcb76b0e0f",
+    "sourceAsset": "Blue Whale - Textured",
+    "attribution": "Blue Whale - Textured by Bohdan Lvov on Sketchfab (CC BY) — https://sketchfab.com/3d-models/blue-whale-textured-d24d19021c724c3a9134eebcb76b0e0f",
     "requiresAttribution": true,
-    "notes": "Imperial II-class Star Destroyer (CC-BY). Scaled to 1,600 m length in-app."
+    "notes": "Uploaded as a blue whale, but the long white-underside pectoral fins and knobbly rostrum are a humpback — shipped as humpback-whale and scaled to 15 m length in-app. The mesh spreads 0.51 of its length across the fins, shorter than a real humpback's ~11 m flipper spread, so catalog width follows the mesh (8 m) rather than the published figure."
+  },
+  {
+    "id": "isd-ii",
+    "catalogName": "Imperial II Star Destroyer",
+    "author": "Todor",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/star-destroyer-b5435fed6c3143f99b56f5de862a05bd",
+    "sourceAsset": "Star Destroyer",
+    "attribution": "Star Destroyer by Todor on Sketchfab (CC BY) — https://sketchfab.com/3d-models/star-destroyer-b5435fed6c3143f99b56f5de862a05bd",
+    "requiresAttribution": true,
+    "notes": "Imperial-class Star Destroyer (CC-BY), textured, 45k tris. Replaces an untextured build by Daniel (uid b8bd2d35f7604670ab85242c06c6d280) whose flat hull panels read as studio floor slabs and inflated the AABB to 1,510 m across. Scaled to 1,600 m length in-app; the mesh runs 1,031 m across the wings against the canon 985 m beam."
   },
   {
     "id": "independence",
@@ -1442,6 +1466,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "SR-71 Blackbird (CC-BY, manilov.ap). Authored in meters at a 37.6 deg yaw; catalog yaw squares the nose to +Z. Scaled to 32.74 m length in-app."
   },
   {
+    "id": "sr72",
+    "catalogName": "SR-72 Darkstar",
+    "author": "Cem Gürbüz",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/lockheed-martin-sr72-darkstar-topgun-maverick-3578c297f98e403aa4c079e0c884953b",
+    "sourceAsset": "Lockheed Martin SR72 Darkstar | TopGun: Maverick",
+    "attribution": "Lockheed Martin SR72 Darkstar | TopGun: Maverick by Cem Gürbüz on Sketchfab (CC BY) — https://sketchfab.com/3d-models/lockheed-martin-sr72-darkstar-topgun-maverick-3578c297f98e403aa4c079e0c884953b",
+    "requiresAttribution": true,
+    "notes": "Darkstar from Top Gun: Maverick by Cem Gürbüz (CC-BY). No official dimensions exist; scaled to an estimated 30.5 m length in-app, width and height follow the mesh."
+  },
+  {
     "id": "valdore",
     "catalogName": "Star Trek Online | Romulan Valdore",
     "author": "LoganRolphh",
@@ -1610,6 +1646,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Tu-22M3 by nazidefenseforceofficial (CC-BY). Scaled to 42.46 m length in-app."
   },
   {
+    "id": "twemoji-country-flags",
+    "catalogName": "Twemoji Country Flags font",
+    "author": "Twitter (Twemoji); font by TalkJS",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://github.com/talkjs/country-flag-emoji-polyfill",
+    "sourceAsset": "Twemoji Country Flags font",
+    "attribution": "Flag emoji from Twemoji by Twitter (CC BY 4.0) — https://github.com/twitter/twemoji, packaged as Twemoji Country Flags by TalkJS (MIT) — https://github.com/talkjs/country-flag-emoji-polyfill",
+    "requiresAttribution": true,
+    "notes": "Flag emoji font so country flags render on Windows, which ships none. Font packaging is MIT (TalkJS, country-flag-emoji-polyfill 0.1.10); the flag artwork is Twemoji, CC-BY 4.0."
+  },
+  {
     "id": "type-15-shuttle",
     "catalogName": "Type 15 Shuttlepod",
     "author": "riker446",
@@ -1692,6 +1740,30 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "Star Trek Online | USS Enterprise D by LoganRolphh on Sketchfab (CC BY) — https://sketchfab.com/3d-models/star-trek-online-uss-enterprise-d-595123c3348646a4a7e6871ebf0e9fae",
     "requiresAttribution": true,
     "notes": "Star Trek Online | USS Enterprise D (CC-BY). Scaled to 642.5 m length (Galaxy class)."
+  },
+  {
+    "id": "los-angeles",
+    "catalogName": "USS Los Angeles (SSN-688)",
+    "author": "Muhamad Mirza Arrafi",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/uss-los-angeles-ssn-688-submarine-c297103b4e054be98c9a9c6803c5a196",
+    "sourceAsset": "USS LOS ANGELES SSN-688 SUBMARINE",
+    "attribution": "USS LOS ANGELES SSN-688 SUBMARINE by Muhamad Mirza Arrafi on Sketchfab (CC BY) — https://sketchfab.com/3d-models/uss-los-angeles-ssn-688-submarine-c297103b4e054be98c9a9c6803c5a196",
+    "requiresAttribution": true,
+    "notes": "Los Angeles-class SSN (USS Los Angeles SSN-688) by nazidefenseforceofficial (CC-BY). Scaled to 110.3 m length in-app; width and height follow the mesh."
+  },
+  {
+    "id": "seawolf",
+    "catalogName": "USS Seawolf (SSN-21)",
+    "author": "SB-129",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/uss-seawolf-ssn-21-90ebfc165a6148e38cb2d7245dc2cd48",
+    "sourceAsset": "USS Seawolf (SSN-21)",
+    "attribution": "USS Seawolf (SSN-21) by SB-129 on Sketchfab (CC BY) — https://sketchfab.com/3d-models/uss-seawolf-ssn-21-90ebfc165a6148e38cb2d7245dc2cd48",
+    "requiresAttribution": true,
+    "notes": "USS Seawolf (SSN-21) by SB-129 (CC-BY). Scaled to 107.6 m length in-app; width and height follow the mesh."
   },
   {
     "id": "v1-flying-bomb",
@@ -1862,6 +1934,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "WW2 US Army Ranger (CC-BY). Linked alpen soldier is not downloadable. Scaled to 1.75 m height in-app."
   },
   {
+    "id": "xb70",
+    "catalogName": "XB-70 Valkyrie",
+    "author": "Muhamad Mirza Arrafi",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/north-american-xb-70-valkyrie-d33aff9d58f8469cbd1073c60b19f152",
+    "sourceAsset": "North American XB-70 Valkyrie",
+    "attribution": "North American XB-70 Valkyrie by Muhamad Mirza Arrafi on Sketchfab (CC BY) — https://sketchfab.com/3d-models/north-american-xb-70-valkyrie-d33aff9d58f8469cbd1073c60b19f152",
+    "requiresAttribution": true,
+    "notes": "XB-70 Valkyrie by nazidefenseforceofficial (CC-BY). Scaled to 56.39 m length in-app; the mesh is slightly narrow for its length, so catalog width and height follow the mesh (30.5 m span vs the published 32 m)."
+  },
+  {
     "id": "h20",
     "catalogName": "Xian H-20",
     "author": "SB-129",
@@ -1872,6 +1956,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "Xian-H20 by SB-129 on Sketchfab (CC BY) — https://sketchfab.com/3d-models/xian-h20-0f33efdf96514152b2aa8ebd03a1a747",
     "requiresAttribution": true,
     "notes": "Xian H-20 by SB-129 (CC-BY). Size classified; scaled to 50 m wingspan estimate in-app."
+  },
+  {
+    "id": "yamato",
+    "catalogName": "Yamato",
+    "author": "tanklover",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/yamato-d6c3ff1f15344a31b1120f48fd2718c5",
+    "sourceAsset": "Yamato",
+    "attribution": "Yamato by tanklover on Sketchfab (CC BY) — https://sketchfab.com/3d-models/yamato-d6c3ff1f15344a31b1120f48fd2718c5",
+    "requiresAttribution": true,
+    "notes": "Japanese battleship Yamato by tanklover (CC-BY). Scaled to 263 m length in-app."
   },
   {
     "id": "yoda",

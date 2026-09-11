@@ -108,6 +108,7 @@ import {
 import {
   createDirtSideTexture,
   createNeighborhoodTexture,
+  textureAverageColor,
   createUndersideCutawayTexture,
   NEIGHBORHOOD_TILE_METERS,
 } from './neighborhoodTexture'
@@ -264,6 +265,30 @@ const MAX_DEVICE_PIXEL_RATIO = 1.5
 const MAX_POSTER_PREVIEW_PIXEL_RATIO = 1.25
 /** After the camera/scene stop changing, pause clips and skip GPU submits. */
 const IDLE_SETTLE_MS = 300
+/** Authored radius of the sky sphere; it is rescaled to the clip planes every render. */
+const SKYBOX_RADIUS = 80
+/**
+ * Most repeats of the block texture across the slab before it falls back to a
+ * flat fill. 4096 × 2048 texels stays under float32's 2^24 exact-integer range,
+ * so UVs keep sub-texel precision (~470 km of ground).
+ */
+const MAX_GROUND_TILE_REPEATS = 4096
+
+/**
+ * Pixels × MSAA samples a poster render target may allocate. The multisampled
+ * colour and depth buffers grow with both. "Large" (4K supersampled 2× at 8×
+ * MSAA, ~265 M sample-pixels) came back blank on common GPUs while "Larger"
+ * (8K at 4×, ~133 M) rendered, so the budget sits at the size known to work.
+ */
+const POSTER_MSAA_BUDGET = 140_000_000
+
+/** Largest power-of-two MSAA count (≤ 8) whose buffers fit the budget. */
+function posterMsaaSamples(width: number, height: number, maxSamples: number): number {
+  const fit = POSTER_MSAA_BUDGET / Math.max(width * height, 1)
+  let samples = 1
+  while (samples * 2 <= Math.min(8, maxSamples, fit)) samples *= 2
+  return samples
+}
 /**
  * Orbit radius where pan/zoom speeds are 1×. Matches the default camera radius so
  * human-scale navigation stays the same; larger views scale pan and zoom with it.
@@ -354,7 +379,7 @@ function plaqueFactLines(
   const ctx = measureCtx()
   if (!ctx) return []
   const m = plaqueMetrics(texW)
-  ctx.font = `${m.factsSize}px "IBM Plex Sans", sans-serif`
+  ctx.font = `${m.factsSize}px "Twemoji Country Flags", "IBM Plex Sans", sans-serif`
   const facts = convertUnitsInText(item.facts, units)
   return wrapPlaqueText(ctx, facts, m.factsWidth, PLAQUE_FACT_LINES)
 }
@@ -400,7 +425,7 @@ function fitFontSize(
   let fitted = size
   const floor = size * 0.6
   while (fitted > floor) {
-    ctx.font = `${prefix}${Math.round(fitted)}px "IBM Plex Sans", sans-serif`
+    ctx.font = `${prefix}${Math.round(fitted)}px "Twemoji Country Flags", "IBM Plex Sans", sans-serif`
     if (ctx.measureText(text).width <= maxWidth) break
     fitted -= 1
   }
@@ -448,8 +473,14 @@ export class ComparisonScene {
   private ground: Mesh
   private skybox: Mesh
   private sun!: DirectionalLight
+  private fillLight: DirectionalLight | null = null
+  /** World-fixed light directions of the interactive scene, restored after a poster. */
+  private sunHomeDirection = new Vector3(-0.45, -1, 0.62)
+  private fillHomeDirection: Vector3 | null = null
   private shadows: ShadowGenerator | null = null
   private neighborhoodTex: DynamicTexture | null = null
+  /** Mean colour of the block texture — the flat fill once it can no longer tile. */
+  private neighborhoodAvg: Color3 | null = null
   private dirtSideTex: DynamicTexture | null = null
   private undersideTex: DynamicTexture | null = null
   private waterSurfaceTex: DynamicTexture | null = null
@@ -482,6 +513,10 @@ export class ComparisonScene {
   private groundPlateId: GroundPlateId = DEFAULT_GROUND_PLATE
   private shadowsWanted = true
   private cityRoot: TransformNode | null = null
+  /** Which plate `cityRoot` holds — a second GLB plate must replace it, not reuse it. */
+  private cityPlateId: GroundPlateId | null = null
+  /** Lowest visual Y of the loaded plate, so the earth slab hides under its terrain. */
+  private cityBaseY = 0
   private cityLoadGen = 0
   private cityFootprint = { width: 0, depth: 0 }
   private detonationMode: DetonationMode = 'casing'
@@ -608,8 +643,12 @@ export class ComparisonScene {
     this.installLights()
 
     this.skybox = this.createGradientSkybox()
+    // Every render path (live, poster, capture) sets its own clip planes, so
+    // fit the sky per camera render rather than in the live tick.
+    this.scene.onBeforeCameraRenderObservable.add((camera) => this.fitSkyboxToClipPlanes(camera))
 
     this.neighborhoodTex = createNeighborhoodTexture(this.scene)
+    this.neighborhoodAvg = Color3.FromArray(textureAverageColor(this.neighborhoodTex))
     this.dirtSideTex = createDirtSideTexture(this.scene)
     this.undersideTex = createUndersideCutawayTexture(this.scene)
     this.waterSurfaceTex = createWaterSurfaceTexture(this.scene)
@@ -1198,11 +1237,15 @@ export class ComparisonScene {
 
       const long = Math.max(captureRequest.width, captureRequest.height)
       const maxSamples = Math.max(1, this.engine.getCaps().maxMSAASamples ?? 4)
-      const wantSamples = long > 8000 ? 2 : long > 4000 ? 4 : 8
-      const samples = Math.min(wantSamples, maxSamples)
       // 4K still 2× SSAA. 8K/16K already have the pixels — don't allocate a 32K RT.
       const wantSuper = long <= 3840 ? 2 : 1
       const superScale = Math.min(wantSuper, maxTex / long)
+      // Samples are chosen for the render target actually allocated, after supersampling.
+      const samples = posterMsaaSamples(
+        captureRequest.width * superScale,
+        captureRequest.height * superScale,
+        maxSamples,
+      )
       const prevRt = this.scene.renderTargetsEnabled
       this.scene.renderTargetsEnabled = true
       this.camera.unfreezeProjectionMatrix()
@@ -1254,6 +1297,7 @@ export class ComparisonScene {
         camera.orthoRight = saved.orthoRight
         camera.orthoTop = saved.orthoTop
         camera.orthoBottom = saved.orthoBottom
+        this.restoreSceneLights()
         this.freezeStaticScene()
       }
       this.camera.unfreezeProjectionMatrix()
@@ -1399,6 +1443,7 @@ export class ComparisonScene {
     this.camera.orthoBottom = saved.orthoBottom
     const canvas = this.engine.getRenderingCanvas()
     if (!this.captureMode && canvas) this.camera.attachControl(canvas, true)
+    this.restoreSceneLights()
     this.freezeStaticScene()
     this.camera.unfreezeProjectionMatrix()
     this.heldIdle = false
@@ -1432,7 +1477,9 @@ export class ComparisonScene {
   private setPosterStageEnabled(enabled: boolean) {
     this.ground.setEnabled(enabled)
     this.skybox.setEnabled(enabled)
-    this.cityRoot?.setEnabled(enabled && this.groundPlateId !== 'neighborhood')
+    this.cityRoot?.setEnabled(
+      enabled && Boolean(GROUND_PLATE_BY_ID[this.groundPlateId].modelPath),
+    )
     for (const mesh of this.scene.meshes) {
       if (mesh.name.startsWith('label-')) mesh.setEnabled(enabled)
     }
@@ -1987,6 +2034,56 @@ export class ComparisonScene {
 
     this.syncCameraClipPlanes()
     this.refreshPosterCameraMatrices()
+    this.aimLightsAtPosterCamera()
+  }
+
+  /**
+   * The sun is fixed in the world, high and to the right of the tour camera.
+   * Poster views look from -Z or straight down, so exported faces were only
+   * half lit and every big model threw its shadow across the smaller one
+   * beside it. Key from over the viewer's left shoulder, fill from the right,
+   * and drop contact shadows — a poster has no ground to receive them.
+   */
+  private aimLightsAtPosterCamera() {
+    if (!this.sun) return
+    const forward = this.camera.getDirection(new Vector3(0, 0, 1))
+    const up = this.camera.getDirection(new Vector3(0, 1, 0))
+    const right = this.camera.getDirection(new Vector3(1, 0, 0))
+    this.sun.direction.copyFrom(
+      forward.add(up.scale(-0.8)).add(right.scale(0.45)).normalize(),
+    )
+    this.fillLight?.direction.copyFrom(
+      forward.add(up.scale(-0.25)).add(right.scale(-0.8)).normalize(),
+    )
+    if (this.shadows) this.shadows.darkness = SHADOW_DARKNESS_OFF
+    this.rebindLightsOnNextFrame()
+  }
+
+  /** Back to the world-fixed sun, fill and shadows of the interactive scene. */
+  private restoreSceneLights() {
+    if (!this.sun) return
+    this.sun.direction.copyFrom(this.sunHomeDirection)
+    if (this.fillLight && this.fillHomeDirection) {
+      this.fillLight.direction.copyFrom(this.fillHomeDirection)
+    }
+    this.applyShadowState()
+    this.rebindLightsOnNextFrame()
+  }
+
+  /**
+   * Frozen materials only rebind light uniforms when the bound effect changes,
+   * so a new light direction could be ignored. Thaw them for one frame so every
+   * mesh picks the new lights up, then freeze them again.
+   */
+  private rebindLightsOnNextFrame() {
+    const thawed = this.scene.materials.filter((material) => material.isFrozen)
+    for (const material of thawed) material.unfreeze()
+    this.scene.onAfterRenderObservable.addOnce(() => {
+      for (const material of thawed) {
+        if (!material.isFrozen) material.freeze()
+      }
+    })
+    this.markDirty()
   }
 
   /**
@@ -2313,10 +2410,19 @@ export class ComparisonScene {
   private async syncGroundPlate() {
     const gen = ++this.cityLoadGen
     const plate = GROUND_PLATE_BY_ID[this.groundPlateId]
+    if (this.cityRoot && this.cityPlateId !== plate.id) {
+      this.cityRoot.dispose(false, true)
+      this.cityRoot = null
+      this.cityPlateId = null
+      this.cityBaseY = 0
+      this.cityFootprint = { width: 0, depth: 0 }
+    }
     if (!plate.modelPath) {
       if (this.cityRoot) {
-        this.cityRoot.dispose()
+        this.cityRoot.dispose(false, true)
         this.cityRoot = null
+        this.cityPlateId = null
+        this.cityBaseY = 0
         this.cityFootprint = { width: 0, depth: 0 }
       }
       this.resizeGroundToContent()
@@ -2332,6 +2438,12 @@ export class ComparisonScene {
       this.resizeGroundToContent()
       this.syncCameraClipPlanes()
       this.markDirty()
+      // On-demand rendering: the one frame above draws before the plate's shaders and
+      // textures are up, and nothing else moves. Repaint once the scene is ready.
+      this.scene.executeWhenReady(() => {
+        if (this.disposed || gen !== this.cityLoadGen) return
+        this.markDirty()
+      })
     } catch (error) {
       console.warn('Failed to load ground plate', plate.id, error)
     }
@@ -2379,18 +2491,31 @@ export class ComparisonScene {
     this.stripCityWaterPlanes(root)
     root.computeWorldMatrix(true)
     for (const mesh of root.getChildMeshes(false)) mesh.computeWorldMatrix(true)
-    const groundY = this.cityGroundLevelY(root)
-    // Seat streets on the model ground plane (AABB min hangs below the city).
+    const anchor = plate.anchorMeshName
+      ? root.getChildMeshes(false).find((mesh) => mesh.name === plate.anchorMeshName)
+      : undefined
+    const anchorBox = anchor?.getBoundingInfo().boundingBox
+    // A named anchor is the surface the lineup stands on (stadium pitch); otherwise
+    // seat streets on the model ground plane (AABB min hangs below the city).
+    const groundY = anchorBox ? anchorBox.maximumWorld.y : this.cityGroundLevelY(root)
     root.position.y -= groundY
     root.computeWorldMatrix(true)
     for (const mesh of root.getChildMeshes(false)) mesh.computeWorldMatrix(true)
 
     const land = this.cityLandBounds(root) ?? this.visualBounds(root)
     let clearing: { x: number; z: number } | null = null
-    try {
-      clearing = this.findCityClearing(root, land)
-    } catch (error) {
-      console.warn('City clearing search failed', error)
+    if (anchor) {
+      const box = anchor.getBoundingInfo().boundingBox
+      clearing = {
+        x: (box.minimumWorld.x + box.maximumWorld.x) * 0.5,
+        z: (box.minimumWorld.z + box.maximumWorld.z) * 0.5,
+      }
+    } else {
+      try {
+        clearing = this.findCityClearing(root, land)
+      } catch (error) {
+        console.warn('City clearing search failed', error)
+      }
     }
     const centerX = clearing?.x ?? (land.min.x + land.max.x) * 0.5
     const centerZ = clearing?.z ?? (land.min.z + land.max.z) * 0.5
@@ -2408,10 +2533,12 @@ export class ComparisonScene {
       1,
     )
     this.cityFootprint = { width: radius * 2, depth: radius * 2 }
+    this.cityBaseY = final.min.y
     const pivot = new TransformNode('ground-city-yaw', this.scene)
     root.parent = pivot
     pivot.rotation.y = ((plate.spinDegrees ?? 0) * Math.PI) / 180
     this.cityRoot = pivot
+    this.cityPlateId = plate.id
     for (const mesh of root.getChildMeshes(false)) {
       this.freezeMaterialTree(mesh.material)
     }
@@ -2914,10 +3041,22 @@ export class ComparisonScene {
     this.rebuildGround(centerX, centerZ, width, depth)
   }
 
-  /** Soft zenith→horizon→ground wash. Camera-relative via infiniteDistance; not clipped. */
+  /**
+   * Keep the sky sphere between the near and far planes at any zoom. At a fixed
+   * size it fell inside the near plane past ~40 km of orbit and was clipped away.
+   * The geometric mean of the planes is always strictly between them. Draw order
+   * (created first, no depth write) keeps it behind everything whatever its size.
+   */
+  private fitSkyboxToClipPlanes(camera: Camera) {
+    const near = Math.max(camera.minZ, 1e-3)
+    const far = Math.max(camera.maxZ, near * 4)
+    const scale = Math.sqrt(near * far) / SKYBOX_RADIUS
+    if (this.skybox.scaling.x !== scale) this.skybox.scaling.setAll(scale)
+  }
+
+  /** Soft zenith→horizon→ground wash. Camera-relative via infiniteDistance. */
   private createGradientSkybox(): Mesh {
-    // Must stay inside the tightest far plane (syncCameraClipPlanes uses max(r*20, 200)).
-    const size = 160
+    const size = SKYBOX_RADIUS * 2
     const sky = MeshBuilder.CreateSphere(
       'skybox',
       { diameter: size, segments: 24, sideOrientation: Mesh.BACKSIDE },
@@ -2971,17 +3110,19 @@ export class ComparisonScene {
   }
 
   /**
-   * Minecraft-style slab: neighborhood dirt, or a thick harbor volume under
-   * the New York photogrammetry.
+   * Minecraft-style slab: dirt under the neighborhood and the stadium, or a
+   * thick harbor volume under the New York photogrammetry.
    */
   private buildEarthSlab(centerX: number, centerZ: number, width: number, depth: number): Mesh {
-    const harbor = this.groundPlateId !== 'neighborhood'
+    const harbor = Boolean(GROUND_PLATE_BY_ID[this.groundPlateId].water)
     const span = Math.max(width, depth)
     const thickness = harbor
       ? Math.max(28, Math.min(span * 0.006, 72))
       : Math.max(8, Math.min(span * 0.0025, Math.sqrt(span) * 0.8))
     // Sit the harbor a few meters below streets so the city shoreline reads above water.
-    const surfaceY = harbor ? -3 : 0
+    // A plate that brings its own terrain (the stadium) gets the slab tucked under it,
+    // otherwise suburban blocks paint straight over the pitch.
+    const surfaceY = harbor ? -3 : Math.min(0, this.cityBaseY - 0.05)
 
     const slab = MeshBuilder.CreateBox(
       'ground',
@@ -3015,21 +3156,22 @@ export class ComparisonScene {
       topTex.wrapV = Texture.WRAP_ADDRESSMODE
       topMat.diffuseTexture = topTex
       if (!ENABLE_SCENE_LIGHTING) topMat.emissiveTexture = topTex
-    } else if (this.neighborhoodTex && span < 8_000) {
-      // Clone so each rebuild can set its own UV scale without fighting prior mats.
+    } else if (this.neighborhoodTex && span / NEIGHBORHOOD_TILE_METERS <= MAX_GROUND_TILE_REPEATS) {
+      // True-scale blocks at every size. Zoomed out, mipmaps blend them into
+      // their average colour; zoomed in, the streets resolve again.
       const topTex = this.neighborhoodTex
-      // Cap tiling: huge quads with uScale in the thousands swim and alias.
-      topTex.uScale = Math.min(width / NEIGHBORHOOD_TILE_METERS, 48)
-      topTex.vScale = Math.min(depth / NEIGHBORHOOD_TILE_METERS, 48)
+      topTex.uScale = width / NEIGHBORHOOD_TILE_METERS
+      topTex.vScale = depth / NEIGHBORHOOD_TILE_METERS
       topTex.wrapU = Texture.WRAP_ADDRESSMODE
       topTex.wrapV = Texture.WRAP_ADDRESSMODE
       topMat.diffuseTexture = topTex
       if (!ENABLE_SCENE_LIGHTING) topMat.emissiveTexture = topTex
-    } else if (ENABLE_SCENE_LIGHTING) {
-      topMat.diffuseColor = new Color3(0.5, 0.53, 0.51)
     } else {
-      // Km-scale slabs: aerial blocks become moiré; a flat earth read is enough.
-      topMat.emissiveColor = new Color3(0.48, 0.5, 0.44)
+      // Beyond UV precision: flat fill in the blocks' own average colour, so
+      // it reads as the same neighborhood seen from very far away.
+      const fill = this.neighborhoodAvg ?? new Color3(0.4, 0.45, 0.38)
+      if (ENABLE_SCENE_LIGHTING) topMat.diffuseColor = fill
+      else topMat.emissiveColor = fill
     }
 
     const sideMat = new StandardMaterial('groundSideMat', this.scene)
@@ -3535,6 +3677,8 @@ export class ComparisonScene {
       fill.diffuse = new Color3(0.6, 0.74, 0.95)
       fill.specular = Color3.Black()
       fill.shadowEnabled = false
+      this.fillLight = fill
+      this.fillHomeDirection = fill.direction.clone()
 
       this.shadows = this.createSunShadows(this.sun)
       this.scene.environmentIntensity = 0.28
@@ -3549,6 +3693,8 @@ export class ComparisonScene {
       this.sun.position = new Vector3(40, 80, -20)
       this.scene.environmentIntensity = 0.4
     }
+
+    this.sunHomeDirection = this.sun.direction.clone()
 
     // Modest IBL so metallic glTF doesn't go black.
     const envUrl = publicAssetUrl('env/environmentSpecular.env')
@@ -3609,9 +3755,6 @@ export class ComparisonScene {
     }
 
     for (const placement of this.placements.values()) {
-      const item = CATALOG_BY_ID[placement.itemId]
-      if (item?.model && this.isAirBlastModel(item.model.path)) continue
-
       if (placement.body instanceof AbstractMesh) {
         placement.body.receiveShadows = true
         this.shadows.addShadowCaster(placement.body, true)
@@ -3763,7 +3906,13 @@ export class ComparisonScene {
 
     const mat = new StandardMaterial(`mat-${instanceId}`, this.scene)
     mat.diffuseColor = Color3.FromHexString(item.color)
-    mat.specularColor = new Color3(0.15, 0.15, 0.15)
+    if (item.category === 'oil') {
+      // Crude reads as glossy black, not matte plastic.
+      mat.specularColor = new Color3(0.55, 0.5, 0.45)
+      mat.specularPower = 48
+    } else {
+      mat.specularColor = new Color3(0.15, 0.15, 0.15)
+    }
     this.applyMaterial(body, mat)
   }
 
@@ -3818,9 +3967,6 @@ export class ComparisonScene {
 
     this.enableVertexColors(container)
     this.prepareImportedMaterials(container)
-    if (this.isAirBlastModel(model.path)) {
-      this.prepareAirBlastMaterials(container)
-    }
     if (item.shape === 'person') {
       this.preparePersonMaterials(container, item.id)
     }
@@ -3857,9 +4003,6 @@ export class ComparisonScene {
     if (model.randomYaw) {
       // After scale so size stays stable; spin about vertical only.
       container.rotation.y = Math.random() * Math.PI * 2
-    }
-    if (this.isAirBlastModel(model.path)) {
-      this.liftAirBlast(container)
     }
     if (model.heightPaint) {
       this.applyHeightPaint(container, model.heightPaint)
@@ -4332,52 +4475,6 @@ export class ComparisonScene {
     }
   }
 
-  private isAirBlastModel(path: string) {
-    return path.includes('nuclear-fireball')
-  }
-
-  /**
-   * Air-blast GLB is an emissive energy sphere on a black albedo. Normal
-   * alpha-blend of that black shell reads as a disc; additive + no depth write
-   * keeps the glow and the far side of the sphere.
-   */
-  private prepareAirBlastMaterials(root: TransformNode) {
-    for (const mesh of root.getChildMeshes(false)) {
-      const mat = mesh.material
-      if (!(mat instanceof PBRMaterial)) continue
-
-      mat.transparencyMode = PBRMaterial.PBRMATERIAL_ALPHABLEND
-      mat.alphaMode = Engine.ALPHA_ADD
-      mat.backFaceCulling = false
-      mat.twoSidedLighting = true
-      mat.disableDepthWrite = true
-      mat.needDepthPrePass = false
-      mat.useAlphaFromAlbedoTexture = false
-      mat.metallic = 0
-      mat.roughness = 1
-      mat.environmentIntensity = 0
-      mat.directIntensity = 0
-      mat.albedoColor = Color3.Black()
-      mat.emissiveColor = Color3.White()
-      if (mat.subSurface) {
-        mat.subSurface.isRefractionEnabled = false
-        mat.subSurface.isTranslucencyEnabled = false
-      }
-      if (mat.albedoTexture) {
-        mat.albedoTexture.hasAlpha = false
-      }
-      mat.markDirty?.()
-    }
-  }
-
-  private liftAirBlast(root: TransformNode) {
-    root.computeWorldMatrix(true)
-    for (const child of root.getChildMeshes()) child.computeWorldMatrix(true)
-    const bounds = this.visualBounds(root)
-    const height = bounds.max.y - bounds.min.y
-    if (height > 1e-6) root.position.y += height * 0.4
-  }
-
   /** Ensure glTF COLOR_0 attributes actually tint the mesh (Babylon 9: flag lives on the mesh). */
   private enableVertexColors(root: TransformNode) {
     for (const mesh of root.getChildMeshes(false)) {
@@ -4516,7 +4613,6 @@ export class ComparisonScene {
    */
   private cropImportedModel(root: TransformNode, item: CatalogItem) {
     if (item.shape === 'person') return
-    if (item.model && this.isAirBlastModel(item.model.path)) return
 
     this.cropDistantHelperMeshes(root)
     if (item.playClips) return
@@ -4789,7 +4885,29 @@ export class ComparisonScene {
     return tex
   }
 
+  private flagFontRequested = false
+
+  /**
+   * Canvas text never triggers a webfont load, so a plaque painted before the
+   * flag face arrives shows two-letter codes. Load it once, then repaint.
+   */
+  private ensureFlagFont(text: string) {
+    if (this.flagFontRequested || !/[\u{1F1E6}-\u{1F1FF}]/u.test(text)) return
+    if (typeof document === 'undefined' || !document.fonts) return
+    this.flagFontRequested = true
+    const spec = '16px "Twemoji Country Flags"'
+    if (document.fonts.check(spec, text)) return
+    document.fonts
+      .load(spec, text)
+      .then(() => {
+        this.refreshAllPlaques()
+        this.markDirty()
+      })
+      .catch(() => undefined)
+  }
+
   private paintPlaqueTexture(tex: DynamicTexture, item: CatalogItem) {
+    this.ensureFlagFont(item.name)
     const size = tex.getSize()
     const texW = size.width
     const texH = size.height
@@ -4807,11 +4925,11 @@ export class ComparisonScene {
     if (lines.length === 0) {
       const dims = this.labelDimensions(item)
       ctx.fillStyle = '#f7f4ef'
-      ctx.font = `600 ${fitFontSize(ctx, item.name, m.factsWidth, m.titleSize, '600')}px "IBM Plex Sans", sans-serif`
+      ctx.font = `600 ${fitFontSize(ctx, item.name, m.factsWidth, m.titleSize, '600')}px "Twemoji Country Flags", "IBM Plex Sans", sans-serif`
       ctx.fillText(item.name, texW / 2, texH * 0.4)
 
       ctx.fillStyle = '#b8c0c6'
-      ctx.font = `${fitFontSize(ctx, dims, m.factsWidth, m.dimsSize)}px "IBM Plex Sans", sans-serif`
+      ctx.font = `${fitFontSize(ctx, dims, m.factsWidth, m.dimsSize)}px "Twemoji Country Flags", "IBM Plex Sans", sans-serif`
       ctx.fillText(dims, texW / 2, texH * 0.7)
       tex.update()
       return
@@ -4824,17 +4942,17 @@ export class ComparisonScene {
     // `plaqueAspect`; only the glyphs shrink to fit the plaque width.
     const dims = this.labelDimensions(item)
     ctx.fillStyle = '#f7f4ef'
-    ctx.font = `600 ${fitFontSize(ctx, item.name, m.factsWidth, m.titleSize, '600')}px "IBM Plex Sans", sans-serif`
+    ctx.font = `600 ${fitFontSize(ctx, item.name, m.factsWidth, m.titleSize, '600')}px "Twemoji Country Flags", "IBM Plex Sans", sans-serif`
     ctx.fillText(item.name, texW / 2, y + m.titleSize / 2)
     y += m.titleSize + m.gapTitle
 
     ctx.fillStyle = '#b8c0c6'
-    ctx.font = `${fitFontSize(ctx, dims, m.factsWidth, m.dimsSize)}px "IBM Plex Sans", sans-serif`
+    ctx.font = `${fitFontSize(ctx, dims, m.factsWidth, m.dimsSize)}px "Twemoji Country Flags", "IBM Plex Sans", sans-serif`
     ctx.fillText(dims, texW / 2, y + m.dimsSize / 2)
     y += m.dimsSize + m.gapFacts
 
     ctx.fillStyle = '#98a2aa'
-    ctx.font = `${m.factsSize}px "IBM Plex Sans", sans-serif`
+    ctx.font = `${m.factsSize}px "Twemoji Country Flags", "IBM Plex Sans", sans-serif`
     for (const line of lines) {
       ctx.fillText(line, texW / 2, y + m.lineHeight / 2)
       y += m.lineHeight
@@ -4855,8 +4973,7 @@ export class ComparisonScene {
     if (hasBlastEffect(item.id) && this.detonationMode !== 'casing') {
       const radius = blastRadiusM(item.id, this.detonationMode)
       if (radius != null) {
-        const modeLabel = this.detonationMode === 'ground' ? 'ground' : 'air'
-        return `${modeLabel} blast r ${formatLength(radius, this.units)}`
+        return `blast r ${formatLength(radius, this.units)}`
       }
     }
 
@@ -5047,7 +5164,7 @@ export class ComparisonScene {
     ctx.fillRect(0, 0, texW, texH)
 
     ctx.fillStyle = '#f4fffc'
-    ctx.font = '700 56px "IBM Plex Sans", sans-serif'
+    ctx.font = '700 56px "Twemoji Country Flags", "IBM Plex Sans", sans-serif'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillText(text, texW / 2, texH / 2)

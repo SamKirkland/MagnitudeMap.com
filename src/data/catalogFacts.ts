@@ -61,6 +61,10 @@ export const CATALOG_FACTS: Record<string, string> = {
     'Russia, 2020–present. Roughly 20–30 delivered so far of 76 ordered, at an estimated $35–50 million each. Russia’s first stealth fighter, with supercruise and thrust vectoring, though its radar cross-section is widely judged well short of the F-22’s owing to exposed engine faces and surface gaps. Western estimates cluster around 0.1–1 m² — a pigeon to a person — against the F-22’s honeybee.',
   'sr71':
     'USA, 1966–1998. Only 32 built, at about $34 million each in 1960s dollars. Mach 3.3 at 26,000 m, and no SR-71 was ever lost to enemy fire — over 4,000 missiles were fired at them and all missed. The titanium airframe leaked fuel on the ground because the panels only sealed once friction heated the skin past 300 °C. Sloped chines and iron-ball paint cut its radar return hard for 1960s work, but frontal RCS is still put near 10 m² — elephant-sized. Nothing could catch it anyway.',
+  'xb70':
+    'USA, 1964–1969. Only two built, as prototypes for a Mach 3 nuclear bomber that was cancelled once Soviet missiles made high-altitude penetration a losing bet. It cruised at Mach 3 at about 21,000 m, folding its wingtips down in flight to ride its own shockwave for extra lift. The second aircraft was destroyed in 1966 after an F-104 collided with it during a publicity photo flight.',
+  'sr72':
+    'Fictional. The Darkstar hypersonic demonstrator from Top Gun: Maverick (2022), designed with Lockheed Martin’s Skunk Works and built as a full-size mockup for filming. In the film it passes Mach 10. Lockheed has talked about a real SR-72 since 2013, but none has been shown publicly. No official dimensions exist; the length here is an estimate.',
   'f117':
     'USA, 1983–2008. 59 built at about $42.6 million each in 1983 dollars (roughly $135 million today). Its faceted shape was dictated by 1970s computers that could only model flat panels, cutting radar cross-section to around 0.003 m² — roughly the radar return of a tennis ball. One was lost to a Serbian SAM in 1999 — the only combat loss.',
 
@@ -93,6 +97,8 @@ export const CATALOG_FACTS: Record<string, string> = {
     'Two VC-25A aircraft have served as Air Force One since 1990. 4,000 ft² of interior space over three decks, aerial refuelling, and an onboard medical suite. The VC-25B replacements are running roughly $5.3 billion for the pair.',
   'c17a':
     'USA, 1993–2015. 279 built at about $218 million each. Carries 77,500 kg — an M1 Abrams fits — yet lands on a 3,500 ft dirt strip and can reverse under its own power on the ground.',
+  'c130j':
+    'USA, 1996–present. Over 500 J models delivered to more than 20 countries, continuing a Hercules line in production since 1954 — the longest run of any military aircraft. Six-blade composite propellers and a digital cockpit for two pilots; it carries about 19 t and operates from short unpaved strips.',
   'c5':
     'USA, 1970–present. 131 built; 52 rebuilt as C-5Ms from 2009. Carries 129,300 kg — two M1 Abrams — through nose and tail doors that both open, and it kneels on its landing gear so vehicles can drive straight in.',
   'c18a':
@@ -193,6 +199,10 @@ export const CATALOG_FACTS: Record<string, string> = {
     'USA, 2004–present. Over 20 built at roughly $3.5 billion each. 7,900 t submerged, over 25 knots, and a reactor core that lasts the 33-year life of the boat. Photonics masts replaced the traditional through-hull periscope.',
   'ohio':
     'USA, 1981–1997. 18 built. Fourteen carry 20 Trident II missiles each and hold most of the US nuclear deterrent at sea; four were converted to carry 154 Tomahawks instead. 18,750 t submerged, with patrols running about 77 days.',
+  'seawolf':
+    'USA, 1997–2005. Only three built — the class was cut from a planned 29 when the Cold War ended — at about $3 billion each, the most expensive attack submarines of their day. 9,100 t submerged, very fast and very quiet, with eight torpedo tubes, twice the Los Angeles class. The third boat, USS Jimmy Carter, was lengthened by 30 m for special operations.',
+  'los-angeles':
+    'USA, 1976–1996. 62 built — the largest class of nuclear-powered submarines ever — and the backbone of the US attack fleet for decades. 6,900 t submerged and over 25 knots; later boats added 12 vertical launch tubes for Tomahawk missiles in the bow.',
   'independence':
     'USA, 2010–present. 19 built at roughly $360 million each. An aluminium trimaran that hits 44 knots and was meant to swap mission modules for mine warfare, submarine hunting or surface combat — though the modular concept was largely abandoned.',
   'type45':
@@ -207,6 +217,8 @@ export const CATALOG_FACTS: Record<string, string> = {
     'USA, 1989–2009. Eight built at roughly $750 million each. 40,500 t — larger than most nations’ aircraft carriers — carrying about 31 aircraft plus 1,894 Marines, with a flooded well deck for landing craft.',
   'iowa':
     'USA, four built 1943–1944. About $100 million each at the time, roughly $1.8 billion today. 57,500 t, nine 16-inch guns firing 1,225 kg shells 38 km, and 33 knots — the fastest battleships ever built. All four served again in the 1980s with Tomahawks bolted on.',
+  'yamato':
+    'Japan, two completed 1941–1942. 72,800 t fully loaded — the heaviest battleship ever built — with nine 460 mm guns, the largest naval guns ever mounted, firing 1,460 kg shells 42 km. Sunk by US carrier aircraft in April 1945 on a one-way mission to Okinawa.',
   'kiev':
     'Soviet Union, four built 1975–1987. 45,000 t hybrids carrying Yak-38 VTOL jets and helicopters aft, with heavy anti-ship missiles forward. Two were later sold on to China and India.',
 
@@ -237,6 +249,8 @@ export const CATALOG_FACTS: Record<string, string> = {
     'Late Cretaceous Argentina, about 98 million years ago — some 30 million years before T. rex. At roughly 12–13 m and 8 t it slightly exceeded T. rex in length, though with a lighter build and a weaker bite.',
   'spinosaurus':
     'Cretaceous North Africa, about 99–93 million years ago, and the longest known predatory dinosaur at 14–15 m. Its paddle-like tail and dense bones point to a semi-aquatic life hunting fish. The only good skeleton was destroyed in a 1944 air raid on Munich.',
+  'humpback-whale':
+    'A 15 m, 30 t baleen whale with 5 m pectoral fins — the longest limbs of any animal. It migrates up to 8,000 km between polar feeding grounds and tropical calving bays, blows nets of bubbles to herd herring, and the males sing structured songs that whole populations revise from season to season. Hunted to about 5,000 by the 1960s, it has recovered to roughly 135,000.',
 
   // --- Stargate --------------------------------------------------------------
   'zpm':

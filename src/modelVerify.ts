@@ -473,7 +473,7 @@ export function evaluateGlbMeshes(item: CatalogItem, posedMeshes: MeshBox[], tri
     }
   }
   const rawSize = boxSize(raw.min, raw.max)
-  const skipAll = item.shape === 'person' || Boolean(item.model?.path.includes('nuclear-fireball'))
+  const skipAll = item.shape === 'person'
   const cropped = cropMeshBoxes(posedMeshes, {
     skipAll,
     skipNeedlePaperHelpers: Boolean(item.playClips),

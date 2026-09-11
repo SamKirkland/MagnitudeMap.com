@@ -32,7 +32,12 @@ import {
   normalizeYawTurns,
   saveDisplayYawTurns,
 } from './modelOrientation'
-import { loadGroundPlate, saveGroundPlate } from './groundPlate'
+import {
+  groundPlateFromUrl,
+  loadGroundPlate,
+  replaceGroundPlateUrl,
+  saveGroundPlate,
+} from './groundPlate'
 import {
   DEFAULT_SHADOWS_ENABLED,
   loadShadowsEnabled,
@@ -74,6 +79,8 @@ export default function App({ initialSelection: seed }: AppProps = {}) {
   const [tourSettings, setTourSettings] = useState<TourSettings>(DEFAULT_TOUR_SETTINGS)
   const [displayYawTurns, setDisplayYawTurns] = useState(0)
   const [groundPlateId, setGroundPlateId] = useState<GroundPlateId>(DEFAULT_GROUND_PLATE)
+  /** True once stored / URL preferences have replaced the render-time defaults. */
+  const [prefsLoaded, setPrefsLoaded] = useState(false)
   const [shadowsEnabled, setShadowsEnabled] = useState(DEFAULT_SHADOWS_ENABLED)
   const [detonationMode, setDetonationMode] = useState<DetonationMode>('casing')
   const [cameraMode, setCameraMode] = useState<'overview' | 'preserve'>('overview')
@@ -99,8 +106,8 @@ export default function App({ initialSelection: seed }: AppProps = {}) {
   }, [shownPresetId])
 
   const shareUrl = useMemo(
-    () => selectionShareUrl(activeItemIds, shownPresetId),
-    [activeItemIds, shownPresetId],
+    () => selectionShareUrl(activeItemIds, shownPresetId, groundPlateId),
+    [activeItemIds, shownPresetId, groundPlateId],
   )
 
   // Lineup links are relative to whichever URL the current selection implies,
@@ -132,8 +139,11 @@ export default function App({ initialSelection: seed }: AppProps = {}) {
     setUnits(loadUnitSystem())
     setTourSettings(loadTourSettings())
     setDisplayYawTurns(loadDisplayYawTurns())
-    setGroundPlateId(loadGroundPlate())
+    // A shared link's `?ground=` wins over the visitor's saved choice, but is
+    // not saved over it — only picking a ground in the toolbar does that.
+    setGroundPlateId(groundPlateFromUrl() ?? loadGroundPlate())
     setShadowsEnabled(loadShadowsEnabled())
+    setPrefsLoaded(true)
   }, [])
 
   // Leave blast visuals when no munition remains selected.
@@ -147,6 +157,13 @@ export default function App({ initialSelection: seed }: AppProps = {}) {
   useEffect(() => {
     replaceSelectionUrl(activeItemIds, shownPresetId)
   }, [activeItemIds, shownPresetId])
+
+  // Deep-link the ground (`?ground=new-york`). Held until preferences load, so
+  // the render-time default never strips a shared link's param before it is read.
+  useEffect(() => {
+    if (!prefsLoaded) return
+    replaceGroundPlateUrl(groundPlateId)
+  }, [prefsLoaded, groundPlateId])
 
   // The prerendered pages ship the right <title>; match it as the URL changes
   // so a bookmark or a share from an in-app navigation is labelled correctly.

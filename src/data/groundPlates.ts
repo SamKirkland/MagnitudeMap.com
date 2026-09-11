@@ -1,5 +1,5 @@
 /** Painted suburban slab, or a true-scale city GLB sitting on it. */
-export type GroundPlateId = 'neighborhood' | 'manhattan'
+export type GroundPlateId = 'neighborhood' | 'manhattan' | 'stadium'
 
 export type GroundPlate = {
   id: GroundPlateId
@@ -9,6 +9,7 @@ export type GroundPlate = {
   /**
    * Real-world meters for the longest horizontal AABB after import.
    * Lower Manhattan (Battery through the Brooklyn Bridge, plus harbor).
+   * Omit when the GLB is already authored in metres.
    */
   lengthMeters?: number
   yawDegrees?: number
@@ -19,6 +20,13 @@ export type GroundPlate = {
   /** Shift the city so the lineup sits in a clearing (world meters). */
   originX?: number
   originZ?: number
+  /**
+   * Mesh whose top face the lineup stands on, in place of the automatic
+   * clearing search — a stadium pitch, not whichever plaza scores best.
+   */
+  anchorMeshName?: string
+  /** Float the plate on a harbor slab instead of dirt (photogrammetry islands). */
+  water?: boolean
 }
 
 export const GROUND_PLATES: GroundPlate[] = [
@@ -37,6 +45,16 @@ export const GROUND_PLATES: GroundPlate[] = [
     pitchDegrees: 90,
     yawDegrees: 0,
     spinDegrees: 165,
+    water: true,
+  },
+  {
+    id: 'stadium',
+    name: 'Stadium',
+    modelPath: 'grounds/stadium/model.glb',
+    // Estadio Único Madre de Ciudades, authored in metres and already +Y up, so no
+    // lengthMeters: the 105 x 68 m pitch is the scale check. Its long axis is the
+    // model's X, which is also the lineup axis — no spin.
+    anchorMeshName: 'pitch-anchor',
   },
 ]
 

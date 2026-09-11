@@ -40,6 +40,7 @@ type ViewerToolbarProps = {
 const PLATE_HINTS: Record<GroundPlateId, string> = {
   neighborhood: 'Suburban blocks at true scale',
   manhattan: 'Manhattan photogrammetry at true scale',
+  stadium: 'A 105 x 68 m football pitch, lineup on the grass',
 }
 
 export function ViewerToolbar({
@@ -256,7 +257,7 @@ export function ViewerToolbar({
                   title={PLATE_HINTS[plate.id]}
                 >
                   <span className="map-type-swatch" aria-hidden="true">
-                    {plate.id === 'manhattan' ? <SkylineSwatch /> : <SuburbSwatch />}
+                    <PlateSwatch id={plate.id} />
                   </span>
                   <span className="map-type-name">{plate.name}</span>
                 </button>
@@ -344,6 +345,30 @@ export function ViewerToolbar({
         )}
       </div>
     </div>
+  )
+}
+
+function PlateSwatch({ id }: { id: GroundPlateId }) {
+  if (id === 'manhattan') return <SkylineSwatch />
+  if (id === 'stadium') return <StadiumSwatch />
+  return <SuburbSwatch />
+}
+
+/** Bowl around a marked pitch: reads as "stadium" at 66 x 46 px. */
+function StadiumSwatch() {
+  return (
+    <svg viewBox="0 0 66 46" className="map-type-art" aria-hidden="true">
+      <rect width="66" height="46" fill="#7d8a93" />
+      <ellipse cx="33" cy="24" rx="30" ry="20" fill="#b9c3c9" />
+      <ellipse cx="33" cy="24" rx="24" ry="15" fill="#57708a" />
+      <ellipse cx="33" cy="24" rx="19" ry="11" fill="#5f9b52" />
+      <g stroke="#e8f0e6" strokeWidth="1" fill="none" opacity="0.85">
+        <ellipse cx="33" cy="24" rx="17" ry="9" />
+        <path d="M33 15v18" />
+        <circle cx="33" cy="24" r="3.5" />
+      </g>
+      <rect y="43" width="66" height="3" fill="#5b666e" />
+    </svg>
   )
 }
 

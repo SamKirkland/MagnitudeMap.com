@@ -24,6 +24,8 @@ export type ComposePosterOptions = PosterOverlayOptions & {
 
 export async function composePoster(opts: ComposePosterOptions): Promise<Blob> {
   await document.fonts.ready.catch(() => undefined)
+  // Canvas text never triggers a webfont load; fetch the flag face up front.
+  await document.fonts.load('16px "Twemoji Country Flags"', '\u{1F1FA}\u{1F1F8}').catch(() => undefined)
 
   const bitmap = await blobToImage(opts.render)
   const canvas = document.createElement('canvas')
@@ -70,7 +72,7 @@ const LOGO_BARS = [
 ]
 
 function applyLogoFont(ctx: CanvasRenderingContext2D, fontSize: number) {
-  ctx.font = `600 ${fontSize}px "IBM Plex Sans", "Segoe UI", sans-serif`
+  ctx.font = `600 ${fontSize}px "Twemoji Country Flags", "IBM Plex Sans", "Segoe UI", sans-serif`
   ctx.letterSpacing = `${-0.01 * fontSize}px`
 }
 
@@ -115,7 +117,7 @@ function drawMagnitudeMapLogo(
 }
 
 function labelFont(fontSize: number): string {
-  return `600 ${fontSize}px "IBM Plex Sans", "Segoe UI", sans-serif`
+  return `600 ${fontSize}px "Twemoji Country Flags", "IBM Plex Sans", "Segoe UI", sans-serif`
 }
 
 type FittedLabel = { text: string; fontSize: number; width: number }
@@ -332,7 +334,7 @@ function drawScaleBar(
   ctx.lineTo(x2, y - tick)
   ctx.stroke()
 
-  ctx.font = `500 ${fontSize}px "IBM Plex Sans", "Segoe UI", sans-serif`
+  ctx.font = `500 ${fontSize}px "Twemoji Country Flags", "IBM Plex Sans", "Segoe UI", sans-serif`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'top'
   ctx.fillText(label.replace(/(\d+)\.0\s/, '$1 '), (x1 + x2) / 2, y + 6)

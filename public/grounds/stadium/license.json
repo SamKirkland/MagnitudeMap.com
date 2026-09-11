@@ -1,0 +1,12 @@
+{
+  "id": "stadium",
+  "file": "model.glb",
+  "license": "CC-BY-4.0",
+  "licenseLabel": "CC BY",
+  "author": "A1905",
+  "source": "https://sketchfab.com/3d-models/estadio-unico-madre-de-ciudades-35ff110e81ea45dfb5294803dd13c3da",
+  "sourceAsset": "Estadio Único Madre de Ciudades",
+  "sketchfabUid": "35ff110e81ea45dfb5294803dd13c3da",
+  "notes": "Estadio Único Madre de Ciudades, Santiago del Estero, Argentina. Authored in real metres (105 x 68 m pitch), so the plate loads at native scale. Stray site props more than 320 m from the pitch were dropped — they stretched the footprint over 1.5 km — and the playing surface mesh is renamed `pitch-anchor`, which seats the lineup on the grass. Optional ground plate, not a catalog item.",
+  "attribution": "Estadio Único Madre de Ciudades by A1905 on Sketchfab (CC BY) — https://sketchfab.com/3d-models/estadio-unico-madre-de-ciudades-35ff110e81ea45dfb5294803dd13c3da"
+}

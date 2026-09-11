@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Country flag emoji (Twemoji, CC-BY 4.0). Windows ships no flag glyphs and
+ * shows two-letter codes instead. The unicode-range limits this face to
+ * regional-indicator letters, so it only downloads when a flag is on screen.
+ */
+@font-face {
+  font-family: 'Twemoji Country Flags';
+  src: url('/fonts/twemoji-country-flags/TwemojiCountryFlags.woff2') format('woff2');
+  unicode-range: U+1F1E6-1F1FF, U+1F3F4, U+E0062-E007F;
+  font-display: swap;
+}
+
 :root {
   --ink: #1c2430;
   --muted: #5c6b7a;
@@ -11,13 +23,14 @@
   --accent-soft: #d8efe9;
   --canvas-wash: #e7eef1;
   /*
-   * No webfont is downloaded or linked -- every face here is one the visitor
-   * already has. IBM Plex Sans stays first so anyone who happens to have it
-   * installed gets the original look; everyone else falls through to their
-   * platform UI face, which is already resident and paints with no swap.
+   * No text webfont is downloaded -- every face here is one the visitor
+   * already has, apart from the flag-only face above. IBM Plex Sans stays
+   * first among text faces so anyone who happens to have it installed gets
+   * the original look; everyone else falls through to their platform UI
+   * face, which is already resident and paints with no swap.
    */
-  --font: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto,
-    'Helvetica Neue', Arial, sans-serif;
+  --font: 'Twemoji Country Flags', 'IBM Plex Sans', system-ui, -apple-system,
+    'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 * {
@@ -1114,15 +1127,6 @@ input {
   color: #f0c14b;
   box-shadow:
     0 0 0 1px rgba(240, 180, 41, 0.08),
-    0 8px 22px rgba(20, 16, 8, 0.28);
-}
-
-.detonate-btn-air {
-  background: #1c1612;
-  border-color: rgba(255, 122, 58, 0.5);
-  color: #ff8a4a;
-  box-shadow:
-    0 0 0 1px rgba(255, 122, 58, 0.08),
     0 8px 22px rgba(20, 16, 8, 0.28);
 }
 

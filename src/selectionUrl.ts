@@ -3,6 +3,8 @@ import {
   COMPARISON_PRESETS,
   type ComparisonPreset,
 } from './data/catalog'
+import type { GroundPlateId } from './data/groundPlates'
+import { searchWithGroundPlate } from './groundPlate'
 import { siteBaseUrl } from './site'
 import { SITE_ORIGIN } from './siteMeta'
 
@@ -11,7 +13,7 @@ export type SelectionFromUrl = {
   presetId: string | null
 }
 
-/** `Bomb sizes` → `bomb-sizes`, `Rockets` → `rockets` */
+/** `Nuclear bombs` → `nuclear-bombs`, `Rockets` → `rockets` */
 export function toSlug(text: string): string {
   return text
     .trim()
@@ -24,8 +26,14 @@ export function presetSlug(preset: ComparisonPreset): string {
   return toSlug(preset.name)
 }
 
+/** Retired lineup slugs that still appear in shared links. */
+const PRESET_SLUG_ALIASES: Record<string, string> = {
+  'bomb-sizes': 'nukes',
+}
+
 export function findPresetBySlug(slug: string): ComparisonPreset | undefined {
-  const key = slug.toLowerCase()
+  const lower = slug.toLowerCase()
+  const key = PRESET_SLUG_ALIASES[lower] ?? lower
   return COMPARISON_PRESETS.find(
     (preset) => preset.id === key || presetSlug(preset) === key,
   )
@@ -90,7 +98,7 @@ export function parseSelectionFromLocation(): SelectionFromUrl | null {
 
 /**
  * Encode selection for the URL (no leading `#`).
- * Presets use a readable name slug (`rockets`, `bomb-sizes`);
+ * Presets use a readable name slug (`rockets`, `nuclear-bombs`);
  * custom mixes use catalog ids (`person-male,falcon-9,starship`).
  */
 export function serializeSelection(
@@ -176,18 +184,23 @@ export function presetHref(base: string, preset: ComparisonPreset): string {
   return `${base}c/${presetSlug(preset)}/`
 }
 
-/** Canonical URL for the current lineup (PNG metadata / poster footer). */
+/**
+ * Canonical URL for the current lineup (PNG metadata / poster footer). A
+ * non-default ground rides along as `?ground=` so the link opens on it.
+ */
 export function selectionShareUrl(
   itemIds: string[],
   presetId: string | null,
+  groundPlateId?: GroundPlateId,
 ): string {
   const encoded = serializeSelection(itemIds, presetId)
   const preset = encoded ? findPresetBySlug(encoded) : undefined
   const homepagePreset = COMPARISON_PRESETS[0]
+  const query = groundPlateId ? searchWithGroundPlate('', groundPlateId) : ''
   if (preset && preset.id !== homepagePreset?.id) {
-    return `${SITE_ORIGIN}/c/${presetSlug(preset)}/`
+    return `${SITE_ORIGIN}/c/${presetSlug(preset)}/${query}`
   }
-  if (preset) return `${SITE_ORIGIN}/`
-  if (encoded) return `${SITE_ORIGIN}/#${encoded}`
-  return `${SITE_ORIGIN}/`
+  if (preset) return `${SITE_ORIGIN}/${query}`
+  if (encoded) return `${SITE_ORIGIN}/${query}#${encoded}`
+  return `${SITE_ORIGIN}/${query}`
 }

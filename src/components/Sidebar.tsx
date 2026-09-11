@@ -36,6 +36,7 @@ const CATEGORY_ORDER: CatalogCategory[] = [
   'reference',
   'animal',
   'money',
+  'oil',
   'vehicle',
   'military',
   'munition',
@@ -329,7 +330,7 @@ export function Sidebar({
                     item={item}
                     checked={activeSet.has(item.id)}
                     showCredits={showCredits}
-                    credit={creditsById.get(item.id)}
+                    credit={creditsById.get(item.id) ?? (item.category === 'oil' ? creditsById.get('twemoji-country-flags') : undefined)}
                     units={units}
                     onToggle={onToggleItem}
                   />
@@ -349,7 +350,7 @@ export function Sidebar({
                           item={item}
                           checked={activeSet.has(item.id)}
                           showCredits={showCredits}
-                          credit={creditsById.get(item.id)}
+                          credit={creditsById.get(item.id) ?? (item.category === 'oil' ? creditsById.get('twemoji-country-flags') : undefined)}
                           units={units}
                           onToggle={onToggleItem}
                         />

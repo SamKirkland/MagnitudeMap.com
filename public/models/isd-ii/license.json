@@ -3,10 +3,10 @@
   "file": "model.glb",
   "license": "CC-BY-4.0",
   "licenseLabel": "CC BY",
-  "author": "Daniel",
-  "source": "https://sketchfab.com/3d-models/star-wars-imperial-ii-star-destroyer-b8bd2d35f7604670ab85242c06c6d280",
-  "sourceAsset": "Star Wars: Imperial II Star Destroyer",
-  "sketchfabUid": "b8bd2d35f7604670ab85242c06c6d280",
-  "notes": "Imperial II-class Star Destroyer (CC-BY). Scaled to 1,600 m length in-app.",
-  "attribution": "Star Wars: Imperial II Star Destroyer by Daniel on Sketchfab (CC BY) — https://sketchfab.com/3d-models/star-wars-imperial-ii-star-destroyer-b8bd2d35f7604670ab85242c06c6d280"
+  "author": "Todor",
+  "source": "https://sketchfab.com/3d-models/star-destroyer-b5435fed6c3143f99b56f5de862a05bd",
+  "sourceAsset": "Star Destroyer",
+  "sketchfabUid": "b5435fed6c3143f99b56f5de862a05bd",
+  "notes": "Imperial-class Star Destroyer (CC-BY), textured, 45k tris. Replaces an untextured build by Daniel (uid b8bd2d35f7604670ab85242c06c6d280) whose flat hull panels read as studio floor slabs and inflated the AABB to 1,510 m across. Scaled to 1,600 m length in-app; the mesh runs 1,031 m across the wings against the canon 985 m beam.",
+  "attribution": "Star Destroyer by Todor on Sketchfab (CC BY) — https://sketchfab.com/3d-models/star-destroyer-b5435fed6c3143f99b56f5de862a05bd"
 }

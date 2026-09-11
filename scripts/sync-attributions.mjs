@@ -10,6 +10,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = join(__dirname, '..')
 const modelsDir = join(root, 'public', 'models')
 const groundsDir = join(root, 'public', 'grounds')
+const fontsDir = join(root, 'public', 'fonts')
 const outPath = join(root, 'src', 'data', 'attributions.ts')
 const catalogPath = join(root, 'src', 'data', 'catalog.ts')
 
@@ -76,6 +77,7 @@ function loadLicenses() {
   const entries = [
     ...readLicenseDir(modelsDir, names),
     ...readLicenseDir(groundsDir, names),
+    ...readLicenseDir(fontsDir, names),
   ]
   entries.sort((a, b) => a.catalogName.localeCompare(b.catalogName))
   return entries

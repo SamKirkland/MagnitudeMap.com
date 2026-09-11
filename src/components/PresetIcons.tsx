@@ -11,7 +11,7 @@ import {
 
 type IconProps = SVGProps<SVGSVGElement>
 
-/** Classic cartoon bomb — used for the Bomb sizes lineup. */
+/** Classic cartoon bomb — used for the Nuclear bombs lineup. */
 export function BombIcon(props: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
@@ -117,6 +117,26 @@ export function AnimalIcon(props: IconProps) {
   )
 }
 
+/** Oil drop — used for the Oil reserves lineup. */
+export function OilDropIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <path
+        d="M12 3.25c-2.9 4.1-6 7.85-6 11.25a6 6 0 0 0 12 0c0-3.4-3.1-7.15-6-11.25Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M9.1 15.1a3 3 0 0 0 2.65 2.65"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
 const PRESET_ICONS: Record<string, ComponentType<IconProps>> = {
   street: HomeModernIcon,
   nukes: BombIcon,
@@ -131,6 +151,7 @@ const PRESET_ICONS: Record<string, ComponentType<IconProps>> = {
   rockets: RocketLaunchIcon,
   landmarks: BuildingLibraryIcon,
   money: BanknotesIcon,
+  oil: OilDropIcon,
   animals: AnimalIcon,
 }
 

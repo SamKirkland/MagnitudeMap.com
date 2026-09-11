@@ -1,0 +1,11 @@
+{
+  "id": "twemoji-country-flags",
+  "file": "TwemojiCountryFlags.woff2",
+  "license": "CC-BY-4.0",
+  "licenseLabel": "CC BY",
+  "author": "Twitter (Twemoji); font by TalkJS",
+  "source": "https://github.com/talkjs/country-flag-emoji-polyfill",
+  "sourceAsset": "Twemoji Country Flags font",
+  "notes": "Flag emoji font so country flags render on Windows, which ships none. Font packaging is MIT (TalkJS, country-flag-emoji-polyfill 0.1.10); the flag artwork is Twemoji, CC-BY 4.0.",
+  "attribution": "Flag emoji from Twemoji by Twitter (CC BY 4.0) — https://github.com/twitter/twemoji, packaged as Twemoji Country Flags by TalkJS (MIT) — https://github.com/talkjs/country-flag-emoji-polyfill"
+}

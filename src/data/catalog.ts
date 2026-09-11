@@ -1,6 +1,15 @@
 import { CATALOG_FACTS } from './catalogFacts'
 import { CATALOG_TAGS } from './catalogTags'
 import { packMoneyAmount } from './moneyPack'
+import {
+  OIL_RESERVES,
+  flagEmoji,
+  oilBlurb,
+  oilCubeSideM,
+  oilFacts,
+  oilReserveId,
+  type OilReserve,
+} from './oilReserves'
 
 export type CatalogCategory =
   | 'reference'
@@ -12,6 +21,7 @@ export type CatalogCategory =
   | 'fiction'
   | 'landmark'
   | 'money'
+  | 'oil'
 
 export type CatalogShape = 'box' | 'cylinder' | 'person'
 
@@ -108,7 +118,8 @@ export type ComparisonPreset = {
   itemIds: string[]
 }
 
-type CatalogSeed = Omit<CatalogItem, 'tags'>
+/** Generated items (oil) carry their own tags; hand-authored ones use CATALOG_TAGS. */
+type CatalogSeed = Omit<CatalogItem, 'tags'> & { tags?: string[] }
 
 /**
  * ABA / Fed: strap = 100 x $100 = $10k; bundle = 10 straps = $100k.
@@ -171,6 +182,24 @@ function moneyItem(
       unitLength: MONEY_BLOCK_LENGTH_M,
       unitHeight: MONEY_BLOCK_HEIGHT_M,
     },
+  }
+}
+
+/** A country's proven oil reserves as one solid cube of crude. */
+function oilItem(reserve: OilReserve): CatalogSeed {
+  const side = oilCubeSideM(reserve)
+  return {
+    id: oilReserveId(reserve),
+    name: `${flagEmoji(reserve.iso)} ${reserve.name} oil`,
+    category: 'oil',
+    length: side,
+    width: side,
+    height: side,
+    shape: 'box',
+    color: '#171412',
+    blurb: oilBlurb(reserve),
+    facts: oilFacts(reserve),
+    tags: ['oil', 'crude', 'petroleum', 'reserves', 'barrels', 'energy', reserve.name.toLowerCase()],
   }
 }
 
@@ -671,6 +700,40 @@ const CATALOG_SEED: CatalogSeed[] = [
     },
   },
   {
+    id: 'sr72',
+    name: 'SR-72 Darkstar',
+    category: 'military',
+    length: 30.5,
+    width: 14.21,
+    height: 3.96,
+    shape: 'box',
+    color: '#111827',
+    blurb: 'Darkstar hypersonic demonstrator from Top Gun: Maverick (~30 m long, estimated).',
+    model: {
+      path: 'models/sr72/model.glb',
+      scaleAxis: 'length',
+      // Native nose is +Z (canopy at +Z).
+      yawDegrees: 180,
+    },
+  },
+  {
+    id: 'xb70',
+    name: 'XB-70 Valkyrie',
+    category: 'military',
+    length: 56.39,
+    width: 30.49,
+    height: 9.54,
+    shape: 'box',
+    color: '#e5e7eb',
+    blurb: 'North American XB-70 Valkyrie Mach 3 bomber prototype (~56.4 m long).',
+    model: {
+      path: 'models/xb70/model.glb',
+      scaleAxis: 'length',
+      // Native nose is -Z (cockpit at -Z).
+      yawDegrees: 0,
+    },
+  },
+  {
     id: 'f117',
     name: 'F-117A Nighthawk',
     category: 'military',
@@ -910,6 +973,23 @@ const CATALOG_SEED: CatalogSeed[] = [
     blurb: 'C-17A Globemaster III (~53 m long).',
     model: {
       path: 'models/c17a/model.glb',
+      scaleAxis: 'length',
+      // Native nose is +Z. 180° points at the plaque (-Z).
+      yawDegrees: 180,
+    },
+  },
+  {
+    id: 'c130j',
+    name: 'C-130J Super Hercules',
+    category: 'military',
+    length: 29.79,
+    width: 40.41,
+    height: 11.84,
+    shape: 'box',
+    color: '#94a3b8',
+    blurb: 'Lockheed Martin C-130J Super Hercules tactical airlifter (~29.8 m long).',
+    model: {
+      path: 'models/c130j/model.glb',
       scaleAxis: 'length',
       // Native nose is +Z. 180° points at the plaque (-Z).
       yawDegrees: 180,
@@ -1649,6 +1729,40 @@ const CATALOG_SEED: CatalogSeed[] = [
     },
   },
   {
+    id: 'seawolf',
+    name: 'USS Seawolf (SSN-21)',
+    category: 'military',
+    length: 107.6,
+    width: 17.38,
+    height: 24.79,
+    shape: 'box',
+    color: '#1e293b',
+    blurb: 'Seawolf-class nuclear attack submarine (~108 m long).',
+    model: {
+      path: 'models/seawolf/model.glb',
+      scaleAxis: 'length',
+      // Native length on X.
+      yawDegrees: 270,
+    },
+  },
+  {
+    id: 'los-angeles',
+    name: 'USS Los Angeles (SSN-688)',
+    category: 'military',
+    length: 110.3,
+    width: 15.26,
+    height: 17.07,
+    shape: 'box',
+    color: '#0f172a',
+    blurb: 'Los Angeles-class nuclear attack submarine (~110 m long).',
+    model: {
+      path: 'models/los-angeles/model.glb',
+      scaleAxis: 'length',
+      // Native length on Z, bow toward -Z.
+      yawDegrees: 180,
+    },
+  },
+  {
     id: 'independence',
     name: 'Independence-class LCS',
     category: 'military',
@@ -1758,6 +1872,23 @@ const CATALOG_SEED: CatalogSeed[] = [
     blurb: 'Iowa-class battleship, USS New Jersey BB-62 (~270 m long).',
     model: {
       path: 'models/iowa/model.glb',
+      scaleAxis: 'length',
+      // Native bow is +Z. 180° puts bow with the other ships.
+      yawDegrees: 180,
+    },
+  },
+  {
+    id: 'yamato',
+    name: 'Yamato',
+    category: 'military',
+    length: 263,
+    width: 38.9,
+    height: 56,
+    shape: 'box',
+    color: '#57534e',
+    blurb: 'Japanese battleship Yamato, the largest ever built (~263 m long).',
+    model: {
+      path: 'models/yamato/model.glb',
       scaleAxis: 'length',
       // Native bow is +Z. 180° puts bow with the other ships.
       yawDegrees: 180,
@@ -2090,7 +2221,7 @@ const CATALOG_SEED: CatalogSeed[] = [
     name: 'Imperial II Star Destroyer',
     category: 'fiction',
     length: 1600,
-    width: 878,
+    width: 985,
     height: 447,
     shape: 'box',
     color: '#d4d4d8',
@@ -2098,6 +2229,7 @@ const CATALOG_SEED: CatalogSeed[] = [
     model: {
       path: 'models/isd-ii/model.glb',
       scaleAxis: 'length',
+      yawDegrees: 90,
     },
   },
   {
@@ -2654,6 +2786,23 @@ const CATALOG_SEED: CatalogSeed[] = [
       clipPrefer: 'walk|idle',
     },
   },
+  {
+    id: 'humpback-whale',
+    name: 'Humpback whale',
+    category: 'animal',
+    length: 15.0,
+    width: 8.0,
+    height: 4.0,
+    shape: 'box',
+    color: '#4a6b8a',
+    blurb: 'Humpback whale (~15 m), with the longest flippers of any animal. Swims when focused.',
+    playClips: true,
+    model: {
+      path: 'models/humpback-whale/model.glb',
+      scaleAxis: 'length',
+      clipPrefer: 'swim',
+    },
+  },
   moneyItem(
     'money-1m',
     '$1 million',
@@ -2690,12 +2839,13 @@ const CATALOG_SEED: CatalogSeed[] = [
     39_890_000_000_000,
     'Packed $100-bill cubes for ~$39.89T (Treasury, ~Aug 6 2026)',
   ),
+  ...OIL_RESERVES.map(oilItem),
 ]
 
 export const CATALOG: CatalogItem[] = CATALOG_SEED.map((item) => ({
   ...item,
-  tags: CATALOG_TAGS[item.id] ?? [item.category],
-  facts: CATALOG_FACTS[item.id],
+  tags: CATALOG_TAGS[item.id] ?? item.tags ?? [item.category],
+  facts: CATALOG_FACTS[item.id] ?? item.facts,
 }))
 
 export const CATALOG_BY_ID = Object.fromEntries(
@@ -2703,6 +2853,27 @@ export const CATALOG_BY_ID = Object.fromEntries(
 ) as Record<string, CatalogItem>
 
 export const COMPARISON_PRESETS: ComparisonPreset[] = [
+  // First entry is the homepage default lineup.
+  {
+    id: 'rockets',
+    name: 'Rockets',
+    description: 'Electron through Starship.',
+    tags: ['rockets', 'space', 'launch', 'saturn', 'starship', 'falcon', 'n1', 'shuttle'],
+    itemIds: [
+      'person-male',
+      'apollo-lm',
+      'v2-rocket',
+      'electron',
+      'soyuz-rocket',
+      'falcon-9',
+      'shuttle-atlantis',
+      'new-glenn',
+      'sls',
+      'n1',
+      'saturn-v',
+      'starship',
+    ],
+  },
   {
     id: 'street',
     name: 'Street scale',
@@ -2726,7 +2897,7 @@ export const COMPARISON_PRESETS: ComparisonPreset[] = [
   },
   {
     id: 'nukes',
-    name: 'Bomb sizes',
+    name: 'Nuclear bombs',
     description: 'TNT, JDAM, Little Boy, Fat Man, Tsar Bomba.',
     tags: ['bombs', 'nukes', 'nuclear', 'munition', 'tnt', 'jdam', 'little boy', 'fat man', 'tsar'],
     itemIds: ['person-male', 'tnt', 'jdam', 'little-boy', 'fat-man', 'tsar-bomba', 'container-20'],
@@ -2734,7 +2905,7 @@ export const COMPARISON_PRESETS: ComparisonPreset[] = [
   {
     id: 'fighters',
     name: 'Fighter jets',
-    description: 'F-16, F/A-18, F-22, F-35, and the MiG and Sukhoi answer.',
+    description: 'F-16, F/A-18, F-117, F-22, F-35, and the MiG and Sukhoi answer.',
     tags: [
       'jets',
       'fighters',
@@ -2744,6 +2915,8 @@ export const COMPARISON_PRESETS: ComparisonPreset[] = [
       'f35',
       'f22',
       'f18',
+      'f117',
+      'nighthawk',
       'mig',
       'sukhoi',
       'su57',
@@ -2754,6 +2927,7 @@ export const COMPARISON_PRESETS: ComparisonPreset[] = [
       'mig23',
       'f18',
       'mig35',
+      'f117',
       'f22',
       'su57',
       'f35',
@@ -2776,6 +2950,8 @@ export const COMPARISON_PRESETS: ComparisonPreset[] = [
       'f117',
       'tu22',
       'h20',
+      'xb70',
+      'valkyrie',
     ],
     itemIds: [
       'person-male',
@@ -2787,6 +2963,7 @@ export const COMPARISON_PRESETS: ComparisonPreset[] = [
       'tu22m3',
       'h20',
       'b52',
+      'xb70',
     ],
   },
   {
@@ -2883,7 +3060,7 @@ export const COMPARISON_PRESETS: ComparisonPreset[] = [
       'galaxy',
       'globemaster',
     ],
-    itemIds: ['person-male', 'abrams', 'c17a', 'c18a', 'c5'],
+    itemIds: ['person-male', 'abrams', 'c130j', 'c17a', 'c18a', 'c5'],
   },
   {
     id: 'warbirds',
@@ -2910,6 +3087,7 @@ export const COMPARISON_PRESETS: ComparisonPreset[] = [
       'v2-rocket',
       'b29',
       'iowa',
+      'yamato',
     ],
   },
   {
@@ -2926,7 +3104,7 @@ export const COMPARISON_PRESETS: ComparisonPreset[] = [
       'blackbird',
       'aircraft',
     ],
-    itemIds: ['person-male', 'f22', 'mig35', 'su57', 'tu22m3', 'b1', 'sr71', 'concorde'],
+    itemIds: ['person-male', 'f22', 'mig35', 'su57', 'tu22m3', 'b1', 'sr71', 'sr72', 'xb70', 'concorde'],
   },
   {
     id: 'navy',
@@ -2945,6 +3123,8 @@ export const COMPARISON_PRESETS: ComparisonPreset[] = [
     ],
     itemIds: [
       'person-male',
+      'seawolf',
+      'los-angeles',
       'virginia',
       'ohio',
       'independence',
@@ -2954,6 +3134,7 @@ export const COMPARISON_PRESETS: ComparisonPreset[] = [
       'moskva',
       'wasp',
       'iowa',
+      'yamato',
       'kiev',
       'super-tanker',
       'nimitz',
@@ -3035,27 +3216,6 @@ export const COMPARISON_PRESETS: ComparisonPreset[] = [
       'uss-discovery',
       'borg-cube',
       'earth-spacedock',
-    ],
-  },
-  {
-    id: 'rockets',
-    name: 'Rockets',
-    description: 'Electron through Starship.',
-    tags: ['rockets', 'space', 'launch', 'saturn', 'starship', 'falcon', 'n1', 'shuttle'],
-    itemIds: [
-      'person-male',
-      'apollo-lm',
-      'v2-rocket',
-      'electron',
-      'soyuz-rocket',
-      'falcon-9',
-      'shuttle-atlantis',
-      'shuttle-discovery',
-      'new-glenn',
-      'sls',
-      'n1',
-      'saturn-v',
-      'starship',
     ],
   },
   {
@@ -3150,9 +3310,18 @@ export const COMPARISON_PRESETS: ComparisonPreset[] = [
     ],
   },
   {
+    id: 'oil',
+    name: 'Oil reserves',
+    description:
+      'Proven oil reserves of the top 15 countries, each as one cube of crude (EIA via Worldometer, 2025).',
+    tags: ['oil', 'crude', 'petroleum', 'reserves', 'barrels', 'energy', 'opec'],
+    // Smallest to largest, next to the Burj Khalifa for scale.
+    itemIds: ['person-male', 'burj', ...[...OIL_RESERVES].reverse().map(oilReserveId)],
+  },
+  {
     id: 'animals',
     name: 'Animals',
-    description: 'Rabbit through Spinosaurus — clips play when you focus them.',
+    description: 'Rabbit through humpback whale — clips play when you focus them.',
     tags: [
       'animals',
       'dinosaurs',
@@ -3178,6 +3347,7 @@ export const COMPARISON_PRESETS: ComparisonPreset[] = [
       'carnotaurus',
       'giganotosaurus',
       'spinosaurus',
+      'humpback-whale',
     ],
   },
 ]
@@ -3192,5 +3362,6 @@ export const CATEGORY_LABELS: Record<CatalogCategory, string> = {
   fiction: 'Fiction',
   landmark: 'Landmarks',
   money: 'Money',
+  oil: 'Oil reserves',
 }
 
