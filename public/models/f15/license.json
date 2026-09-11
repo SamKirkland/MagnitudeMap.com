@@ -1,0 +1,12 @@
+{
+  "id": "f15",
+  "file": "model.glb",
+  "license": "CC-BY-4.0",
+  "licenseLabel": "CC BY",
+  "author": "Trouvaille",
+  "source": "https://sketchfab.com/3d-models/f-15-eagle-f874bffa8e314743b4a7cb9ad4b9f3a8",
+  "sourceAsset": "F-15 Eagle",
+  "sketchfabUid": "f874bffa8e314743b4a7cb9ad4b9f3a8",
+  "notes": "F-15 Eagle by Trouvaille (dashdu, CC-BY). Stand-in for the requested Usman Zia F-15 (250efd1d8a004228a10737967beddcf5), whose skinned rig renders with tails, gear and tanks displaced from the airframe. Scaled to 19.43 m length in-app.",
+  "attribution": "F-15 Eagle by Trouvaille on Sketchfab (CC BY) — https://sketchfab.com/3d-models/f-15-eagle-f874bffa8e314743b4a7cb9ad4b9f3a8"
+}

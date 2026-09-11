@@ -51,6 +51,14 @@ export const CATALOG_FACTS: Record<string, string> = {
     'USA, 2015–present. Over 1,100 delivered of roughly 3,000 planned, across three variants. An F-35A costs about $82 million. Radar cross-section is roughly 0.0015 m² — a golf ball, and some fifteen times the F-22’s honeybee. Combat radius is 1,240 km, and it fuses sensor data across an entire formation.',
   'f18':
     'USA, 1999–present. About 600 Super Hornets built at roughly $70 million each. 20% larger than the original Hornet, carrier-capable, and the backbone of US Navy strike wings. Its radar cross-section is unpublished, but reshaped intakes and edge treatments are generally credited with roughly a tenth of the legacy Hornet’s return — on the order of 0.1 m², about a pigeon.',
+  'f14':
+    'USA, 1970–1991. 712 built, and the US Navy retired its last in 2006; Iran still flies the survivors of 79 it bought before 1979. Its wings sweep automatically from 20° to 68° in flight, and the AWG-9 radar and Phoenix missiles could engage targets 160 km away. Famous from Top Gun (1986). Unshaped and huge, its frontal radar cross-section is often put near 25 m² — roughly a small truck.',
+  'f15':
+    'USA, 1972–present. Over 1,500 built, and the F-15EX is still in production. Its air-to-air record stands at more than 100 kills for no losses in combat. Twin engines give it a thrust-to-weight ratio above 1, so it can accelerate straight up, and it tops out past Mach 2.5. Big, flat-sided and unshaped, its radar cross-section is estimated at 10–25 m² — roughly a barn door.',
+  'yf23':
+    'USA, 1990. Only two prototypes built, for the Advanced Tactical Fighter contest the YF-22 won in 1991. Many judged it stealthier and faster — it supercruised at about Mach 1.6 — but the Air Force picked the more agile, lower-risk Lockheed design. Its engines exhausted through troughs lined with heat-absorbing tiles to hide them from infrared sensors below. Both airframes survive in museums.',
+  'f38':
+    'Fictional. A fan concept of a future Lockheed Martin stealth fighter blending F-22 and F-35 design cues. No such aircraft exists or has been announced, so the dimensions here are an estimate sized between the F-35A and the F-22.',
   'spitfire':
     'United Kingdom, 1938–1948. 20,351 built across 24 marks — the only British fighter in continuous production through the whole war. About £12,600 in 1940 (roughly £700,000 today). Its elliptical wing was expensive to build but gave low drag and a 594 km/h top speed on the Mk IIa. Radar cross-section was nobody’s concern in 1938: an unshaped fighter this size returns several square metres, a larger radar target than the man flying it.',
   'mig23':
@@ -105,6 +113,8 @@ export const CATALOG_FACTS: Record<string, string> = {
     'A concept heavy-lift transport shown at roughly C-17 scale, about 53 m long. Not a real production aircraft.',
   'v22':
     'USA, 2007–present. About 400 built at roughly $75 million each. Tilts its rotors to take off like a helicopter and cruise at 509 km/h like a turboprop — twice a helicopter’s speed — carrying 24 troops.',
+  'rah66':
+    'USA, 1996–2004. Only two prototypes flew before the programme was cancelled after roughly $7 billion had been spent. Built as a stealth scout, it carried its missiles in internal bays behind doors, and its faceted composite skin is credited with a radar cross-section several hundred times smaller than the Apache’s. The shrouded fantail rotor also cut its noise.',
   'apache':
     'USA, 1986–present. Over 2,700 built. An AH-64E costs about $52 million and carries a 30 mm chain gun plus up to 16 Hellfire missiles. Its mast-mounted radar tracks 128 targets and lets it pop up to fire from behind cover.',
   'mi-24':

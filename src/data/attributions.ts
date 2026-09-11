@@ -638,6 +638,30 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "F-117A Nighthawk by nazidefenseforceofficial (CC-BY). Scaled to 20.09 m length in-app."
   },
   {
+    "id": "f14",
+    "catalogName": "F-14 Tomcat",
+    "author": "dwsd",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/f-14-tomcat-top-gun-gear-down-downloadable-4e54e7cbaa9d4d1094b0a6b29bc2e065",
+    "sourceAsset": "F-14 Tomcat Top Gun (Gear Down) Downloadable",
+    "attribution": "F-14 Tomcat Top Gun (Gear Down) Downloadable by dwsd on Sketchfab (CC BY) — https://sketchfab.com/3d-models/f-14-tomcat-top-gun-gear-down-downloadable-4e54e7cbaa9d4d1094b0a6b29bc2e065",
+    "requiresAttribution": true,
+    "notes": "F-14 Tomcat by dwsd (CC-BY). Wings modelled spread; scaled to 19.1 m length in-app, catalog width is the 19.55 m unswept span."
+  },
+  {
+    "id": "f15",
+    "catalogName": "F-15 Eagle",
+    "author": "Trouvaille",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/f-15-eagle-f874bffa8e314743b4a7cb9ad4b9f3a8",
+    "sourceAsset": "F-15 Eagle",
+    "attribution": "F-15 Eagle by Trouvaille on Sketchfab (CC BY) — https://sketchfab.com/3d-models/f-15-eagle-f874bffa8e314743b4a7cb9ad4b9f3a8",
+    "requiresAttribution": true,
+    "notes": "F-15 Eagle by Trouvaille (dashdu, CC-BY). Stand-in for the requested Usman Zia F-15 (250efd1d8a004228a10737967beddcf5), whose skinned rig renders with tails, gear and tanks displaced from the airframe. Scaled to 19.43 m length in-app."
+  },
+  {
     "id": "f16",
     "catalogName": "F-16C Falcon",
     "author": "Carlos.Maciel",
@@ -672,6 +696,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "Low poly 1:1 USAF F35A by Yi Tsung Lee on Sketchfab (CC BY) — https://sketchfab.com/3d-models/low-poly-11-usaf-f35a-dc727cb5c1404f26b3a29a7e2d50bb2b",
     "requiresAttribution": true,
     "notes": "F-35A Lightning II by Yi Tsung Lee (CC-BY). Replaces prior F-35B. Scaled to 15.67 m length in-app."
+  },
+  {
+    "id": "f38",
+    "catalogName": "F-38 concept",
+    "author": "Muhamad Mirza Arrafi",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/f-38-next-generation-stealth-fighter-jet-b8fcf0e71572448cae6806b166be2a76",
+    "sourceAsset": "F-38 Next Generation Stealth Fighter Jet",
+    "attribution": "F-38 Next Generation Stealth Fighter Jet by Muhamad Mirza Arrafi on Sketchfab (CC BY) — https://sketchfab.com/3d-models/f-38-next-generation-stealth-fighter-jet-b8fcf0e71572448cae6806b166be2a76",
+    "requiresAttribution": true,
+    "notes": "Fictional F-38 concept by Muhamad Mirza Arrafi (nazidefenseforceofficial, CC-BY). No real dimensions exist; scaled to an estimated 17.5 m length in-app."
   },
   {
     "id": "f18",
@@ -1296,6 +1332,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "Low-poly animated rabbit by Pneshik on Sketchfab (CC BY) — https://sketchfab.com/3d-models/low-poly-animated-rabbit-dcf4d25f535347b1bfb859c659314bde",
     "requiresAttribution": true,
     "notes": "Low-poly rabbit (CC-BY, Pneshik, 5 clips). Linked GremorySaiyan pack is Standard. Scaled to 0.4 m length in-app."
+  },
+  {
+    "id": "rah66",
+    "catalogName": "RAH-66 Comanche",
+    "author": "Muhamad Mirza Arrafi",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/boeing-sikorsky-rah-66-comanche-7c0f4ce77e794d029e8f574419f35e98",
+    "sourceAsset": "Boeing-Sikorsky RAH-66 Comanche",
+    "attribution": "Boeing-Sikorsky RAH-66 Comanche by Muhamad Mirza Arrafi on Sketchfab (CC BY) — https://sketchfab.com/3d-models/boeing-sikorsky-rah-66-comanche-7c0f4ce77e794d029e8f574419f35e98",
+    "requiresAttribution": true,
+    "notes": "RAH-66 Comanche by Muhamad Mirza Arrafi (nazidefenseforceofficial, CC-BY). Scaled on the 11.9 m rotor diameter (scaleAxis width), as with the other helicopters; catalog length is the 14.28 m rotors-turning figure and will not match the mesh exactly. The mesh carries a mast-mounted radar dome, so it stands ~4.2 m tall against the 3.39 m published height (verify-models height WARN is expected)."
   },
   {
     "id": "dkyr",
@@ -1968,6 +2016,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "Yamato by tanklover on Sketchfab (CC BY) — https://sketchfab.com/3d-models/yamato-d6c3ff1f15344a31b1120f48fd2718c5",
     "requiresAttribution": true,
     "notes": "Japanese battleship Yamato by tanklover (CC-BY). Scaled to 263 m length in-app."
+  },
+  {
+    "id": "yf23",
+    "catalogName": "YF-23 Black Widow II",
+    "author": "metlocaypsecrasy",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/rigged-northrop-yf-23-53936b1d83b74e6a8598f793fabe7119",
+    "sourceAsset": "rigged Northrop YF-23",
+    "attribution": "rigged Northrop YF-23 by metlocaypsecrasy on Sketchfab (CC BY) — https://sketchfab.com/3d-models/rigged-northrop-yf-23-53936b1d83b74e6a8598f793fabe7119",
+    "requiresAttribution": true,
+    "notes": "Northrop YF-23 by metlocaypsecrasy (CC-BY). Scaled to 20.6 m length in-app."
   },
   {
     "id": "yoda",

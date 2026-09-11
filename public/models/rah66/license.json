@@ -1,0 +1,12 @@
+{
+  "id": "rah66",
+  "file": "model.glb",
+  "license": "CC-BY-4.0",
+  "licenseLabel": "CC BY",
+  "author": "Muhamad Mirza Arrafi",
+  "source": "https://sketchfab.com/3d-models/boeing-sikorsky-rah-66-comanche-7c0f4ce77e794d029e8f574419f35e98",
+  "sourceAsset": "Boeing-Sikorsky RAH-66 Comanche",
+  "sketchfabUid": "7c0f4ce77e794d029e8f574419f35e98",
+  "notes": "RAH-66 Comanche by Muhamad Mirza Arrafi (nazidefenseforceofficial, CC-BY). Scaled on the 11.9 m rotor diameter (scaleAxis width), as with the other helicopters; catalog length is the 14.28 m rotors-turning figure and will not match the mesh exactly. The mesh carries a mast-mounted radar dome, so it stands ~4.2 m tall against the 3.39 m published height (verify-models height WARN is expected).",
+  "attribution": "Boeing-Sikorsky RAH-66 Comanche by Muhamad Mirza Arrafi on Sketchfab (CC BY) — https://sketchfab.com/3d-models/boeing-sikorsky-rah-66-comanche-7c0f4ce77e794d029e8f574419f35e98"
+}

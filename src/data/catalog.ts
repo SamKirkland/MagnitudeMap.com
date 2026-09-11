@@ -517,6 +517,74 @@ const CATALOG_SEED: CatalogSeed[] = [
     },
   },
   {
+    id: 'f15',
+    name: 'F-15 Eagle',
+    category: 'military',
+    length: 19.43,
+    width: 13.05,
+    height: 5.63,
+    shape: 'box',
+    color: '#8a939c',
+    blurb: 'F-15 Eagle air-superiority fighter (~19.4 m long).',
+    model: {
+      path: 'models/f15/model.glb',
+      scaleAxis: 'length',
+      // Native nose is +X; 270° points it at the plaque like the F-35.
+      yawDegrees: 270,
+    },
+  },
+  {
+    id: 'f14',
+    name: 'F-14 Tomcat',
+    category: 'military',
+    length: 19.1,
+    width: 19.55,
+    height: 4.88,
+    shape: 'box',
+    color: '#8d949b',
+    blurb: 'F-14 Tomcat swing-wing carrier fighter, wings spread (~19.1 m long).',
+    model: {
+      path: 'models/f14/model.glb',
+      scaleAxis: 'length',
+      // Native nose is +X; 270° points it at the plaque like the F-35.
+      yawDegrees: 270,
+    },
+  },
+  {
+    id: 'yf23',
+    name: 'YF-23 Black Widow II',
+    category: 'military',
+    length: 20.6,
+    width: 13.3,
+    height: 4.3,
+    shape: 'box',
+    color: '#3d4247',
+    blurb: 'Northrop YF-23 prototype that lost the ATF contest to the F-22 (~20.6 m long).',
+    model: {
+      path: 'models/yf23/model.glb',
+      scaleAxis: 'length',
+      // Native nose is +X; 270° points it at the plaque like the F-35.
+      yawDegrees: 270,
+    },
+  },
+  {
+    id: 'f38',
+    name: 'F-38 concept',
+    category: 'military',
+    length: 17.5,
+    width: 12.5,
+    height: 4.6,
+    shape: 'box',
+    color: '#5f6873',
+    blurb: 'F-38 fan-concept stealth fighter (~17.5 m long, estimated).',
+    model: {
+      path: 'models/f38/model.glb',
+      scaleAxis: 'length',
+      // Native nose is -X; 90° points it at the plaque like the F-35.
+      yawDegrees: 90,
+    },
+  },
+  {
     id: 'da-vinci-ornithopter',
     name: "Da Vinci's flying machine",
     category: 'vehicle',
@@ -930,6 +998,24 @@ const CATALOG_SEED: CatalogSeed[] = [
     },
   },
   {
+    id: 'rah66',
+    name: 'RAH-66 Comanche',
+    category: 'military',
+    length: 14.28,
+    width: 11.9,
+    height: 3.39,
+    shape: 'box',
+    color: '#343a36',
+    blurb: 'RAH-66 Comanche stealth scout helicopter, cancelled in 2004 (~11.9 m rotor).',
+    model: {
+      path: 'models/rah66/model.glb',
+      // Rotor diameter, like the other helicopters (blades are spread in the mesh).
+      scaleAxis: 'width',
+      // Native nose is -Z (cockpit at -Z), already facing the plaque.
+      yawDegrees: 0,
+    },
+  },
+  {
     id: 'chinook',
     name: 'CH-47 Chinook',
     category: 'military',
@@ -1056,8 +1142,10 @@ const CATALOG_SEED: CatalogSeed[] = [
     blurb: 'Mil Mi-26 Halo, the heaviest helicopter ever produced (~33.7 m fuselage, 32 m rotor).',
     model: {
       path: 'models/mi26/model.glb',
-      scaleAxis: 'width',
-      yawDegrees: 180,
+      // 45° display turn inflates the X/Z AABB, so scale on the yaw-invariant height.
+      scaleAxis: 'height',
+      // Fuselage is authored ~40.5° off native X (measured by PCA), not a clean 45°.
+      yawDegrees: 130.5,
     },
   },
   {
@@ -1072,8 +1160,10 @@ const CATALOG_SEED: CatalogSeed[] = [
     blurb: 'Mil Mi-10 Harke flying crane on stilt landing gear (~32.9 m long).',
     model: {
       path: 'models/mi10/model.glb',
-      scaleAxis: 'length',
-      yawDegrees: 180,
+      // 45° display turn inflates the X/Z AABB, so scale on the yaw-invariant height.
+      scaleAxis: 'height',
+      // Fuselage is authored ~42° off native X (measured by PCA), not a clean 45°.
+      yawDegrees: 132,
     },
   },
   {
@@ -1089,7 +1179,7 @@ const CATALOG_SEED: CatalogSeed[] = [
     model: {
       path: 'models/pave-low/model.glb',
       scaleAxis: 'width',
-      yawDegrees: 180,
+      yawDegrees: 90,
     },
   },
   {
@@ -2800,6 +2890,7 @@ const CATALOG_SEED: CatalogSeed[] = [
     model: {
       path: 'models/humpback-whale/model.glb',
       scaleAxis: 'length',
+      yawDegrees: 180,
       clipPrefer: 'swim',
     },
   },
@@ -2905,12 +2996,16 @@ export const COMPARISON_PRESETS: ComparisonPreset[] = [
   {
     id: 'fighters',
     name: 'Fighter jets',
-    description: 'F-16, F/A-18, F-117, F-22, F-35, and the MiG and Sukhoi answer.',
+    description: 'F-16, F/A-18, F-15, F-117, F-22, F-35, and the MiG and Sukhoi answer.',
     tags: [
       'jets',
       'fighters',
       'aircraft',
       'military',
+      'f14',
+      'tomcat',
+      'f15',
+      'eagle',
       'f16',
       'f35',
       'f22',
@@ -2927,10 +3022,14 @@ export const COMPARISON_PRESETS: ComparisonPreset[] = [
       'mig23',
       'f18',
       'mig35',
+      'f14',
+      'f15',
       'f117',
       'f22',
+      'yf23',
       'su57',
       'f35',
+      'f38',
     ],
   },
   {
@@ -3003,6 +3102,7 @@ export const COMPARISON_PRESETS: ComparisonPreset[] = [
       'blackhawk',
       'osprey',
       'raider',
+      'comanche',
       'pave low',
       'mi26',
       'mi10',
@@ -3010,6 +3110,7 @@ export const COMPARISON_PRESETS: ComparisonPreset[] = [
     itemIds: [
       'person-male',
       's97',
+      'rah66',
       'apache',
       'mi-24',
       'blackhawk',
