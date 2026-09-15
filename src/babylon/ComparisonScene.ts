@@ -52,6 +52,19 @@ import '@babylonjs/core/Culling/ray'
 // ES6 build only patches the prototype when this module is imported, so the
 // hover cage threw here and killed the outline plus its dimension labels.
 import '@babylonjs/core/Rendering/edgesRenderer'
+// Installs Scene.beginAnimation / beginDirectAnimation. Without it Babylon's
+// ES6 build leaves those as warn-and-return-undefined stubs, so every animated
+// camera move (click-to-focus, overview reset, tour steps) and every imported
+// model clip silently did nothing.
+import '@babylonjs/core/Animations/animatable'
+// Guard for the whole class of bug above. Babylon's ES6 build replaces every
+// un-imported augmentation with a stub that returns undefined and stays silent
+// by default, so a missing side-effect import reads as "the feature just does
+// nothing" rather than as an error. Warnings are off in production because
+// engine internals probe optional APIs as feature checks; in dev the first
+// call to a stubbed method names it in the console.
+import { SetMissingSideEffectWarningsEnabled } from '@babylonjs/core/Misc/devTools'
+if (import.meta.env.DEV) SetMissingSideEffectWarningsEnabled(true)
 import { CreateScreenshotUsingRenderTargetAsync } from '@babylonjs/core/Misc/screenshotTools'
 // glTF 2.0 only. The bare '@babylonjs/loaders/glTF' entry also registers the
 // glTF 1.0 loader, which nothing here loads.
@@ -77,6 +90,14 @@ import {
   packMoneyAmount,
 } from '../data/moneyPack'
 import { createMoneyTiledPile } from './moneyTiledMesh'
+import { lodLevelsFor } from '../data/modelLods'
+import {
+  apparentPixelHeight,
+  buildLodLevels,
+  resolveLevel,
+  wantedLevel,
+  type LodLevel,
+} from './modelLod'
 import { formatLength, type UnitSystem } from '../units'
 import { convertUnitsInText } from '../unitText'
 import {
@@ -172,6 +193,26 @@ function warmDracoDecoder() {
   }
 }
 
+/**
+ * One model's detail levels. `roots[i]` holds the scene nodes for level `i`;
+ * exactly one entry is enabled at a time. Level 0 is the full-detail import
+ * that was loaded normally — everything else is fetched the first time the
+ * model shrinks far enough to want it, so a viewer who never zooms out never
+ * pays for a LOD, and one who stays zoomed out fetches only the far level.
+ */
+type LodGroup = {
+  levels: LodLevel[]
+  roots: (TransformNode[] | null)[]
+  active: number
+  /** Node the levels hang off; its world matrix carries pose, scale and position. */
+  parent: TransformNode
+  /** Bounding-sphere centre in `parent` space, and its radius in world units. */
+  localCenter: Vector3
+  radius: number
+  /** Post-import fixups for a freshly downloaded level (materials, picking). */
+  prepare: (root: TransformNode) => void
+}
+
 type PlacedObject = {
   instanceId: string
   itemId: string
@@ -191,6 +232,9 @@ type PlacedObject = {
  * lineup, the poster hides it and drops a black silhouette beside every few
  * objects — the architectural-drawing convention, and far easier to read.
  */
+/** Concurrent LOD downloads. Enough to keep the pipe busy, few enough to stay polite. */
+const MAX_LOD_LOADS_IN_FLIGHT = 4
+
 const POSTER_SCALE_FIGURE_ID = 'person-male'
 const POSTER_SCALE_REFERENCE_IDS = new Set(['person-male', 'person-female'])
 /** Objects smaller than this get no figure: it would dwarf them. */
@@ -470,6 +514,9 @@ export class ComparisonScene {
   readonly camera: ArcRotateCamera
 
   private readonly placements = new Map<string, PlacedObject>()
+  /** Keyed by placement instance id, plus `ground-city` for the stage itself. */
+  private readonly lodGroups = new Map<string, LodGroup>()
+  private lodLoadsInFlight = 0
   private ground: Mesh
   private skybox: Mesh
   private sun!: DirectionalLight
@@ -2411,6 +2458,7 @@ export class ComparisonScene {
     const gen = ++this.cityLoadGen
     const plate = GROUND_PLATE_BY_ID[this.groundPlateId]
     if (this.cityRoot && this.cityPlateId !== plate.id) {
+      this.lodGroups.delete('ground-city')
       this.cityRoot.dispose(false, true)
       this.cityRoot = null
       this.cityPlateId = null
@@ -2419,6 +2467,7 @@ export class ComparisonScene {
     }
     if (!plate.modelPath) {
       if (this.cityRoot) {
+        this.lodGroups.delete('ground-city')
         this.cityRoot.dispose(false, true)
         this.cityRoot = null
         this.cityPlateId = null
@@ -2453,8 +2502,12 @@ export class ComparisonScene {
     const { rootUrl, filename } = this.resolveModelUrl(plate.modelPath!)
     const result = await SceneLoader.ImportMeshAsync('', rootUrl, filename, this.scene)
     const root = new TransformNode('ground-city', this.scene)
+    const baseRoots: TransformNode[] = []
     for (const mesh of result.meshes) {
-      if (!mesh.parent) mesh.parent = root
+      if (!mesh.parent) {
+        mesh.parent = root
+        baseRoots.push(mesh)
+      }
       mesh.isPickable = false
       mesh.metadata = { kind: 'ground-city' }
     }
@@ -2542,6 +2595,29 @@ export class ComparisonScene {
     for (const mesh of root.getChildMeshes(false)) {
       this.freezeMaterialTree(mesh.material)
     }
+
+    this.registerLodGroup('ground-city', plate.modelPath!, root, baseRoots, (node) => {
+      // Same fixups the full-detail plate got, in the same order.
+      this.stripCityWaterPlanes(node)
+      this.prepareImportedMaterials(node)
+      for (const mesh of node.getChildMeshes(false)) {
+        mesh.isPickable = false
+        mesh.metadata = { kind: 'ground-city' }
+        mesh.receiveShadows = ENABLE_SCENE_LIGHTING
+        const mat = mesh.material
+        if (mat instanceof PBRMaterial) {
+          if (mat.albedoTexture) mat.albedoTexture.anisotropicFilteringLevel = 8
+          if (!ENABLE_SCENE_LIGHTING) {
+            mat.unlit = true
+            if (mat.albedoTexture) {
+              mat.emissiveTexture = mat.albedoTexture
+              mat.emissiveColor = Color3.White()
+            }
+          }
+        }
+        this.freezeMaterialTree(mesh.material)
+      }
+    })
   }
 
   private stripCityWaterPlanes(root: TransformNode) {
@@ -3460,6 +3536,7 @@ export class ComparisonScene {
 
     this.syncCameraClipPlanes()
     this.syncCameraNavigationScale()
+    this.updateLodGroups()
     this.scene.render()
     this.camera.freezeProjectionMatrix()
     this.rendersThisSecond += 1
@@ -3475,12 +3552,20 @@ export class ComparisonScene {
     const now = performance.now()
     if (this.perfSecondStarted === 0) this.perfSecondStarted = now
     if (now - this.perfSecondStarted < 1000) return
+    // Detail levels in use, finest first: [full, mid, far].
+    const lodLevels: number[] = []
+    for (const group of this.lodGroups.values()) {
+      lodLevels[group.active] = (lodLevels[group.active] ?? 0) + 1
+    }
     const stats = {
       submitsPerSec: this.rendersThisSecond,
       skippedPerSec: this.skippedThisSecond,
       heldIdle: this.heldIdle,
       renderNeeded: this.renderNeeded,
       animatables: this.scene.animatables.length,
+      activeMeshes: this.scene.getActiveMeshes().length,
+      activeTriangles: Math.round(this.scene.getActiveIndices() / 3),
+      lodLevels: [...lodLevels].map((n) => n ?? 0),
     }
     ;(window as unknown as { __mmPerf: typeof stats }).__mmPerf = stats
     this.rendersThisSecond = 0
@@ -3742,6 +3827,155 @@ export class ComparisonScene {
     return shadows
   }
 
+  /**
+   * Register a model's detail levels, if `npm run generate-lods` made any.
+   *
+   * `parent` must be the node the full-detail import already hangs off, so a
+   * downloaded level inherits the same authoring pose, metre scale and ground
+   * offset without being measured again — the generated levels share the source
+   * file's coordinate system exactly.
+   */
+  private registerLodGroup(
+    key: string,
+    sourcePath: string,
+    parent: TransformNode,
+    baseRoots: TransformNode[],
+    prepare: (root: TransformNode) => void,
+  ) {
+    // Capture and poster export must render the real thing.
+    if (this.captureMode) return
+    const manifest = lodLevelsFor(sourcePath)
+    if (manifest.length === 0) return
+
+    const bounds = this.visualBounds(parent)
+    if (!Number.isFinite(bounds.min.x) || bounds.min.x > bounds.max.x) return
+    const center = bounds.min.add(bounds.max).scale(0.5)
+    const radius = bounds.max.subtract(bounds.min).length() / 2
+    if (!(radius > 0)) return
+
+    const levels = buildLodLevels(manifest)
+    if (levels.length < 2) return
+
+    const roots: (TransformNode[] | null)[] = levels.map(() => null)
+    roots[0] = baseRoots
+    this.lodGroups.set(key, {
+      levels,
+      roots,
+      active: 0,
+      parent,
+      localCenter: Vector3.TransformCoordinates(
+        center,
+        Matrix.Invert(parent.computeWorldMatrix(true)),
+      ),
+      radius,
+      prepare,
+    })
+  }
+
+  /**
+   * Pick a detail level for every registered model. Runs once per rendered
+   * frame — which, on this render-on-demand scene, means only when something
+   * actually moved.
+   */
+  private updateLodGroups() {
+    if (this.lodGroups.size === 0) return
+    // The poster wants the geometry it is about to rasterize, not an impostor.
+    if (this.posterPreview) {
+      for (const group of this.lodGroups.values()) this.applyLodLevel(group, 0)
+      return
+    }
+
+    // Debug affordance, same spirit as `window.__mmPerf`: pin every model to one
+    // level to eyeball a threshold, `null`/absent to go back to automatic.
+    const pinned = (window as unknown as { __mmLodPin?: number | null }).__mmLodPin
+    if (typeof pinned === 'number') {
+      for (const group of this.lodGroups.values()) {
+        const index = Math.min(pinned, group.levels.length - 1)
+        if (group.levels[index].state === 'idle') void this.loadLodLevel(group, index)
+        this.applyLodLevel(group, resolveLevel(group.levels, index))
+      }
+      return
+    }
+
+    const viewportHeight = this.engine.getRenderHeight()
+    const orthographic = this.camera.mode === Camera.ORTHOGRAPHIC_CAMERA
+    const orthoHeight = orthographic
+      ? Math.abs((this.camera.orthoTop ?? 0) - (this.camera.orthoBottom ?? 0))
+      : null
+    const eye = this.camera.globalPosition
+
+    for (const group of this.lodGroups.values()) {
+      if (group.parent.isDisposed()) continue
+      const center = Vector3.TransformCoordinates(
+        group.localCenter,
+        group.parent.getWorldMatrix(),
+      )
+      const pixels = apparentPixelHeight(
+        group.radius,
+        Vector3.Distance(eye, center),
+        viewportHeight,
+        orthographic ? null : this.camera.fov,
+        orthoHeight,
+      )
+      const wanted = wantedLevel(group.levels, pixels, group.active)
+      if (group.levels[wanted].state === 'idle') void this.loadLodLevel(group, wanted)
+      this.applyLodLevel(group, resolveLevel(group.levels, wanted))
+    }
+  }
+
+  private applyLodLevel(group: LodGroup, index: number) {
+    if (index === group.active) return
+    const incoming = group.roots[index]
+    if (!incoming) return
+    for (const node of group.roots[group.active] ?? []) {
+      if (!node.isDisposed()) node.setEnabled(false)
+    }
+    for (const node of incoming) {
+      if (!node.isDisposed()) node.setEnabled(true)
+    }
+    group.active = index
+    // The new meshes are not in the shadow map's render list yet.
+    if (this.shadowsActive()) this.syncShadowCasters()
+    this.markDirty()
+  }
+
+  private async loadLodLevel(group: LodGroup, index: number) {
+    const level = group.levels[index]
+    if (!level.path || level.state !== 'idle') return
+    // A lineup of two hundred objects would otherwise open two hundred sockets
+    // the moment the camera pulls back. Untaken requests come round next frame.
+    if (this.lodLoadsInFlight >= MAX_LOD_LOADS_IN_FLIGHT) return
+
+    level.state = 'loading'
+    this.lodLoadsInFlight += 1
+    try {
+      const { rootUrl, filename } = this.resolveModelUrl(level.path)
+      const result = await SceneLoader.ImportMeshAsync('', rootUrl, filename, this.scene)
+      const holder = new TransformNode(`lod-${index}-${group.parent.name}`, this.scene)
+      // Park it disabled first: ImportMesh drops meshes at the world origin,
+      // and this one is not the level being shown yet in any case.
+      holder.setEnabled(false)
+      holder.parent = group.parent
+      for (const mesh of result.meshes) {
+        if (!mesh.parent) mesh.parent = holder
+      }
+      if (this.disposed || group.parent.isDisposed()) {
+        holder.dispose(false, true)
+        level.state = 'failed'
+        return
+      }
+      group.prepare(holder)
+      group.roots[index] = [holder]
+      level.state = 'ready'
+      this.markDirty()
+    } catch (error) {
+      console.warn('Failed to load LOD level', level.path, error)
+      level.state = 'failed'
+    } finally {
+      this.lodLoadsInFlight -= 1
+    }
+  }
+
   private syncShadowCasters() {
     if (!this.shadows) return
     const map = this.shadows.getShadowMap()
@@ -3788,6 +4022,8 @@ export class ComparisonScene {
     if (this.hoverItemId === placement.itemId) this.clearHover()
     this.disposePlacement(placement)
     this.placements.delete(instanceId)
+    // The level nodes are children of the placement and go with it.
+    this.lodGroups.delete(instanceId)
   }
 
   private disposePlacement(placement: PlacedObject) {
@@ -3825,6 +4061,7 @@ export class ComparisonScene {
     if (opts.hidden) root.setEnabled(false)
 
     let body: TransformNode
+    let baseRoots: TransformNode[] = []
     let animationGroups: AnimationGroup[] = []
     let skeletons: Skeleton[] = []
     if (item.instanceGrid) {
@@ -3839,6 +4076,7 @@ export class ComparisonScene {
       try {
         const loaded = await this.loadScaledModel(item, instanceId, opts.onProgress)
         body = loaded.container
+        baseRoots = loaded.roots
         animationGroups = loaded.animationGroups
         skeletons = loaded.skeletons
       } catch (error) {
@@ -3883,6 +4121,22 @@ export class ComparisonScene {
       this.preparePersonRestPose(placement, skeletons)
     }
 
+    if (item.model && baseRoots.length > 0) {
+      this.registerLodGroup(instanceId, item.model.path, body, baseRoots, (root) => {
+        this.enableVertexColors(root)
+        this.prepareImportedMaterials(root)
+        if (item.model?.heightPaint) this.applyHeightPaint(root, item.model.heightPaint)
+        this.markPickable(root, item.id)
+        root.computeWorldMatrix(true)
+        for (const mesh of root.getChildMeshes(false)) {
+          mesh.computeWorldMatrix(true)
+          mesh.doNotSyncBoundingInfo = true
+          mesh.receiveShadows = ENABLE_SCENE_LIGHTING
+          this.freezeMaterialTree(mesh.material)
+        }
+      })
+    }
+
     return placement
   }
 
@@ -3922,6 +4176,8 @@ export class ComparisonScene {
     onProgress?: (fraction: number) => void,
   ): Promise<{
     container: TransformNode
+    /** Top-level imported nodes, the handle a LOD group toggles this level by. */
+    roots: TransformNode[]
     animationGroups: AnimationGroup[]
     skeletons: Skeleton[]
   }> {
@@ -3950,9 +4206,11 @@ export class ComparisonScene {
     const container = new TransformNode(`mesh-${instanceId}`, this.scene)
     container.metadata = { itemId: item.id }
 
+    const roots: TransformNode[] = []
     for (const mesh of result.meshes) {
       if (!mesh.parent) {
         mesh.parent = container
+        roots.push(mesh)
       }
       mesh.isVisible = true
       mesh.setEnabled(true)
@@ -4009,6 +4267,7 @@ export class ComparisonScene {
     }
     return {
       container,
+      roots,
       animationGroups: keepClips && !model.poseAtClipEnd ? (result.animationGroups ?? []) : [],
       skeletons: result.skeletons ?? [],
     }
