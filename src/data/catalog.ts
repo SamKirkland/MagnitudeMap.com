@@ -116,6 +116,14 @@ export type ComparisonPreset = {
   description: string
   tags: string[]
   itemIds: string[]
+  /**
+   * Fleet lineup: how many of each type existed, keyed by the ids in
+   * `itemIds`. The lineup still shows one of each with its plaque; the rest
+   * are drawn as instanced copies formed up behind it, so the row reads as an
+   * order of battle rather than a sample of one. Types with no entry, or a
+   * count of 1, look exactly as they do in any other lineup.
+   */
+  fleet?: Record<string, number>
 }
 
 /** Generated items (oil) carry their own tags; hand-authored ones use CATALOG_TAGS. */
@@ -1100,18 +1108,20 @@ const CATALOG_SEED: CatalogSeed[] = [
   },
   {
     id: 'mi-24',
-    name: 'Mil Mi-24P Hind',
+    name: 'Mil Mi-24 Hind',
     category: 'military',
     length: 21.35,
     width: 17.3,
     height: 6.5,
     shape: 'box',
     color: '#4a5340',
-    blurb: 'Mil Mi-24P Hind gunship — attack helicopter and troop carrier (~17.3 m rotor).',
+    blurb: 'Mil Mi-24 Hind gunship — attack helicopter and troop carrier (~17.3 m rotor).',
     model: {
       path: 'models/mi-24/model.glb',
       // Blades are modelled spread, so the box never matches rotors-turning length.
       scaleAxis: 'width',
+      // Mesh is authored tail-forward; 180° puts the nose on +Z.
+      yawDegrees: 180,
     },
   },
   {
@@ -1128,6 +1138,22 @@ const CATALOG_SEED: CatalogSeed[] = [
       path: 'models/blackhawk/model.glb',
       scaleAxis: 'length',
       yawDegrees: 180,
+    },
+  },
+  {
+    id: 'stealth-hawk',
+    name: 'MH-X Stealth Black Hawk',
+    category: 'military',
+    length: 19.76,
+    width: 16.36,
+    height: 5.13,
+    shape: 'box',
+    color: '#2b2f33',
+    blurb: 'MH-X stealth Black Hawk — the modified UH-60 flown on the 2011 Abbottabad raid (~19.8 m long).',
+    model: {
+      path: 'models/stealth-hawk/model.glb',
+      // Blades are modelled spread, so the box never matches rotors-turning length.
+      scaleAxis: 'width',
     },
   },
   {
@@ -1948,6 +1974,103 @@ const CATALOG_SEED: CatalogSeed[] = [
       path: 'models/wasp/model.glb',
       scaleAxis: 'length',
       yawDegrees: 180,
+    },
+  },
+  {
+    id: 'gato',
+    name: 'Gato-class submarine',
+    category: 'military',
+    length: 95,
+    width: 8.3,
+    height: 17.5,
+    shape: 'box',
+    color: '#3f3f46',
+    blurb: 'Gato-class fleet submarine, the Pacific war patrol boat (95 m long).',
+    model: {
+      path: 'models/gato/model.glb',
+      scaleAxis: 'length',
+      // Native hull runs along +X with the bow at +X; 270 deg turns it onto -Z
+      // with the other ships.
+      yawDegrees: 270,
+    },
+  },
+  {
+    id: 'fletcher',
+    name: 'Fletcher-class destroyer',
+    category: 'military',
+    length: 114.8,
+    width: 12,
+    height: 23.8,
+    shape: 'box',
+    color: '#52525b',
+    blurb: 'Fletcher-class destroyer, 175 built — the backbone of the wartime screen (115 m long).',
+    model: {
+      path: 'models/fletcher/model.glb',
+      scaleAxis: 'length',
+      // Native bow is already -Z, the way the other ships face.
+    },
+  },
+  {
+    id: 'cleveland',
+    name: 'Cleveland-class light cruiser',
+    category: 'military',
+    length: 185.9,
+    width: 20.2,
+    height: 35.8,
+    shape: 'box',
+    color: '#4b5563',
+    blurb: 'Cleveland-class light cruiser, twelve 152 mm guns and a wall of anti-aircraft fire (186 m long).',
+    model: {
+      path: 'models/cleveland/model.glb',
+      scaleAxis: 'length',
+    },
+  },
+  {
+    id: 'independence-cvl',
+    name: 'Independence-class light carrier',
+    category: 'military',
+    length: 189.7,
+    width: 33.3,
+    height: 28.1,
+    shape: 'box',
+    color: '#57534e',
+    blurb: 'Independence-class light carrier, built on a cruiser hull to get flight decks to sea faster (190 m long).',
+    model: {
+      path: 'models/independence-cvl/model.glb',
+      scaleAxis: 'length',
+    },
+  },
+  {
+    id: 'south-dakota',
+    name: 'South Dakota-class battleship',
+    category: 'military',
+    length: 210,
+    width: 33,
+    height: 39.9,
+    shape: 'box',
+    color: '#57534e',
+    blurb: 'South Dakota-class fast battleship, nine 406 mm guns on a short, heavily armoured hull (210 m long).',
+    model: {
+      path: 'models/south-dakota/model.glb',
+      scaleAxis: 'length',
+    },
+  },
+  {
+    id: 'essex-cv',
+    name: 'Essex-class fleet carrier',
+    category: 'military',
+    length: 265.8,
+    // The real Essex flight deck was 45 m across. This is the narrower
+    // Yorktown-class deck of the stand-in hull (see facts and license.json):
+    // the figure on the plaque has to be the one actually drawn.
+    width: 35.6,
+    height: 47.5,
+    shape: 'box',
+    color: '#57534e',
+    blurb: 'Essex-class fleet carrier, the ship that carried the Pacific war (266 m long, about 90 aircraft).',
+    model: {
+      path: 'models/essex-cv/model.glb',
+      scaleAxis: 'length',
     },
   },
   {
@@ -3114,6 +3237,7 @@ export const COMPARISON_PRESETS: ComparisonPreset[] = [
       'apache',
       'mi-24',
       'blackhawk',
+      'stealth-hawk',
       'v22',
       'chinook',
       'pave-low',
@@ -3242,6 +3366,139 @@ export const COMPARISON_PRESETS: ComparisonPreset[] = [
       'ford-carrier',
       'container-ship',
     ],
+  },
+  {
+    id: 'us-navy-1945',
+    name: 'US Navy 1945',
+    description: 'The Pacific fleet at the Japanese surrender, class by class.',
+    tags: [
+      'navy',
+      'fleet',
+      'ww2',
+      'world war ii',
+      '1945',
+      'pacific',
+      'order of battle',
+      'carrier',
+      'battleship',
+      'destroyer',
+      'submarine',
+    ],
+    itemIds: [
+      'person-male',
+      'gato',
+      'fletcher',
+      'cleveland',
+      'independence-cvl',
+      'south-dakota',
+      'iowa',
+      'essex-cv',
+    ],
+    /*
+     * Ships in commission in August 1945, counted by class rather than by role,
+     * so every block is the ship it says it is. That does mean the lineup is
+     * short of the Navy's full 1945 order of battle: the 71 escort carriers,
+     * the 361 destroyer escorts, the Baltimore heavy cruisers and the older
+     * battleships have no model here that could stand in honestly, and a fleet
+     * lineup that mislabels a hull is worse than one that is visibly partial.
+     * What is here — 311 ships — is the core of the fast carrier task forces.
+     */
+    fleet: {
+      gato: 77,
+      fletcher: 175,
+      cleveland: 26,
+      'independence-cvl': 8,
+      'south-dakota': 4,
+      iowa: 4,
+      'essex-cv': 17,
+    },
+  },
+  {
+    id: 'us-navy-today',
+    name: 'US Navy today',
+    description: 'Every battle force ship, one block per class.',
+    tags: [
+      'navy',
+      'fleet',
+      'us navy',
+      'order of battle',
+      'carrier',
+      'destroyer',
+      'submarine',
+      'amphibious',
+      'ships',
+    ],
+    itemIds: [
+      'person-male',
+      'seawolf',
+      'los-angeles',
+      'virginia',
+      'ohio',
+      'independence',
+      'arleigh-burke',
+      'zumwalt',
+      'wasp',
+      'nimitz',
+      'ford-carrier',
+    ],
+    // Battle force counts, 2025. Ticonderoga cruisers, Freedom-class LCS, the
+    // amphibious transport docks and the whole logistics fleet have no model
+    // yet and are left out rather than stood in for by a different hull.
+    fleet: {
+      'ford-carrier': 1,
+      nimitz: 10,
+      wasp: 10,
+      'arleigh-burke': 74,
+      zumwalt: 3,
+      independence: 15,
+      ohio: 18,
+      virginia: 23,
+      'los-angeles': 24,
+      seawolf: 3,
+    },
+  },
+  {
+    id: 'us-air-force-today',
+    name: 'US Air Force today',
+    description: 'Fighters, bombers and airlifters at squadron strength.',
+    tags: [
+      'air force',
+      'usaf',
+      'fleet',
+      'inventory',
+      'fighters',
+      'bombers',
+      'airlift',
+      'order of battle',
+    ],
+    itemIds: [
+      'person-male',
+      'f16',
+      'f35',
+      'f22',
+      'f15',
+      'b2',
+      'b1',
+      'c130j',
+      'b52',
+      'c17a',
+      'c5',
+    ],
+    // Active USAF inventory, 2025. The A-10, the KC-135 and KC-46 tankers, the
+    // trainer fleet and the ISR aircraft have no model yet; this is the combat
+    // and airlift core, not the whole 5,000-aircraft inventory.
+    fleet: {
+      f16: 842,
+      f35: 450,
+      f22: 178,
+      f15: 340,
+      b52: 76,
+      b1: 45,
+      b2: 19,
+      c130j: 180,
+      c17a: 222,
+      c5: 52,
+    },
   },
   {
     id: 'stargate',

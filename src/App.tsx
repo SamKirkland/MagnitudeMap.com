@@ -97,6 +97,17 @@ export default function App({ initialSelection: seed }: AppProps = {}) {
 
   const shownPresetId = activePresetId ?? presetMatchId
 
+  /**
+   * Fleet lineups declare how many of each type there were. Derived from the
+   * preset rather than held in state, so a shared URL that resolves to a fleet
+   * preset opens as a fleet.
+   */
+  const fleetCounts = useMemo(() => {
+    if (!shownPresetId) return null
+    const preset = COMPARISON_PRESETS.find((entry) => entry.id === shownPresetId)
+    return preset?.fleet ?? null
+  }, [shownPresetId])
+
   const exportTitle = useMemo(() => {
     if (!shownPresetId) return 'Custom comparison'
     return (
@@ -253,6 +264,7 @@ export default function App({ initialSelection: seed }: AppProps = {}) {
       <main className="viewer-pane">
         <Viewer
           activeItemIds={activeItemIds}
+          fleetCounts={fleetCounts}
           units={units}
           onUnitsChange={handleUnitsChange}
           detonationMode={detonationMode}

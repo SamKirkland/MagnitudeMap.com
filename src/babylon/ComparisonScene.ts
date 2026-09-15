@@ -24,6 +24,9 @@ import { HemisphericLight } from '@babylonjs/core/Lights/hemisphericLight'
 import type { Material } from '@babylonjs/core/Materials/material'
 import { Matrix, Quaternion, Vector3 } from '@babylonjs/core/Maths/math.vector'
 import { Mesh } from '@babylonjs/core/Meshes/mesh'
+// Thin instances are how a fleet block draws in one call; the methods live on
+// Mesh only after this side-effect import.
+import '@babylonjs/core/Meshes/thinInstanceMesh'
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder'
 import { MultiMaterial } from '@babylonjs/core/Materials/multiMaterial'
 import type { Node } from '@babylonjs/core/node'
@@ -91,6 +94,7 @@ import {
 } from '../data/moneyPack'
 import { createMoneyTiledPile } from './moneyTiledMesh'
 import { lodLevelsFor } from '../data/modelLods'
+import { fleetFormation, type FleetSlot } from './fleetFormation'
 import {
   apparentPixelHeight,
   buildLodLevels,
@@ -201,6 +205,8 @@ function warmDracoDecoder() {
  * pays for a LOD, and one who stays zoomed out fetches only the far level.
  */
 type LodGroup = {
+  /** Placement instance id, or `ground-city`. Same key this is stored under. */
+  key: string
   levels: LodLevel[]
   roots: (TransformNode[] | null)[]
   active: number
@@ -225,6 +231,16 @@ type PlacedObject = {
   labelTex: DynamicTexture | null
   animationGroups: AnimationGroup[]
   clipPlaying: boolean
+  /**
+   * Fleet lineups only. World-space offsets of this type's other units, drawn
+   * as thin instances of the same meshes. Null when the lineup shows one each.
+   */
+  fleetCopies: FleetSlot[] | null
+  /**
+   * One unit's world AABB, measured before any copies existed. The formation is
+   * sized from this; measuring afterwards would grow the block every rebuild.
+   */
+  unitBounds: { min: Vector3; max: Vector3 } | null
 }
 
 /**
@@ -234,6 +250,17 @@ type PlacedObject = {
  */
 /** Concurrent LOD downloads. Enough to keep the pipe busy, few enough to stay polite. */
 const MAX_LOD_LOADS_IN_FLIGHT = 4
+
+function sameFleetCounts(
+  a: Record<string, number> | null,
+  b: Record<string, number> | null,
+): boolean {
+  if (a === b) return true
+  if (!a || !b) return false
+  const keys = Object.keys(a)
+  if (keys.length !== Object.keys(b).length) return false
+  return keys.every((key) => a[key] === b[key])
+}
 
 const POSTER_SCALE_FIGURE_ID = 'person-male'
 const POSTER_SCALE_REFERENCE_IDS = new Set(['person-male', 'person-female'])
@@ -517,6 +544,9 @@ export class ComparisonScene {
   /** Keyed by placement instance id, plus `ground-city` for the stage itself. */
   private readonly lodGroups = new Map<string, LodGroup>()
   private lodLoadsInFlight = 0
+  /** How many of each type a fleet lineup is showing; null for one of each. */
+  private fleetCounts: Record<string, number> | null = null
+  private readonly scratchMatrix = Matrix.Identity()
   private ground: Mesh
   private skybox: Mesh
   private sun!: DirectionalLight
@@ -862,6 +892,10 @@ export class ComparisonScene {
       this.thawPlacement(placement)
       placement.display.rotation.y = yaw
     }
+    // A quarter turn swaps a hull's length and beam along the lineup, so every
+    // fleet block has to be re-measured and re-shaped from the new footprint.
+    this.resetFleetMeasurements()
+    this.rebuildFleet()
     this.relayoutLineup()
     for (const placement of this.placements.values()) {
       this.thawPlacement(placement)
@@ -1076,6 +1110,9 @@ export class ComparisonScene {
     if (this.disposed || generation !== this.loadGeneration) return
     this.emitLoadProgress(null)
 
+    // Once, at the end: a block is sized from its type's own footprint, and
+    // rebuilding it on every arrival would re-measure the row for nothing.
+    this.rebuildFleet()
     this.settleLineup()
     this.stepIndex = Math.max(0, this.sortedItems.length - 1)
 
@@ -3828,6 +3865,116 @@ export class ComparisonScene {
   }
 
   /**
+   * Show a lineup as a fleet: `counts` gives how many of each type exist, and
+   * every type past the first is drawn as thin instances formed up behind the
+   * one already standing in the lineup. `null` goes back to one of each.
+   */
+  setFleet(counts: Readonly<Record<string, number>> | null | undefined) {
+    const next = counts && Object.keys(counts).length > 0 ? { ...counts } : null
+    if (sameFleetCounts(this.fleetCounts, next)) return
+    this.fleetCounts = next
+    if (this.placements.size === 0) return
+    this.refreshAllPlaques()
+    this.rebuildFleet()
+    this.settleLineup()
+    this.reframeAfterSettingsChange(true)
+  }
+
+  private rebuildFleet() {
+    for (const placement of this.placements.values()) {
+      this.applyFleetToPlacement(placement)
+    }
+  }
+
+  /**
+   * Drop the copies and the cached unit footprint so the next rebuild measures
+   * a single unit again. Has to clear the instances first: with them in place
+   * the mesh bounding info covers the whole block.
+   */
+  private resetFleetMeasurements() {
+    for (const placement of this.placements.values()) {
+      if (placement.fleetCopies) {
+        placement.fleetCopies = null
+        this.applyFleetInstances(placement)
+      }
+      placement.unitBounds = null
+    }
+  }
+
+  /**
+   * Size this type's block from one unit's own footprint and hand the offsets
+   * to the meshes. Runs again whenever the lineup re-measures — a facing change
+   * swaps a hull's length and beam along the lineup axis, and the block has to
+   * follow or neighbouring types start overlapping.
+   */
+  private applyFleetToPlacement(placement: PlacedObject) {
+    const count = this.fleetCounts?.[placement.itemId] ?? 1
+    if (count <= 1) {
+      if (placement.fleetCopies) {
+        placement.fleetCopies = null
+        this.applyFleetInstances(placement)
+      }
+      return
+    }
+
+    this.thawPlacement(placement)
+    if (!placement.unitBounds) {
+      // Measure before the first copy exists: afterwards the mesh bounding info
+      // covers the whole block, and sizing from that would grow it every pass.
+      placement.unitBounds = this.visualBounds(placement.body)
+    }
+    const unit = placement.unitBounds
+    const formation = fleetFormation(
+      count,
+      unit.max.x - unit.min.x,
+      unit.max.z - unit.min.z,
+    )
+    placement.fleetCopies = formation.copies
+    this.applyFleetInstances(placement)
+  }
+
+  /**
+   * Push the formation onto every mesh under the placement, at every detail
+   * level — a level that is currently disabled still needs them, so the swap
+   * itself stays free.
+   *
+   * Thin instance matrices are read in the mesh's own local space, so each
+   * mesh converts the shared world-space offset through its own inverse world
+   * matrix. Slot 0 is identity: that is the unit the lineup placed, the one
+   * carrying the plaque and the click target.
+   */
+  private applyFleetInstances(placement: PlacedObject) {
+    const copies = placement.fleetCopies
+    const offset = new Vector3()
+    const local = new Vector3()
+    for (const mesh of placement.body.getChildMeshes(false)) {
+      if (!(mesh instanceof Mesh) || mesh.getTotalVertices() < 3) continue
+      if (!copies || copies.length === 0) {
+        if (mesh.thinInstanceCount > 0) {
+          mesh.thinInstanceCount = 0
+          mesh.refreshBoundingInfo(true, true)
+        }
+        continue
+      }
+      mesh.computeWorldMatrix(true)
+      const inverse = Matrix.Invert(mesh.getWorldMatrix())
+      const matrices = new Float32Array((copies.length + 1) * 16)
+      Matrix.IdentityToRef(this.scratchMatrix)
+      this.scratchMatrix.copyToArray(matrices, 0)
+      for (let i = 0; i < copies.length; i++) {
+        offset.set(copies[i].x, 0, copies[i].z)
+        Vector3.TransformNormalToRef(offset, inverse, local)
+        Matrix.TranslationToRef(local.x, local.y, local.z, this.scratchMatrix)
+        this.scratchMatrix.copyToArray(matrices, (i + 1) * 16)
+      }
+      mesh.thinInstanceSetBuffer('matrix', matrices, 16, true)
+      // Without this the whole block is culled the moment the lead unit leaves
+      // the frustum, and the lineup's own measurements would miss it too.
+      mesh.thinInstanceRefreshBoundingInfo(true)
+    }
+  }
+
+  /**
    * Register a model's detail levels, if `npm run generate-lods` made any.
    *
    * `parent` must be the node the full-detail import already hangs off, so a
@@ -3859,6 +4006,7 @@ export class ComparisonScene {
     const roots: (TransformNode[] | null)[] = levels.map(() => null)
     roots[0] = baseRoots
     this.lodGroups.set(key, {
+      key,
       levels,
       roots,
       active: 0,
@@ -3967,6 +4115,10 @@ export class ComparisonScene {
       group.prepare(holder)
       group.roots[index] = [holder]
       level.state = 'ready'
+      // A fleet's copies live on the meshes, so a level that was not in the
+      // scene when the formation was built has to be given them now.
+      const placement = this.placements.get(group.key)
+      if (placement?.fleetCopies?.length) this.applyFleetInstances(placement)
       this.markDirty()
     } catch (error) {
       console.warn('Failed to load LOD level', level.path, error)
@@ -4115,6 +4267,8 @@ export class ComparisonScene {
       labelTex,
       animationGroups,
       clipPlaying: false,
+      fleetCopies: null,
+      unitBounds: null,
     }
 
     if (item.shape === 'person') {
@@ -5165,7 +5319,18 @@ export class ComparisonScene {
       .catch(() => undefined)
   }
 
+  /**
+   * Plaque heading. In a fleet lineup the count is the whole point of the
+   * block standing behind it, so it leads: "74 x Arleigh Burke-class destroyer".
+   */
+  private plaqueTitle(item: CatalogItem): string {
+    const count = this.fleetCounts?.[item.id] ?? 1
+    if (count <= 1) return item.name
+    return `${count.toLocaleString()} × ${item.name}`
+  }
+
   private paintPlaqueTexture(tex: DynamicTexture, item: CatalogItem) {
+    const title = this.plaqueTitle(item)
     this.ensureFlagFont(item.name)
     const size = tex.getSize()
     const texW = size.width
@@ -5184,8 +5349,8 @@ export class ComparisonScene {
     if (lines.length === 0) {
       const dims = this.labelDimensions(item)
       ctx.fillStyle = '#f7f4ef'
-      ctx.font = `600 ${fitFontSize(ctx, item.name, m.factsWidth, m.titleSize, '600')}px "Twemoji Country Flags", "IBM Plex Sans", sans-serif`
-      ctx.fillText(item.name, texW / 2, texH * 0.4)
+      ctx.font = `600 ${fitFontSize(ctx, title, m.factsWidth, m.titleSize, '600')}px "Twemoji Country Flags", "IBM Plex Sans", sans-serif`
+      ctx.fillText(title, texW / 2, texH * 0.4)
 
       ctx.fillStyle = '#b8c0c6'
       ctx.font = `${fitFontSize(ctx, dims, m.factsWidth, m.dimsSize)}px "Twemoji Country Flags", "IBM Plex Sans", sans-serif`
@@ -5201,8 +5366,8 @@ export class ComparisonScene {
     // `plaqueAspect`; only the glyphs shrink to fit the plaque width.
     const dims = this.labelDimensions(item)
     ctx.fillStyle = '#f7f4ef'
-    ctx.font = `600 ${fitFontSize(ctx, item.name, m.factsWidth, m.titleSize, '600')}px "Twemoji Country Flags", "IBM Plex Sans", sans-serif`
-    ctx.fillText(item.name, texW / 2, y + m.titleSize / 2)
+    ctx.font = `600 ${fitFontSize(ctx, title, m.factsWidth, m.titleSize, '600')}px "Twemoji Country Flags", "IBM Plex Sans", sans-serif`
+    ctx.fillText(title, texW / 2, y + m.titleSize / 2)
     y += m.titleSize + m.gapTitle
 
     ctx.fillStyle = '#b8c0c6'

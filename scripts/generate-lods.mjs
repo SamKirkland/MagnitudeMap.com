@@ -23,10 +23,13 @@
  *                skeletons per placement (rest pose, T-pose relaxation, the clip
  *                it plays on focus). Swapping one mid-clip needs its own design,
  *                so people and creatures keep a single level for now.
- *   animated     The viewer reads the pose out of the clips (`poseAtClipEnd`:
- *                F-22 gear down) and LOD2's flatten/join would bake whatever
- *                rest pose the exporter left behind — frequently the wrong one.
+ *   playClips    An item the viewer animates on screen. A static level cannot
+ *                stand in for it however small it gets.
  *   tiny         Under MIN_SOURCE_TRIANGLES there is nothing to win.
+ *
+ * Other animated models are baked into the pose the viewer actually draws —
+ * the last clip frame for `poseAtClipEnd`, the rest pose otherwise — and their
+ * clips dropped, before any simplification runs.
  *
  * Output is recorded in `src/data/modelLods.ts` (generated, committed) keyed by
  * the source path, with the source's content hash so a changed `model.glb`
@@ -98,6 +101,8 @@ const MIN_SOURCE_TRIANGLES = 4000
 const MIN_LEVEL_TRIANGLES = 400
 /** A level has to beat the one above it by this much on bytes or triangles to ship. */
 const LEVEL_WORTH_IT = 0.6
+/** ...and this much on triangles alone if its file is the larger of the two. */
+const LEVEL_BIGGER_FILE_NEEDS = 0.25
 
 const args = process.argv.slice(2)
 const force = args.includes('--force')
@@ -387,11 +392,109 @@ function cropHelpers(document) {
   return drop.size
 }
 
+/**
+ * The catalog, keyed by model path, loaded through Vite so this plain Node
+ * script can read the TypeScript source. Same approach as `verify-models.mjs`.
+ * Only paid for when an animated model actually turns up.
+ */
+let catalogPromise = null
+async function getCatalogByModelPath() {
+  if (!catalogPromise) {
+    catalogPromise = (async () => {
+      const { createServer } = await import('vite')
+      const vite = await createServer({
+        server: { middlewareMode: true },
+        appType: 'custom',
+        logLevel: 'error',
+      })
+      try {
+        const { CATALOG_BY_ID } = await vite.ssrLoadModule('/src/data/catalog.ts')
+        const byPath = new Map()
+        for (const item of Object.values(CATALOG_BY_ID)) {
+          if (item.model?.path) byPath.set(item.model.path.replace(/^\//, ''), item)
+        }
+        return byPath
+      } finally {
+        await vite.close()
+      }
+    })()
+  }
+  return catalogPromise
+}
+
+/**
+ * Freeze an animated model into the pose the viewer actually draws.
+ *
+ * The viewer never plays a clip except on `playClips` items: it either holds
+ * the last frame (`poseAtClipEnd` — the F-22's gear and boarding ladder) or
+ * returns to the rest pose and throws the clips away. Baking the same choice
+ * here lets an animated model have LODs at all — the far level flattens and
+ * joins the hierarchy, which would otherwise weld in whatever pose the
+ * exporter happened to leave behind.
+ *
+ * Keep in lockstep with `holdClipEndPose` / `disposeImportedAnimations` in
+ * `ComparisonScene`.
+ */
+function bakeAnimationPose(document, atClipEnd) {
+  if (atClipEnd) {
+    for (const animation of document.getRoot().listAnimations()) {
+      for (const channel of animation.listChannels()) {
+        const node = channel.getTargetNode()
+        const path = channel.getTargetPath()
+        const sampler = channel.getSampler()
+        const output = sampler?.getOutput()
+        if (!node || !output) continue
+        const size = output.getElementSize()
+        const last = output.getCount() - 1
+        if (last < 0) continue
+        // CUBICSPLINE stores in-tangent, value, out-tangent per keyframe; the
+        // value is the middle third.
+        const stride = sampler.getInterpolation() === 'CUBICSPLINE' ? 3 : 1
+        const index = stride === 3 ? last - 1 : last
+        if (index < 0) continue
+        const value = output.getElement(index, new Array(size).fill(0))
+        if (path === 'translation') node.setTranslation(value)
+        else if (path === 'rotation') node.setRotation(value)
+        else if (path === 'scale') node.setScale(value)
+      }
+    }
+  }
+  for (const animation of document.getRoot().listAnimations()) animation.dispose()
+}
+
+/**
+ * Strip primitives that are not triangles.
+ *
+ * Rigging, antennas and deck markings often ship as LINES. They carry no
+ * triangles, so simplification ignores them and Draco refuses to compress them
+ * — on the Nimitz, `join` merged twenty line primitives into two that stored 5
+ * MB of raw float positions, more than the whole rest of the model. At the
+ * distance the far level is for, a one-pixel wire is invisible anyway.
+ */
+function dropNonTriangles(document) {
+  const TRIANGLES = 4
+  let dropped = 0
+  for (const mesh of document.getRoot().listMeshes()) {
+    for (const primitive of mesh.listPrimitives()) {
+      if (primitive.getMode() === TRIANGLES) continue
+      mesh.removePrimitive(primitive)
+      dropped += 1
+    }
+  }
+  return dropped
+}
+
 /** Why this model gets no LODs, or null if it should get them. */
-function skipReason(document, triangles) {
+async function skipReason(document, triangles, sourcePath) {
   if (document.getRoot().listSkins().length > 0) return 'skinned'
-  if (document.getRoot().listAnimations().length > 0) return 'animated'
   if (triangles < MIN_SOURCE_TRIANGLES) return `only ${triangles} tris`
+  if (document.getRoot().listAnimations().length > 0) {
+    const item = (await getCatalogByModelPath()).get(sourcePath)
+    // A `playClips` item is animating on screen, so a static level cannot
+    // stand in for it however small it gets.
+    if (!item) return 'animated, not in the catalog'
+    if (item.playClips) return 'animated (plays clips)'
+  }
   return null
 }
 
@@ -411,8 +514,13 @@ async function buildLevel(sourcePath, outPath, level, sourceTriangles) {
 
   const document = await io.read(sourcePath)
   document.setLogger(quietLogger)
-  // Before anything else: the viewer never draws these, so neither should a
-  // level whose geometry it can no longer reach individually.
+  if (document.getRoot().listAnimations().length > 0) {
+    const item = (await getCatalogByModelPath()).get(publicPath(sourcePath))
+    bakeAnimationPose(document, Boolean(item?.model?.poseAtClipEnd))
+  }
+  // Before the crop, which measures node world matrices, and long before
+  // flatten/join: the viewer never draws helper geometry, so neither should a
+  // level whose parts it can no longer reach individually.
   cropHelpers(document)
 
   const ratio = Math.min(
@@ -424,6 +532,8 @@ async function buildLevel(sourcePath, outPath, level, sourceTriangles) {
       MIN_LEVEL_TRIANGLES / Math.max(sourceTriangles, 1),
     ),
   )
+
+  if (level.collapse) dropNonTriangles(document)
 
   const transforms = [dedup()]
   if (level.collapse) {
@@ -559,7 +669,7 @@ async function main() {
       continue
     }
 
-    const reason = skipReason(document, sourceTriangles)
+    const reason = await skipReason(document, sourceTriangles, key)
     if (reason) {
       skipped += 1
       delete manifest[key]
@@ -585,10 +695,19 @@ async function main() {
       for (const level of LEVELS) {
         const outPath = join(dirname(glb), `model.${level.suffix}.glb`)
         const result = await buildLevel(glb, outPath, level, sourceTriangles)
-        // A level that is not clearly cheaper than the one above it is a second
-        // download for nothing — drop it and let the runtime skip straight to
-        // the next. Small or texture-dominated models routinely land here.
-        if (result.bytes > previous.bytes * LEVEL_WORTH_IT && result.triangles > previous.triangles * LEVEL_WORTH_IT) {
+        // A level has to be clearly cheaper than the one above it, on triangles
+        // or on bytes; otherwise it is a second fetch for nothing. A file that
+        // is *larger* than the level above has to earn it with a big triangle
+        // win — recomputed normals and 32-bit indices can outweigh the texture
+        // saving on a small model, and that is fine when the GPU cost drops
+        // tenfold, but not for the B-21's 24 MB mid level that saved 0.4%.
+        const cheaper =
+          result.bytes <= previous.bytes * LEVEL_WORTH_IT ||
+          result.triangles <= previous.triangles * LEVEL_WORTH_IT
+        const earnsItsBytes =
+          result.bytes < previous.bytes ||
+          result.triangles <= previous.triangles * LEVEL_BIGGER_FILE_NEEDS
+        if (!cheaper || !earnsItsBytes) {
           unlinkSync(outPath)
           dropped.push(level.suffix)
           continue

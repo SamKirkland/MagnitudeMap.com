@@ -446,6 +446,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Christ The Redeemer (CC-BY, Naveen Himal). Low poly; includes the pedestal. Scaled to 38 m total height in-app."
   },
   {
+    "id": "cleveland",
+    "catalogName": "Cleveland-class light cruiser",
+    "author": "KTKloss",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/uss-cleveland-model-fpr-14000-printing-da03808e0aa74ca89a237ce4da2ac29e",
+    "sourceAsset": "USS Cleveland - Model fpr 1/4000 printing",
+    "attribution": "USS Cleveland - Model fpr 1/4000 printing by KTKloss on Sketchfab (CC BY) — https://sketchfab.com/3d-models/uss-cleveland-model-fpr-14000-printing-da03808e0aa74ca89a237ce4da2ac29e",
+    "requiresAttribution": true,
+    "notes": "Original work — the uploader states \"This model was made by me with the help of the original recognition manual from the US Navy\" and prints the series himself at 1/4000; no third-party source claimed. Part of a coherent 1/4000 wargaming series. Scaled to 185.9 m length in-app. Waterline hull, no below-water section."
+  },
+  {
     "id": "colosseum",
     "catalogName": "Colosseum",
     "author": "Carlos.Maciel",
@@ -600,6 +612,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "Electron - Rocket Lab by Stanley Creative on Sketchfab (CC BY) — https://sketchfab.com/3d-models/electron-rocket-lab-0376dfab27574a909cb8714841379894",
     "requiresAttribution": true,
     "notes": "Rocket Lab Electron (CC-BY, ~53k tris). Scaled to 18 m height in-app."
+  },
+  {
+    "id": "essex-cv",
+    "catalogName": "Essex-class fleet carrier",
+    "author": "KTKloss",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/uss-enterprise-model-for-small-scale-printing-bf79e093d4c94b0eb02097c178dd6e98",
+    "sourceAsset": "USS Enterprise - Model for small scale printing",
+    "attribution": "USS Enterprise - Model for small scale printing by KTKloss on Sketchfab (CC BY) — https://sketchfab.com/3d-models/uss-enterprise-model-for-small-scale-printing-bf79e093d4c94b0eb02097c178dd6e98",
+    "requiresAttribution": true,
+    "notes": "Original work — the uploader states \"This model was made by me with the help of the original recognition manual from the US Navy\" and prints the series himself at 1/4000; no third-party source claimed. Part of a coherent 1/4000 wargaming series. SUBSTITUTION: this is USS Enterprise (CV-6), a Yorktown-class hull, standing in for the Essex class, which the catalog entry is named and sized for. No Essex-class model was available under a redistributable licence — the only two found were a Free3D re-upload and an account whose ships are tagged for a submarine game. The Essex was a developed Yorktown and the two are close in plan; the flight deck here is Enterprise's narrower one. Scaled to 265.8 m length in-app."
   },
   {
     "id": "stadium",
@@ -758,6 +782,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Red fire truck with ladder (CC-BY, Chenzoss). Linked Rescue3D model is Store-only. Scaled to 12 m length in-app."
   },
   {
+    "id": "fletcher",
+    "catalogName": "Fletcher-class destroyer",
+    "author": "KTKloss",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/uss-fletcher-model-for-14000-82aa255d14284bcfba6333a88f9e7321",
+    "sourceAsset": "USS Fletcher - Model for 1/4000",
+    "attribution": "USS Fletcher - Model for 1/4000 by KTKloss on Sketchfab (CC BY) — https://sketchfab.com/3d-models/uss-fletcher-model-for-14000-82aa255d14284bcfba6333a88f9e7321",
+    "requiresAttribution": true,
+    "notes": "Original work — the uploader states \"This model was made by me with the help of the original recognition manual from the US Navy\" and prints the series himself at 1/4000; no third-party source claimed. Part of a coherent 1/4000 wargaming series. Scaled to 114.8 m length in-app. Waterline hull, no below-water section."
+  },
+  {
     "id": "wright-flyer",
     "catalogName": "Flyer",
     "author": "manilov.ap",
@@ -780,6 +816,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "USS Enterprise CVN-80 Aircraft Carrier by Muhamad Mirza Arrafi on Sketchfab (CC BY) — https://sketchfab.com/3d-models/uss-enterprise-cvn-80-aircraft-carrier-b9c4d0ca6c0c4fe684a8cae0f589a901",
     "requiresAttribution": true,
     "notes": "USS Enterprise CVN-80 (Ford-class) by nazidefenseforceofficial (CC-BY). Scaled to 337 m length in-app."
+  },
+  {
+    "id": "gato",
+    "catalogName": "Gato-class submarine",
+    "author": "AcesWild1965",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/gato-sub-241b70d1a6fb4836b29ed8f4246c180b",
+    "sourceAsset": "Gato Sub",
+    "attribution": "Gato Sub by AcesWild1965 on Sketchfab (CC BY) — https://sketchfab.com/3d-models/gato-sub-241b70d1a6fb4836b29ed8f4246c180b",
+    "requiresAttribution": true,
+    "notes": "Uploader claims authorship — \"I did this because people sell them for way too much, so here this ones free!\" — with no third-party source, game or engine named. WEAKER THAN USUAL: the account has this one model, so there is no portfolio to corroborate it. Flagged here for review. Scaled to 95 m length in-app."
   },
   {
     "id": "jdam",
@@ -912,6 +960,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "USS INDEPENDENCE  LCS-2 by Muhamad Mirza Arrafi on Sketchfab (CC BY) — https://sketchfab.com/3d-models/uss-independence-lcs-2-7db04398d9524a36a6e08bead0050b76",
     "requiresAttribution": true,
     "notes": "USS Independence LCS-2 by nazidefenseforceofficial (CC-BY). Scaled to 127.4 m length in-app."
+  },
+  {
+    "id": "independence-cvl",
+    "catalogName": "Independence-class light carrier",
+    "author": "KTKloss",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/uss-independence-model-for-14000-printing-ec30b6bdd81e4a3292685933b9f4ea13",
+    "sourceAsset": "USS Independence - Model for 1/4000 printing",
+    "attribution": "USS Independence - Model for 1/4000 printing by KTKloss on Sketchfab (CC BY) — https://sketchfab.com/3d-models/uss-independence-model-for-14000-printing-ec30b6bdd81e4a3292685933b9f4ea13",
+    "requiresAttribution": true,
+    "notes": "Original work — the uploader states \"This model was made by me with the help of the original recognition manual from the US Navy\" and prints the series himself at 1/4000; no third-party source claimed. Part of a coherent 1/4000 wargaming series. Scaled to 189.7 m length in-app. Waterline hull, no below-water section."
   },
   {
     "id": "intrepid-type",
@@ -1070,6 +1130,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Call of Duty MWII 'MH-35 Pave Low' rip by thientrung2004pr (CC-BY) - the game's stand-in for the real Sikorsky MH-53 Pave Low. Listed under the real MH-53J. scaleAxis is width (the 24.08 m rotor diameter): the mesh has its blades spread rather than fore-and-aft, so its bounding length is not the 30.18 m rotors-turning figure, and scaling on length oversized the aircraft by 47 percent. Scaled on the rotor the height lands at 7.55 m against the real 7.60 m, but the game fuselage is short - about 20.5 m nose to tail against the real 26.9 m - so the silhouette reads stubbier than an MH-53J."
   },
   {
+    "id": "stealth-hawk",
+    "catalogName": "MH-X Stealth Black Hawk",
+    "author": "mandun",
+    "license": "3D Warehouse General Model License",
+    "licenseLabel": "3D Warehouse GML",
+    "source": "https://3dwarehouse.sketchup.com/model/c3a0af8cded5316798d6c669641fb47e/MH-60-Stealth-Black-Hawk",
+    "sourceAsset": "MH-60 Stealth Black Hawk",
+    "attribution": "MH-60 Stealth Black Hawk by mandun on 3D Warehouse (General Model License) — https://3dwarehouse.sketchup.com/model/c3a0af8cded5316798d6c669641fb47e/MH-60-Stealth-Black-Hawk",
+    "requiresAttribution": true,
+    "notes": "NOT a Creative Commons asset. Sourced from Trimble 3D Warehouse under the General Model License (https://3dwarehouse.sketchup.com/tos/), which grants download, modification, derivative works, display and commercial distribution, but restricts distributing an individual model 'on a standalone basis' and aggregating 3D Warehouse content for redistribution. The entity reports isDownloadRestricted false and the GLB was pulled from the public binaries endpoint. Shipped as a deliberate, owner-approved exception to the CC-only rule in AGENTS.md, on the reading that the viewer renders the model inside a substantial combined work rather than offering it for download; note that model.glb is still served verbatim at a stable URL and committed to a public repo. No stealth Black Hawk exists under CC anywhere — the only Sketchfab MH-X is a Call of Duty rip tagged CC-BY by an uploader with no rights in it. The mesh is authored roughly 2.4x oversize (raw bounds 37.7 x 12.3 x 48.5 m) and is normalised by scaleAxis width against the 16.36 m UH-60 rotor diameter. Authored tail-forward, so yawDegrees 180. Dimensions are the UH-60's; the real aircraft's are unpublished."
+  },
+  {
     "id": "mig23",
     "catalogName": "MiG-23MLD",
     "author": "Tim Samedov",
@@ -1107,15 +1179,15 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
   },
   {
     "id": "mi-24",
-    "catalogName": "Mil Mi-24P Hind",
-    "author": "42manako",
+    "catalogName": "Mil Mi-24 Hind",
+    "author": "Duane's Mind",
     "license": "CC-BY-4.0",
     "licenseLabel": "CC BY",
-    "source": "https://sketchfab.com/3d-models/ukrainian-mil-mi-24p-2d8a8f13daae4757be0ff95195a6d6f3",
-    "sourceAsset": "Ukrainian Mil Mi-24P",
-    "attribution": "Ukrainian Mil Mi-24P by 42manako on Sketchfab (CC BY) — https://sketchfab.com/3d-models/ukrainian-mil-mi-24p-2d8a8f13daae4757be0ff95195a6d6f3",
+    "source": "https://sketchfab.com/3d-models/mi-24-hind-004d68143e1a4df88e136dbc0a05f181",
+    "sourceAsset": "Mi-24 Hind",
+    "attribution": "Mi-24 Hind by Duane's Mind on Sketchfab (CC BY) — https://sketchfab.com/3d-models/mi-24-hind-004d68143e1a4df88e136dbc0a05f181",
     "requiresAttribution": true,
-    "notes": "Requested model. Blades are modelled spread, so the app scales on width (17.3 m rotor diameter) per the helicopter rule; rendered length/height run ~10% over the catalog figures because of the spread blades."
+    "notes": "Original work — described by the uploader as 'Modelled in Maya and Textured in Zbrush', no third-party source claimed. Replaces an earlier Mi-24P from 42manako that was tagged CC-BY but described as 'Ripped from the Battlefield 2 mod Point of Existence'; the uploader held no rights in that geometry, so the CC grant was void. Low poly (4.2k tris). Shipped with the 'Wheels and Rotor' animation stripped and the gear-down pose (t=3.25 s) baked into node TRS — the file's own rest pose is gear-up. Authored tail-forward, so yawDegrees 180. Scaled on the 17.3 m rotor diameter (scaleAxis width); catalog length is the 21.35 m rotors-turning figure and will not match the mesh exactly."
   },
   {
     "id": "mi26",
@@ -1416,6 +1488,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "Low Poly - NASA Artemis II SLS Rocket by OFFhead on Sketchfab (CC BY) — https://sketchfab.com/3d-models/low-poly-nasa-artemis-ii-sls-rocket-8f75f222418945058398a77d33625c27",
     "requiresAttribution": true,
     "notes": "Artemis II SLS low-poly (CC-BY, ~12k tris). Scaled to 98 m height in-app."
+  },
+  {
+    "id": "south-dakota",
+    "catalogName": "South Dakota-class battleship",
+    "author": "KTKloss",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/uss-south-dakota-model-for-14000-printing-662dccefc8414a4eabdd26555f159ad0",
+    "sourceAsset": "USS South Dakota - Model for 1/4000 printing",
+    "attribution": "USS South Dakota - Model for 1/4000 printing by KTKloss on Sketchfab (CC BY) — https://sketchfab.com/3d-models/uss-south-dakota-model-for-14000-printing-662dccefc8414a4eabdd26555f159ad0",
+    "requiresAttribution": true,
+    "notes": "Original work — the uploader states \"This model was made by me with the help of the original recognition manual from the US Navy\" and prints the series himself at 1/4000; no third-party source claimed. Part of a coherent 1/4000 wargaming series. Scaled to 210 m length in-app. Waterline hull, no below-water section."
   },
   {
     "id": "sovereign",

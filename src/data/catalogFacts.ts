@@ -117,8 +117,10 @@ export const CATALOG_FACTS: Record<string, string> = {
     'USA, 1996–2004. Only two prototypes flew before the programme was cancelled after roughly $7 billion had been spent. Built as a stealth scout, it carried its missiles in internal bays behind doors, and its faceted composite skin is credited with a radar cross-section several hundred times smaller than the Apache’s. The shrouded fantail rotor also cut its noise.',
   'apache':
     'USA, 1986–present. Over 2,700 built. An AH-64E costs about $52 million and carries a 30 mm chain gun plus up to 16 Hellfire missiles. Its mast-mounted radar tracks 128 targets and lets it pop up to fire from behind cover.',
+  'stealth-hawk':
+    'USA, flown publicly once, on 1 May 2011. Two modified UH-60s carried SEAL Team Six into Osama bin Laden’s compound at Abbottabad; one struck the wall in a hard landing and was destroyed on the ground, leaving a tail section whose faceted covers and shrouded rotor gave the world its only real look at the aircraft. The programme has never been acknowledged, so no dimensions have ever been published — the figures here are those of the UH-60 airframe it was built on.',
   'mi-24':
-    'Soviet Union, 1972–present. Over 2,600 built. The Hind is the rare gunship that also carries eight troops in a cabin behind the cockpit, which is why crews call it the flying tank. The Mi-24P swaps the nose turret for a fixed 30 mm twin cannon on the fuselage side, and the type cruises at 270 km/h.',
+    'Soviet Union, 1972–present. Over 2,600 built. The Hind is the rare gunship that also carries eight troops in a cabin behind the cockpit, which is why crews call it the flying tank. Early Hinds carry a nose turret; the later Mi-24P swaps it for a fixed 30 mm twin cannon on the fuselage side. The type cruises at 270 km/h.',
   'godzilla':
     'Japan, 1954–present, and the longest-running film franchise in the world. The original suit-actor Godzilla stood 50 m; Legendary’s MonsterVerse version reached 119.8 m by 2021, tall enough to look over most city skylines. The 2023 film Godzilla Minus One won the visual-effects Oscar on a budget under $15 million.',
   'warthog':
@@ -225,6 +227,18 @@ export const CATALOG_FACTS: Record<string, string> = {
     'Soviet Union, two built 1967–1969. Helicopter carriers designed to hunt NATO ballistic-missile submarines in the Mediterranean with 14 Ka-25 helicopters. Poor seakeeping cut the class short.',
   'wasp':
     'USA, 1989–2009. Eight built at roughly $750 million each. 40,500 t — larger than most nations’ aircraft carriers — carrying about 31 aircraft plus 1,894 Marines, with a flooded well deck for landing craft.',
+  'gato':
+    'USA, 77 built 1941–1944, with 195 more of the near-identical Balao and Tench classes. 1,525 t submerged, ten 533 mm torpedo tubes, 21 knots on the surface and 9 submerged. US submarines were under 2 per cent of the Navy but sank over half of all Japanese merchant tonnage; 52 boats and 3,500 men were lost doing it.',
+  'fletcher':
+    'USA, 175 built 1942–1944 — more than any other destroyer class anywhere. 2,500 t, five 127 mm guns, ten torpedo tubes and 36 knots. Nineteen were lost in the war; the survivors served into the 1970s and four are museum ships today.',
+  'cleveland':
+    'USA, 27 completed 1942–1946 out of 52 ordered, with nine more finished as light carriers. 14,100 t, twelve 152 mm guns in four triple turrets and a rate of fire around ten rounds a minute each. Not one was lost.',
+  'independence-cvl':
+    'USA, nine converted 1943 from Cleveland-class cruiser hulls already on the slipway, because fleet carriers were taking three years to build and the Pacific could not wait. 11,000 t and about 30 aircraft — a third of an Essex — but they were at sea a year sooner.',
+  'south-dakota':
+    'USA, four built 1942. 44,500 t on a hull 20 m shorter than an Iowa, which bought thicker armour at the cost of speed. Nine 406 mm guns, and the first US battleships designed around the treaty limit of 35,000 t before it lapsed.',
+  'essex-cv':
+    'USA, 24 built, 17 in commission by August 1945 — the class that fought the Pacific. 36,400 t, about 90 aircraft, and 33 knots. Several were hit badly enough to lose their flight decks and none was lost. The model shown is USS Enterprise, a Yorktown-class hull standing in — no Essex-class model was available under a licence this site can ship — so the flight deck here is 36 m across rather than the Essex’s 45 m.',
   'iowa':
     'USA, four built 1943–1944. About $100 million each at the time, roughly $1.8 billion today. 57,500 t, nine 16-inch guns firing 1,225 kg shells 38 km, and 33 knots — the fastest battleships ever built. All four served again in the 1980s with Tomahawks bolted on.',
   'yamato':

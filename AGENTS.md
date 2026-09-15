@@ -175,16 +175,49 @@ distance (`src/babylon/modelLod.ts`). `window.__mmLodPin = 0 | 1 | 2` pins every
 model to one level for eyeballing a threshold; `null` restores automatic. Level
 counts show up in `window.__mmPerf.lodLevels`, finest first.
 
-**Skinned and animated GLBs get no LODs.** A skinned level would arrive with its
-own skeleton, and the viewer poses skeletons per placement (rest pose, T-pose
-relaxation, the clip it plays on focus); an animated one would have LOD2's
-flatten/join bake whatever rest pose the exporter left, which is routinely the
-wrong one (`poseAtClipEnd` exists because of this). Both are the obvious next
-step if people models start dominating a scene. Models under ~4k triangles are
-skipped too — there is nothing to win.
+**Skinned GLBs get no LODs.** A level would arrive with its own skeleton, and
+the viewer poses skeletons per placement (rest pose, T-pose relaxation, the clip
+it plays on focus), so swapping one mid-clip needs its own design. Twenty-two of
+the twenty-four skinned models are `playClips` or `person` and animate on screen
+anyway; the four static ones (at-te, pelican, yf23, yoda) are the only ones a
+skin bake would win, which is why there is no skin bake.
+
+Animated models *are* covered: the generator loads the catalog through Vite and
+bakes the pose the viewer draws — the last clip frame for `poseAtClipEnd` (the
+F-22's gear and boarding ladder), the rest pose otherwise — then drops the
+clips before simplifying. Keep `bakeAnimationPose` in lockstep with
+`holdClipEndPose` / `disposeImportedAnimations` in `ComparisonScene`.
+
+Models under ~4k triangles are skipped — there is nothing to win. So is any
+level that fails to beat the one above it by 40% on triangles or bytes, or that
+would be a larger download (Draco occasionally refuses a primitive and the
+"simplified" file comes out bigger than the source).
 
 The generator re-implements the viewer's helper crop (`cropHelpers` in
 `scripts/generate-lods.mjs`). It has to: LOD2 joins everything into one
 primitive, so a sim "teleport to y=-8192" dummy that is still present at that
 point is welded into the silhouette permanently. Keep it in lockstep with
 `cropMeshBoxes` in `src/modelVerify.ts` and `ComparisonScene.cropImportedModel`.
+
+## Fleet lineups
+
+A preset can carry a `fleet` map — how many of each type existed — and the
+lineup then shows the whole order of battle: one of each type stands in the
+usual sorted row with its plaque, and the rest of its class forms up behind it
+as thin instances of the same meshes. `US Navy today` and `US Air Force today`
+are the two built this way.
+
+Because the copies are thin instances, a block of 842 F-16s costs one draw call
+per mesh, and the far LOD level keeps the triangles down (the USAF lineup is
+about 5.6M triangles with every type at LOD2, against 40M at full detail). The
+two features only work together: without LODs a fleet lineup is unusable, and
+without fleets the far level rarely earns its download.
+
+Counts belong on the preset, not the catalog: `src/babylon/fleetFormation.ts`
+sizes each block from one unit's measured footprint so a long hull lands in few
+columns and a stubby one in many. The plaque title picks the count up
+automatically ("74 x Arleigh Burke-class destroyer").
+
+When a type has no model of its own, leave it out and say so in a comment on the
+preset rather than standing a different hull in for it — a lineup that claims to
+be an order of battle has to be honest about what is missing.

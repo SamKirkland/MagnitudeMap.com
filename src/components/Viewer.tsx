@@ -51,6 +51,8 @@ const DEBUG_WINDOW_MS = 3000
 
 type ViewerProps = {
   activeItemIds: string[]
+  /** Fleet lineup counts by item id; null shows one of each, as usual. */
+  fleetCounts?: Readonly<Record<string, number>> | null
   units: UnitSystem
   onUnitsChange: (units: UnitSystem) => void
   detonationMode: DetonationMode
@@ -78,6 +80,7 @@ type ViewerProps = {
 
 export function Viewer({
   activeItemIds,
+  fleetCounts = null,
   units,
   onUnitsChange,
   detonationMode,
@@ -112,6 +115,7 @@ export function Viewer({
   const groundPlateIdRef = useRef(groundPlateId)
   const shadowsEnabledRef = useRef(shadowsEnabled)
   const activeItemIdsRef = useRef(activeItemIds)
+  const fleetCountsRef = useRef(fleetCounts)
   const brandClicksRef = useRef<number[]>([])
   const [posterPreviewActive, setPosterPreviewActive] = useState(false)
   const [loadProgress, setLoadProgress] = useState<SceneLoadProgress | null>(null)
@@ -128,6 +132,7 @@ export function Viewer({
   groundPlateIdRef.current = groundPlateId
   shadowsEnabledRef.current = shadowsEnabled
   activeItemIdsRef.current = activeItemIds
+  fleetCountsRef.current = fleetCounts
 
   function handleBrandClick() {
     const now = Date.now()
@@ -168,6 +173,7 @@ export function Viewer({
       unsubscribeLoad = scene.subscribeLoadProgress(setLoadProgress)
       // Prop-driven effects below already ran against a null scene; replay the
       // one that carries state the constructor does not take.
+      scene.setFleet(fleetCountsRef.current)
       void scene.setActiveItems(activeItemIdsRef.current, {
         camera: cameraModeRef.current,
       })
@@ -195,10 +201,13 @@ export function Viewer({
   }, [tourToggleRef, debugToggleRef])
 
   useEffect(() => {
+    // Counts first: setActiveItems forms the blocks up at the end of its load,
+    // so setting them afterwards would only make it do the work twice.
+    sceneRef.current?.setFleet(fleetCounts)
     void sceneRef.current?.setActiveItems(activeItemIds, {
       camera: cameraModeRef.current,
     })
-  }, [activeItemIds])
+  }, [activeItemIds, fleetCounts])
 
   useEffect(() => {
     sceneRef.current?.setUnits(units)
