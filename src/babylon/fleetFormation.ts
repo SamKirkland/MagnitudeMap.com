@@ -12,11 +12,20 @@
  * far LOD level (`modelLod.ts`), a stage can carry a few thousand hulls.
  *
  * Offsets are world-space metres relative to the type's own position: +X along
- * the lineup, −Z away from the camera, so the block grows backwards and the
- * front rank stays level with the rest of the row.
+ * the lineup, +Z away from the camera (which orbits from −Z), so the block
+ * grows backwards and the front rank stays level with the rest of the row.
  */
 
 export type FleetSlot = { x: number; z: number }
+
+/**
+ * World-axis extent of a whole formation relative to the unit standing in the
+ * lineup. Every consumer that has to know how much room a block takes reads
+ * this rather than the meshes: thin-instance bounds only cover the copies
+ * currently being drawn, which is a small prefix of the block until the coarse
+ * detail levels land.
+ */
+export type FleetSpan = { minX: number; maxX: number; minZ: number; maxZ: number }
 
 export type FleetFormation = {
   /** Every copy except the one already standing in the lineup. */
@@ -26,6 +35,7 @@ export type FleetFormation = {
   depth: number
   cols: number
   rows: number
+  span: FleetSpan
 }
 
 /**
@@ -41,7 +51,14 @@ const GAP_FRACTION = 0.35
  */
 export const MAX_FLEET_COPIES = 4000
 
-const EMPTY: FleetFormation = { copies: [], width: 0, depth: 0, cols: 0, rows: 0 }
+const EMPTY: FleetFormation = {
+  copies: [],
+  width: 0,
+  depth: 0,
+  cols: 0,
+  rows: 0,
+  span: { minX: 0, maxX: 0, minZ: 0, maxZ: 0 },
+}
 
 /**
  * @param count  Total units of this type, including the one in the lineup.
@@ -67,7 +84,7 @@ export function fleetFormation(count: number, unitX: number, unitZ: number): Fle
     // Centre each rank on the lineup position, including a short last rank.
     const offset = ((inRow - 1) * cellX) / 2
     for (let col = 0; col < inRow; col++) {
-      slots.push({ x: col * cellX - offset, z: -row * cellZ })
+      slots.push({ x: col * cellX - offset, z: row * cellZ })
     }
   }
 
@@ -92,11 +109,21 @@ export function fleetFormation(count: number, unitX: number, unitZ: number): Fle
     // full — leaves a compact cluster rather than one very long front rank.
     .sort((a, b) => Math.hypot(a.x, a.z) - Math.hypot(b.x, b.z))
 
+  // The unit in the lineup sits at (0, 0) of this span by construction.
+  const span: FleetSpan = { minX: 0, maxX: 0, minZ: 0, maxZ: 0 }
+  for (const copy of copies) {
+    span.minX = Math.min(span.minX, copy.x)
+    span.maxX = Math.max(span.maxX, copy.x)
+    span.minZ = Math.min(span.minZ, copy.z)
+    span.maxZ = Math.max(span.maxZ, copy.z)
+  }
+
   return {
     copies,
     width: cols * cellX,
     depth: rows * cellZ,
     cols,
     rows,
+    span,
   }
 }

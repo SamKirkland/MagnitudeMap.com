@@ -145,6 +145,56 @@ const MIN_LEVEL_TRIANGLES = 400
 const MAX_SKIN_REST_DEVIATION = 0.01
 /** Split ratio above which position welding is worth its damage. See `positionSplitRatio`. */
 const POSITION_WELD_SPLIT_RATIO = 1.45
+/**
+ * How far a level may reach outside the model, as a fraction of the model's
+ * largest dimension: `maxGrowth` before it is rebuilt through a safer recipe,
+ * `maxDrift` before it is not shipped at all. Per level, because a level is
+ * only ever seen at one size.
+ *
+ * This is the dial on a trade. `join` displaces some geometry on most of these
+ * hierarchies — 7% on the C-47, 12-19% on the Hellcat and the B-17 — and the
+ * recipe that avoids it also gives up the merge the simplifier needs, so the
+ * level lands several times heavier or cannot beat the level above it and is
+ * dropped. What matters is whether the displacement is legible: on lod1 and
+ * lod2, which are drawn from 320 px down to 34, a part a tenth of the model out
+ * of place is a wheel hanging in the air; on the swarm level, drawn below 34 px
+ * and mostly a thousand strong in a fleet, the same fraction is two pixels.
+ *
+ * Only growth counts. A simplifier can only pull a silhouette inwards — the
+ * swarm level of a thin-winged aeroplane legitimately loses 40% of its span at
+ * 400 triangles — so shrinkage is never evidence of a bug, while anything
+ * *outside* the model is geometry the pipeline put there.
+ */
+/**
+ * Bump when a change here would produce different output from the same source.
+ *
+ * The source hash tells us when a *model* changed; nothing told us when the
+ * *pipeline* changed, so every fix in this file — a dropped skin's transform, a
+ * collapse that repainted the model, a level that came out with parts in open
+ * air — sat unapplied in ninety-odd committed GLBs until someone remembered
+ * `--force`. A level built by an older pipeline is now stale by definition.
+ *
+ * 1: skinned node transforms cleared on drop, material colours baked to
+ *    vertices before the collapse, silhouette and scale guards.
+ * 2: swarm-level silhouette tolerance loosened; see LEVEL_GROWTH_LIMITS.
+ */
+const PIPELINE_VERSION = 2
+
+const LEVEL_GROWTH_LIMITS = {
+  lod1: { maxGrowth: 0.08, maxDrift: 0.2 },
+  lod2: { maxGrowth: 0.1, maxDrift: 0.25 },
+  // The swarm level is drawn below 34 px and, in a fleet, several thousand
+  // strong: what it costs matters more here than anywhere else, and what it
+  // looks like matters less. Tightening this to 0.2 cost the Thunderbolt and
+  // the Skytrain their swarm levels outright — the recipe that avoids the merge
+  // cannot beat the level above it, so it is dropped and 5,000 aircraft draw at
+  // lod2 instead, 16M triangles for one block. At 0.35 they keep a 400-triangle
+  // level and the displacement is a few pixels on a shape that is 30 across.
+  // lod1 and lod2 stay strict: those are the levels you see close up, and that
+  // is where a wheel hanging in the air is a wheel hanging in the air.
+  lod3: { maxGrowth: 0.35, maxDrift: 0.6 },
+}
+const DEFAULT_GROWTH_LIMITS = { maxGrowth: 0.1, maxDrift: 0.25 }
 /** A level has to beat the one above it by this much on bytes or triangles to ship. */
 const LEVEL_WORTH_IT = 0.6
 /** ...and this much on triangles alone if its file is the larger of the two. */
@@ -556,6 +606,83 @@ function dropNonTriangles(document) {
   return dropped
 }
 
+/** sRGB channel (0-1) to linear, the transfer glTF uses for base colour. */
+function srgbToLinear(value) {
+  const c = Math.min(Math.max(value, 0), 1)
+  return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+}
+
+/** Mean colour of a texture, in linear space, or null if it cannot be read. */
+async function averageTextureColor(texture, sharp) {
+  const image = texture?.getImage()
+  if (!image) return null
+  try {
+    const stats = await sharp(Buffer.from(image)).stats()
+    const [r, g, b] = stats.channels
+    if (!r || !g || !b) return null
+    return [r, g, b].map((channel) => srgbToLinear(channel.mean / 255))
+  } catch {
+    // An exotic encoding is not worth failing a level over; skip the texture.
+    return null
+  }
+}
+
+/**
+ * Fold each primitive's material colour into its vertex colours.
+ *
+ * Only useful ahead of `collapseMaterials`, and necessary because of it: once
+ * every primitive is on one material, the model is painted in whichever colour
+ * happened to cover the most triangles — the Hellcat's whole airframe went the
+ * colour of its canopy glass. Vertex colours survive the collapse, the join and
+ * the simplifier, cost one float4 a vertex on a 400-triangle mesh, and need no
+ * extra draw call, so the swarm level can keep its markings while still being
+ * one primitive on one material.
+ *
+ * A textured material contributes the texture's average colour: at this level
+ * the texture itself is thrown away, and its average is what the eye reads off
+ * a shape 30 px tall anyway.
+ */
+async function bakeMaterialColorsToVertices(document, sharp) {
+  const buffer = document.getRoot().listBuffers()[0]
+  if (!buffer) return 0
+  const cache = new Map()
+  let baked = 0
+
+  for (const mesh of document.getRoot().listMeshes()) {
+    for (const primitive of mesh.listPrimitives()) {
+      const material = primitive.getMaterial()
+      const position = primitive.getAttribute('POSITION')
+      if (!material || !position) continue
+
+      let colour = cache.get(material)
+      if (!colour) {
+        const factor = material.getBaseColorFactor() ?? [1, 1, 1, 1]
+        const mean = await averageTextureColor(material.getBaseColorTexture(), sharp)
+        colour = [0, 1, 2].map((i) => factor[i] * (mean ? mean[i] : 1))
+        cache.set(material, colour)
+      }
+
+      const count = position.getCount()
+      const existing = primitive.getAttribute('COLOR_0')
+      const existingSlots = existing?.getType() === 'VEC3' ? 3 : 4
+      const slot = new Array(existingSlots).fill(1)
+      const array = new Float32Array(count * 4)
+      for (let v = 0; v < count; v++) {
+        if (existing) existing.getElement(v, slot)
+        for (let c = 0; c < 3; c++) array[v * 4 + c] = colour[c] * (existing ? slot[c] : 1)
+        // Alpha stays on the material: the viewer draws these levels opaque.
+        array[v * 4 + 3] = 1
+      }
+      primitive.setAttribute(
+        'COLOR_0',
+        document.createAccessor().setArray(array).setType('VEC4').setBuffer(buffer),
+      )
+      baked += 1
+    }
+  }
+  return baked
+}
+
 /**
  * Put every primitive on one material, so `join` can merge the whole model into
  * a single primitive.
@@ -567,8 +694,9 @@ function dropNonTriangles(document) {
  * frame for aeroplanes 30 px tall. Collapsing to one material drops the floor to
  * one primitive's worth.
  *
- * The survivor is whichever material covers the most triangles — on an aircraft
- * that is the airframe paint, which is what the silhouette should be coloured.
+ * The survivor is whichever material covers the most triangles, stripped of its
+ * own colour: what each part is painted has already been folded into its vertex
+ * colours, which cost nothing extra to draw and survive everything downstream.
  * Only the swarm level does this; the far level still keeps its materials.
  */
 function collapseMaterials(document) {
@@ -595,6 +723,13 @@ function collapseMaterials(document) {
   for (const mesh of document.getRoot().listMeshes()) {
     for (const primitive of mesh.listPrimitives()) primitive.setMaterial(winner)
   }
+  // The vertices carry the colour now (see `bakeMaterialColorsToVertices`), so
+  // the surviving material has to stop carrying its own or every primitive
+  // would be tinted by it — and its texture would be painted over the whole
+  // model, which is how the collapse used to repaint half an aeroplane.
+  winner.setBaseColorTexture(null)
+  const alpha = winner.getBaseColorFactor()?.[3] ?? 1
+  winner.setBaseColorFactor([1, 1, 1, alpha])
   return share.size - 1
 }
 
@@ -702,9 +837,40 @@ function dropSkin(document) {
       }
     }
     node.setSkin(null)
+    // glTF ignores a skinned mesh node's transform — the joint matrices carry
+    // the whole pose — so the moment the mesh stops being skinned that
+    // transform starts applying, and the level renders at a scale and
+    // orientation LOD0 never had. The ankylosaurus node carries a 2x scale and
+    // the carnotaurus node a quarter turn, which is exactly how they looked:
+    // one doubling in size and the other spinning as the camera crossed the
+    // switch distance.
+    clearNodeWorldTransform(document, node)
   }
   for (const skin of document.getRoot().listSkins()) skin.dispose()
   for (const animation of document.getRoot().listAnimations()) animation.dispose()
+}
+
+/**
+ * Give a node the identity world matrix: its own transform cleared, and the
+ * node lifted out from under any parent still carrying one.
+ */
+function clearNodeWorldTransform(document, node) {
+  node.setTranslation([0, 0, 0])
+  node.setRotation([0, 0, 0, 1])
+  node.setScale([1, 1, 1])
+  let top = node
+  let parent = top.getParentNode()
+  if (!parent) return
+  while (parent) {
+    top = parent
+    parent = top.getParentNode()
+  }
+  for (const scene of document.getRoot().listScenes()) {
+    if (scene.listChildren().includes(top)) {
+      scene.addChild(node)
+      return
+    }
+  }
 }
 
 /**
@@ -777,7 +943,7 @@ function levelsFor(document) {
   return LEVELS.filter((level) => level.allowSkinned)
 }
 
-async function buildLevel(sourcePath, outPath, level, sourceTriangles) {
+async function buildLevelDocument(sourcePath, level, sourceTriangles) {
   const { io, functions, simplifier, sharp } = await getDeps()
   const {
     dedup,
@@ -794,6 +960,10 @@ async function buildLevel(sourcePath, outPath, level, sourceTriangles) {
 
   const document = await io.read(sourcePath)
   document.setLogger(quietLogger)
+  // What the viewer actually draws for LOD0, measured before anything here
+  // touches the file: for a skinned mesh that is the raw vertex data, since
+  // glTF has the joints place it and ignores the node's own transform.
+  const runtimeBox = documentBox(document, true)
   if (document.getRoot().listSkins().length > 0) {
     dropSkin(document)
   } else if (document.getRoot().listAnimations().length > 0) {
@@ -804,6 +974,9 @@ async function buildLevel(sourcePath, outPath, level, sourceTriangles) {
   // flatten/join: the viewer never draws helper geometry, so neither should a
   // level whose parts it can no longer reach individually.
   cropHelpers(document)
+  // The silhouette the level has to stay inside, measured on exactly the
+  // geometry that survived the crop.
+  const sourceBox = documentBox(document)
 
   const ratio = Math.min(
     1,
@@ -817,7 +990,10 @@ async function buildLevel(sourcePath, outPath, level, sourceTriangles) {
 
   if (level.collapse) dropNonTriangles(document)
 
-  if (level.collapseMaterials) collapseMaterials(document)
+  if (level.collapseMaterials) {
+    await bakeMaterialColorsToVertices(document, sharp)
+    collapseMaterials(document)
+  }
 
   const transforms = [dedup()]
   if (level.collapse) {
@@ -872,8 +1048,143 @@ async function buildLevel(sourcePath, outPath, level, sourceTriangles) {
   )
 
   await document.transform(...transforms)
-  const triangles = countTriangles(document)
-  writeFileSync(outPath, Buffer.from(await io.writeBinary(document)))
+  return { document, sourceBox, runtimeBox }
+}
+
+/**
+ * World-space AABB of every primitive in the document, or null if it has none.
+ *
+ * `asDrawn` measures a still-skinned mesh the way a renderer does: from the raw
+ * vertices, ignoring the node's transform, which glTF says the joints override.
+ */
+function documentBox(document, asDrawn = false) {
+  const min = [Infinity, Infinity, Infinity]
+  const max = [-Infinity, -Infinity, -Infinity]
+  let found = false
+  for (const scene of document.getRoot().listScenes()) {
+    scene.traverse((node) => {
+      const mesh = node.getMesh()
+      if (!mesh) return
+      const worldMatrix =
+        asDrawn && node.getSkin() ? IDENTITY_MATRIX : node.getWorldMatrix()
+      for (const primitive of mesh.listPrimitives()) {
+        const box = primitiveBox(primitive, worldMatrix)
+        if (!box) continue
+        found = true
+        for (let axis = 0; axis < 3; axis++) {
+          min[axis] = Math.min(min[axis], box.min[axis])
+          max[axis] = Math.max(max[axis], box.max[axis])
+        }
+      }
+    })
+  }
+  return found ? { min, max } : null
+}
+
+const IDENTITY_MATRIX = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+
+/**
+ * How far `box` reaches outside `source`, as a fraction of the source's size.
+ *
+ * Growth only: geometry outside the model's own box is either a part the
+ * pipeline displaced or the whole model at the wrong scale or facing, and both
+ * are bugs. Geometry *inside* it is a simplifier doing its job.
+ *
+ * Measured against the model's largest dimension, not each axis's own, so a
+ * wheel dragged sideways off a flat wing is not read as a 900% error.
+ */
+function boxGrowth(source, box) {
+  if (!source || !box) return 0
+  const span = Math.max(...source.max.map((hi, axis) => hi - source.min[axis]))
+  if (!(span > 0)) return 0
+  let worst = 0
+  for (let axis = 0; axis < 3; axis++) {
+    worst = Math.max(
+      worst,
+      (source.min[axis] - box.min[axis]) / span,
+      (box.max[axis] - source.max[axis]) / span,
+    )
+  }
+  return worst
+}
+
+/**
+ * Build a level, falling back through safer recipes until it stays inside the
+ * source's silhouette.
+ *
+ * A level is meant to be the same shape with fewer triangles, and a part that
+ * comes out beyond the source's box is geometry standing in open air — which
+ * the viewer then scales by the factor it measured on LOD0, so on the C-47 a
+ * wheel a third of a wingspan wide of the airframe arrived on screen as a
+ * wheel the size of a building floating beside the aeroplane.
+ *
+ * Measured on the C-47, the culprit is `join`, not the simplifier: with the
+ * merge on, the swarm level came out 25% wider than the source whatever the
+ * error budget, and with it off, 0%. Tightening `error` is tried first because
+ * it is cheap and keeps the draw-call win; the no-merge recipe is the fallback.
+ * It has to be caught here — by the time a level ships, the displaced part is
+ * welded into a joined primitive and cannot be reached on its own.
+ */
+async function buildLevel(sourcePath, outPath, level, sourceTriangles) {
+  const { io } = await getDeps()
+  const limits = LEVEL_GROWTH_LIMITS[level.suffix] ?? DEFAULT_GROWTH_LIMITS
+  const attempts = [level, { ...level, error: level.error / 4 }]
+  if (level.sloppy) attempts.push({ ...level, error: level.error / 16, sloppy: false })
+  // Last resort. `join` is what displaces the geometry — it bakes node
+  // transforms as it merges, and on some authoring hierarchies (the C-47's
+  // landing gear) parts come out well wide of where they started. Dropping the
+  // merge costs draw calls and leaves the simplifier topology-limited, so it is
+  // worth it only when the alternative is a wheel floating beside the model.
+  // The sloppy pass and the position weld both want the joined primitive, and
+  // meshoptimizer walks off the end of the buffer without it, so this attempt
+  // gives up all three together.
+  if (level.collapse) {
+    attempts.push({ ...level, collapse: false, sloppy: false, weldPositions: false })
+  }
+
+  let best = null
+  for (const attempt of attempts) {
+    let document
+    let sourceBox
+    let runtimeBox
+    try {
+      ;({ document, sourceBox, runtimeBox } = await buildLevelDocument(
+        sourcePath,
+        attempt,
+        sourceTriangles,
+      ))
+    } catch (err) {
+      // One recipe failing is not the model failing: try the next.
+      console.warn(`      ${level.suffix}: ${err.message}`)
+      continue
+    }
+    // Against what the viewer draws for LOD0, not against the mid-pipeline
+    // document: a skinned model whose node transform leaked in would agree
+    // with itself perfectly and still be twice the size on screen.
+    const growth = Math.max(
+      boxGrowth(sourceBox, documentBox(document)),
+      boxGrowth(runtimeBox, documentBox(document)),
+    )
+    if (!best || growth < best.growth) best = { document, growth, attempt }
+    if (growth <= limits.maxGrowth) break
+  }
+  if (!best) throw new Error(`${level.suffix}: every recipe failed`)
+  if (best.growth > limits.maxDrift) {
+    console.warn(
+      `      ${level.suffix}: dropped, ${(best.growth * 100).toFixed(0)}% outside the model`,
+    )
+    return null
+  }
+  if (best.growth > limits.maxGrowth) {
+    console.warn(
+      `      ${level.suffix}: silhouette ${(best.growth * 100).toFixed(0)}% over source`,
+    )
+  } else if (best.attempt !== level) {
+    console.log(`      ${level.suffix}: rebuilt to keep the silhouette`)
+  }
+
+  const triangles = countTriangles(best.document)
+  writeFileSync(outPath, Buffer.from(await io.writeBinary(best.document)))
   return { triangles, bytes: statSync(outPath).size }
 }
 
@@ -918,6 +1229,12 @@ export type ModelLodLevel = {
 
 export type ModelLodEntry = {
   sourceHash: string
+  /**
+   * Version of the generator that built these levels; see PIPELINE_VERSION.
+   * Absent on entries written before pipeline versioning, which counts as 0 —
+   * older than anything current, so they rebuild.
+   */
+  pipeline?: number
   sourceTriangles: number
   levels: ModelLodLevel[]
 }
@@ -929,6 +1246,11 @@ ${body}
 /** Detail levels for a catalog model path, coarsest-last. Empty when it has none. */
 export function lodLevelsFor(sourcePath: string): ModelLodLevel[] {
   return MODEL_LODS[sourcePath.replace(/^\\//, '')]?.levels ?? []
+}
+
+/** Triangles in the model as authored — what one copy of LOD0 costs. */
+export function lodSourceTrianglesFor(sourcePath: string): number {
+  return MODEL_LODS[sourcePath.replace(/^\\//, '')]?.sourceTriangles ?? 0
 }
 `,
   )
@@ -957,7 +1279,8 @@ async function main() {
     const levelsOnDisk =
       prior?.levels?.every((level) => existsSync(join(publicRoot, level.path))) ?? false
 
-    if (!force && prior && prior.sourceHash === hash && levelsOnDisk) {
+    const currentPipeline = (prior?.pipeline ?? 0) === PIPELINE_VERSION
+    if (!force && prior && prior.sourceHash === hash && currentPipeline && levelsOnDisk) {
       manifest[key] = prior
       unchanged += 1
       continue
@@ -1001,6 +1324,11 @@ async function main() {
       for (const level of levelsFor(document)) {
         const outPath = join(dirname(glb), `model.${level.suffix}.glb`)
         const result = await buildLevel(glb, outPath, level, sourceTriangles)
+        // Came out as a different model; `buildLevel` has already said why.
+        if (!result) {
+          dropped.push(level.suffix)
+          continue
+        }
         // A level has to be clearly cheaper than the one above it, on triangles
         // or on bytes; otherwise it is a second fetch for nothing. A file that
         // is *larger* than the level above has to earn it with a big triangle
@@ -1036,7 +1364,7 @@ async function main() {
         const absolute = join(publicRoot, path)
         if (existsSync(absolute)) unlinkSync(absolute)
       }
-      manifest[key] = { sourceHash: hash, sourceTriangles, levels }
+      manifest[key] = { sourceHash: hash, pipeline: PIPELINE_VERSION, sourceTriangles, levels }
       built += 1
       console.log(
         `ok    ${id} ${sourceTriangles} tris / ${formatBytes(sourceBytes)} -> ${levels

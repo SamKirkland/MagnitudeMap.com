@@ -93,13 +93,15 @@ import {
   packMoneyAmount,
 } from '../data/moneyPack'
 import { createMoneyTiledPile } from './moneyTiledMesh'
-import { lodLevelsFor } from '../data/modelLods'
-import { fleetFormation, type FleetSlot } from './fleetFormation'
+import { lodLevelsFor, lodSourceTrianglesFor } from '../data/modelLods'
+import { fleetFormation, type FleetSlot, type FleetSpan } from './fleetFormation'
 import {
   apparentPixelHeight,
   buildLodLevels,
+  fitCrowdLevels,
   resolveLevel,
   wantedLevel,
+  type CrowdLevelRequest,
   type LodLevel,
 } from './modelLod'
 import { formatLength, type UnitSystem } from '../units'
@@ -237,10 +239,30 @@ type PlacedObject = {
    */
   fleetCopies: FleetSlot[] | null
   /**
-   * One unit's world AABB, measured before any copies existed. The formation is
-   * sized from this; measuring afterwards would grow the block every rebuild.
+   * One unit's AABB in `root` space, measured before any copies existed. The
+   * formation is sized from this; measuring afterwards would grow the block
+   * every rebuild. Root-local so it survives the lineup being repacked.
    */
   unitBounds: { min: Vector3; max: Vector3 } | null
+  /**
+   * Fleet lineups only. Extent of the whole formation around the unit in the
+   * lineup, including ranks the triangle budget is not drawing yet. Spacing,
+   * framing, the plaque and picking all measure from this — mesh bounds cover
+   * only the copies currently drawn, which packs the lineup far too tight.
+   */
+  fleetSpan: FleetSpan | null
+  /**
+   * Fleet lineups only. The copies currently promoted to a finer level than the
+   * rest of the block, which level is drawing them, which level they are hidden
+   * in, and where the camera was when they were picked.
+   */
+  closeUp: {
+    level: number
+    hiddenIn: number
+    indices: number[]
+    meshes: Set<Mesh>
+    origin: Vector3
+  } | null
 }
 
 /**
@@ -253,20 +275,45 @@ const MAX_LOD_LOADS_IN_FLIGHT = 4
 
 /**
  * Triangles a frame the fleet blocks may share between them. Set so the largest
- * lineup — 29,600 aircraft, about 14.5M triangles once they are all at the swarm
+ * lineup — 29,600 aircraft, about 23M triangles once they are all at the swarm
  * level — draws in full, while the first frames of that same lineup, at full
  * detail because no coarse level has been fetched yet, are cut from roughly a
  * billion triangles to something the tab survives. Blocks are trimmed from the
  * back, so what you lose is the rank furthest from the camera, and you get it
  * back a second later when the coarse levels land.
+ *
+ * It rose from 16M when the LOD generator started refusing to ship a level
+ * whose parts had wandered outside the model: a couple of models now pay a few
+ * thousand triangles a copy for the swarm level rather than a few hundred, and
+ * 29,600 of them have to fit. `fitCrowdLevels` spends it on detail where the
+ * camera is; this is only the ceiling.
  */
-const FLEET_TRIANGLE_BUDGET = 16_000_000
+const FLEET_TRIANGLE_BUDGET = 24_000_000
 /**
  * The poster renders a single frame at its own resolution, so it gets a much
  * larger allowance: a downloaded image should show the whole fleet, and the
  * detail levels already pick themselves from the poster's apparent sizes.
  */
 const POSTER_FLEET_BUDGET_MULTIPLIER = 12
+/**
+ * Triangles a frame the close-up copies may take, across every block.
+ *
+ * A block draws from one mesh set, so every copy in it is at the same level —
+ * which is right for the ranks stretching to the horizon and wrong for the one
+ * filling the screen. The copies nearest the camera are drawn a second time
+ * instead, from a finer level's meshes, and hidden in the block's own. This is
+ * what that costs; it buys the two or three hundred aircraft actually close
+ * enough for the detail to show.
+ */
+const CLOSE_UP_TRIANGLE_BUDGET = 6_000_000
+/** Most copies that may be promoted at once, however cheap the fine level is. */
+const MAX_CLOSE_UP_COPIES = 400
+/**
+ * How far the camera may move, as a fraction of one unit's own size, before the
+ * close-up set is picked again. Small enough to keep the set under the camera,
+ * large enough that flying through a formation re-picks a few times a second.
+ */
+const CLOSE_UP_RESELECT_FRACTION = 0.5
 
 function sameFleetCounts(
   a: Record<string, number> | null,
@@ -353,6 +400,8 @@ const MAX_DEVICE_PIXEL_RATIO = 1.5
 const MAX_POSTER_PREVIEW_PIXEL_RATIO = 1.25
 /** After the camera/scene stop changing, pause clips and skip GPU submits. */
 const IDLE_SETTLE_MS = 300
+/** Idle settles to wait out an unready scene before giving up (~6s). */
+const MAX_IDLE_READY_WAITS = 20
 /** Authored radius of the sky sphere; it is rescaled to the clip planes every render. */
 const SKYBOX_RADIUS = 80
 /**
@@ -624,6 +673,7 @@ export class ComparisonScene {
   private readonly modelTemplateLoading = new Map<string, Promise<Mesh>>()
   private renderNeeded = true
   private heldIdle = false
+  private readyWaits = 0
   private idleSettleTimer: number | null = null
   private clipPlayingCount = 0
   private cameraMoveGen = 0
@@ -938,11 +988,13 @@ export class ComparisonScene {
     const sortedIndex = this.sortedItems.findIndex((entry) => entry.id === itemId)
     this.stepIndex = Math.max(0, sortedIndex)
 
-    // Frame the model mesh only (not the ground plaque), using live bounds.
+    // Frame the models only (not the ground plaque), using live bounds. In a
+    // fleet lineup that means the whole block, centred on all of it — the point
+    // of clicking a type there is to see how many of them there are.
     const body = placement.body
     body.computeWorldMatrix(true)
     for (const child of body.getChildMeshes()) child.computeWorldMatrix(true)
-    const { min, max } = this.visualBounds(body)
+    const { min, max } = this.blockWorldBounds(placement)
 
     const pose = poseForWorldBounds(
       {
@@ -1128,6 +1180,7 @@ export class ComparisonScene {
 
     if (this.disposed || generation !== this.loadGeneration) return
     this.emitLoadProgress(null)
+    this.markDirtyWhenReady(generation)
 
     // Once, at the end: a block is sized from its type's own footprint, and
     // rebuilding it on every arrival would re-measure the row for nothing.
@@ -1151,6 +1204,18 @@ export class ComparisonScene {
       this.emitTour()
     }
     this.markDirty()
+  }
+
+  /**
+   * On-demand rendering: the frames right after a load draw before the new
+   * models' shaders and textures are up, and nothing else moves. Repaint once
+   * the scene is ready. Mirrors what syncGroundPlate does for the plate.
+   */
+  private markDirtyWhenReady(generation: number) {
+    this.scene.executeWhenReady(() => {
+      if (this.disposed || generation !== this.loadGeneration) return
+      this.markDirty()
+    })
   }
 
   /**
@@ -2455,6 +2520,7 @@ export class ComparisonScene {
     let minX = Infinity
     let maxX = -Infinity
     let maxH = 0
+    let minZ = 0
     let maxZ = 0
     for (const item of this.sortedItems) {
       const x = this.itemXs.get(item.id) ?? 0
@@ -2463,11 +2529,23 @@ export class ComparisonScene {
       minX = Math.min(minX, x - halfX)
       maxX = Math.max(maxX, x + halfX)
       maxH = Math.max(maxH, item.height)
+      minZ = Math.min(minZ, -halfZ)
       maxZ = Math.max(maxZ, halfZ)
+    }
+    // A fleet block runs hundreds of metres back from the row; frame the stage
+    // that is actually there rather than one rank of it.
+    for (const placement of this.placements.values()) {
+      if (!placement.fleetSpan) continue
+      const box = this.blockWorldBounds(placement)
+      minX = Math.min(minX, box.min.x)
+      maxX = Math.max(maxX, box.max.x)
+      minZ = Math.min(minZ, box.min.z)
+      maxZ = Math.max(maxZ, box.max.z)
+      maxH = Math.max(maxH, box.max.y)
     }
     if (!Number.isFinite(minX) || minX > maxX) return null
     return {
-      min: new Vector3(minX, 0, -maxZ),
+      min: new Vector3(minX, 0, minZ),
       max: new Vector3(maxX, maxH, maxZ),
     }
   }
@@ -2845,13 +2923,17 @@ export class ComparisonScene {
     }
   }
 
-  /** World-X AABB of each loaded body (excludes plaques). */
+  /**
+   * World-X AABB of each loaded body (excludes plaques), or of the whole fleet
+   * block where there is one — a type is as wide as the formation standing
+   * behind it, and spacing the row by the lead hull alone overlaps the blocks.
+   */
   private measuredFacingExtents(): Map<string, number> {
     const extents = new Map<string, number>()
     for (const item of this.sortedItems) {
       const placement = this.placementForItem(item.id)
       if (!placement) continue
-      const box = this.visualBounds(placement.body)
+      const box = this.blockWorldBounds(placement)
       const width = box.max.x - box.min.x
       if (Number.isFinite(width) && width > 1e-6) extents.set(item.id, width)
     }
@@ -3074,12 +3156,7 @@ export class ComparisonScene {
 
     if (info.type === PointerEventTypes.POINTERMOVE) {
       if (this.pointerDownPos) return
-      const pick = this.scene.pick(
-        this.scene.pointerX,
-        this.scene.pointerY,
-        (mesh) => Boolean((mesh.metadata as { itemId?: string } | undefined)?.itemId),
-      )
-      const itemId = this.resolveItemId(pick.pickedMesh)
+      const itemId = this.pickItemAt(this.scene.pointerX, this.scene.pointerY)
       if (itemId !== this.hoverItemId) {
         this.clearHover()
         if (itemId) this.showHover(itemId)
@@ -3099,16 +3176,49 @@ export class ComparisonScene {
     this.pointerDownPos = null
     if (dx * dx + dy * dy > 36) return
 
-    const mesh = info.pickInfo?.pickedMesh
-    const itemId = this.resolveItemId(mesh)
+    const itemId = this.pickItemAt(this.scene.pointerX, this.scene.pointerY)
     if (itemId) {
       this.focusItem(itemId, true)
       return
     }
 
-    if (mesh?.metadata?.kind === 'ground' || !info.pickInfo?.hit) {
-      this.resetFocus(true)
+    this.resetFocus(true)
+  }
+
+  /**
+   * Which item the pointer means: whatever the ray hits, and otherwise the
+   * nearest one to where it lands on the ground. A lineup is mostly the gaps
+   * between objects and a fleet block mostly the air between hulls, so
+   * requiring a mesh hit left most of the stage dead to hover and to
+   * click-to-focus. The ground slab is the stage — a ray that misses even that
+   * means nothing, which is how a focus is left.
+   */
+  private pickItemAt(x: number, y: number): string | null {
+    const pick = this.scene.pick(x, y, (mesh) => {
+      const meta = mesh.metadata as { itemId?: string; kind?: string } | undefined
+      return Boolean(meta?.itemId) || meta?.kind === 'ground'
+    })
+    if (!pick?.hit) return null
+    const hit = this.resolveItemId(pick.pickedMesh)
+    if (hit) return hit
+    return pick.pickedPoint ? this.nearestItemTo(pick.pickedPoint) : null
+  }
+
+  /** Item whose footprint is closest to a point on the ground. */
+  private nearestItemTo(point: Vector3): string | null {
+    let best: string | null = null
+    let bestDistance = Infinity
+    for (const placement of this.placements.values()) {
+      const box = this.blockWorldBounds(placement)
+      const dx = Math.max(box.min.x - point.x, 0, point.x - box.max.x)
+      const dz = Math.max(box.min.z - point.z, 0, point.z - box.max.z)
+      const distance = Math.hypot(dx, dz)
+      if (distance < bestDistance) {
+        bestDistance = distance
+        best = placement.itemId
+      }
     }
+    return best
   }
 
   private resolveItemId(mesh: Node | null | undefined): string | null {
@@ -3141,11 +3251,14 @@ export class ComparisonScene {
     for (const placement of this.placements.values()) {
       placement.root.computeWorldMatrix(true)
       for (const child of placement.root.getChildMeshes()) child.computeWorldMatrix(true)
+      // Plaque included (it hangs off `root`), and the block whether or not
+      // every rank of it is being drawn yet.
       const { min, max } = this.visualBounds(placement.root)
-      minX = Math.min(minX, min.x)
-      maxX = Math.max(maxX, max.x)
-      minZ = Math.min(minZ, min.z)
-      maxZ = Math.max(maxZ, max.z)
+      const block = this.blockWorldBounds(placement)
+      minX = Math.min(minX, min.x, block.min.x)
+      maxX = Math.max(maxX, max.x, block.max.x)
+      minZ = Math.min(minZ, min.z, block.min.z)
+      maxZ = Math.max(maxZ, max.z, block.max.z)
       const base = CATALOG_BY_ID[placement.itemId]
       if (base) {
         const item = resolveDetonationItem(base, this.detonationMode)
@@ -3509,6 +3622,7 @@ export class ComparisonScene {
 
   private markDirty() {
     this.renderNeeded = true
+    this.readyWaits = 0
     this.armIdleSettle()
   }
 
@@ -3534,6 +3648,16 @@ export class ComparisonScene {
       this.armIdleSettle()
       return
     }
+    // Frames submitted before shaders/textures finish drop the meshes that
+    // aren't ready yet, so holding now can freeze a blank canvas until the
+    // user moves the camera. Keep painting until the scene reports ready —
+    // but bounded, so an asset that never loads can't pin the GPU at 60fps.
+    if (this.readyWaits < MAX_IDLE_READY_WAITS && !this.scene.isReady()) {
+      this.readyWaits += 1
+      this.armIdleSettle()
+      return
+    }
+    this.readyWaits = 0
     for (const animatable of this.scene.animatables) {
       if (this.isCameraAnimatable(animatable)) continue
       animatable.pause()
@@ -3622,6 +3746,17 @@ export class ComparisonScene {
     for (const group of this.lodGroups.values()) {
       lodLevels[group.active] = (lodLevels[group.active] ?? 0) + 1
     }
+    // Copies promoted above their block's own level, for the same reason the
+    // rest of this exists: so a threshold can be eyeballed from the console.
+    let closeUpBlocks = 0
+    let closeUpCopies = 0
+    let closeUpLevel = -1
+    for (const placement of this.placements.values()) {
+      if (!placement.closeUp) continue
+      closeUpBlocks += 1
+      closeUpCopies += placement.closeUp.indices.length
+      closeUpLevel = placement.closeUp.level
+    }
     const stats = {
       submitsPerSec: this.rendersThisSecond,
       skippedPerSec: this.skippedThisSecond,
@@ -3631,6 +3766,9 @@ export class ComparisonScene {
       activeMeshes: this.scene.getActiveMeshes().length,
       activeTriangles: Math.round(this.scene.getActiveIndices() / 3),
       lodLevels: [...lodLevels].map((n) => n ?? 0),
+      closeUp: closeUpBlocks
+        ? { blocks: closeUpBlocks, copies: closeUpCopies, level: closeUpLevel }
+        : null,
       fleet: this.fleetDebug
         ? {
             unitsDrawn: this.fleetDebug.units,
@@ -3945,6 +4083,10 @@ export class ComparisonScene {
       let unitTriangles = 0
       for (const mesh of placement.body.getChildMeshes(false)) {
         if (!mesh.isEnabled() || mesh.isVisible === false) continue
+        // The close-up level is enabled alongside the block's own and draws a
+        // couple of hundred copies on its own budget; it is not what a copy of
+        // this block costs.
+        if (placement.closeUp?.meshes.has(mesh as Mesh)) continue
         unitTriangles += mesh.getTotalIndices() / 3
       }
       unitTriangles = Math.max(unitTriangles, 1)
@@ -3968,6 +4110,7 @@ export class ComparisonScene {
       for (const mesh of block.placement.body.getChildMeshes(false)) {
         if (!(mesh instanceof Mesh)) continue
         if (mesh.thinInstanceCount === 0) continue
+        if (block.placement.closeUp?.meshes.has(mesh)) continue
         mesh.thinInstanceCount = shown
       }
     }
@@ -3982,6 +4125,7 @@ export class ComparisonScene {
     for (const placement of this.placements.values()) {
       if (placement.fleetCopies) {
         placement.fleetCopies = null
+        placement.fleetSpan = null
         this.applyFleetInstances(placement)
       }
       placement.unitBounds = null
@@ -3999,6 +4143,7 @@ export class ComparisonScene {
     if (count <= 1) {
       if (placement.fleetCopies) {
         placement.fleetCopies = null
+        placement.fleetSpan = null
         this.applyFleetInstances(placement)
       }
       return
@@ -4008,7 +4153,12 @@ export class ComparisonScene {
     if (!placement.unitBounds) {
       // Measure before the first copy exists: afterwards the mesh bounding info
       // covers the whole block, and sizing from that would grow it every pass.
-      placement.unitBounds = this.visualBounds(placement.body)
+      const world = this.visualBounds(placement.body)
+      const origin = placement.root.position
+      placement.unitBounds = {
+        min: world.min.subtract(origin),
+        max: world.max.subtract(origin),
+      }
     }
     const unit = placement.unitBounds
     const formation = fleetFormation(
@@ -4017,7 +4167,34 @@ export class ComparisonScene {
       unit.max.z - unit.min.z,
     )
     placement.fleetCopies = formation.copies
+    placement.fleetSpan = formation.copies.length > 0 ? formation.span : null
     this.applyFleetInstances(placement)
+  }
+
+  /**
+   * World AABB of everything this type puts on the stage: the unit standing in
+   * the lineup plus every copy formed up behind it, drawn or not. Falls back to
+   * the meshes for a lineup that is showing one of each.
+   */
+  private blockWorldBounds(placement: PlacedObject): { min: Vector3; max: Vector3 } {
+    const span = placement.fleetSpan
+    const unit = placement.unitBounds
+    if (!span || !unit) return this.visualBounds(placement.body)
+    // `root` only ever translates along the lineup, so its local axes are the
+    // world axes and the span applies directly.
+    const origin = placement.root.position
+    return {
+      min: new Vector3(
+        unit.min.x + origin.x + span.minX,
+        unit.min.y + origin.y,
+        unit.min.z + origin.z + span.minZ,
+      ),
+      max: new Vector3(
+        unit.max.x + origin.x + span.maxX,
+        unit.max.y + origin.y,
+        unit.max.z + origin.z + span.maxZ,
+      ),
+    }
   }
 
   /**
@@ -4030,11 +4207,13 @@ export class ComparisonScene {
    * matrix. Slot 0 is identity: that is the unit the lineup placed, the one
    * carrying the plaque and the click target.
    */
-  private applyFleetInstances(placement: PlacedObject) {
+  private applyFleetInstances(placement: PlacedObject, meshes?: Iterable<AbstractMesh>) {
     const copies = placement.fleetCopies
     const offset = new Vector3()
     const local = new Vector3()
-    for (const mesh of placement.body.getChildMeshes(false)) {
+    // Rewriting the buffers wholesale drops whatever the close-up was holding.
+    if (!meshes) placement.closeUp = null
+    for (const mesh of meshes ?? placement.body.getChildMeshes(false)) {
       if (!(mesh instanceof Mesh) || mesh.getTotalVertices() < 3) continue
       if (!copies || copies.length === 0) {
         if (mesh.thinInstanceCount > 0) {
@@ -4087,7 +4266,7 @@ export class ComparisonScene {
     const radius = bounds.max.subtract(bounds.min).length() / 2
     if (!(radius > 0)) return
 
-    const levels = buildLodLevels(manifest)
+    const levels = buildLodLevels(manifest, lodSourceTrianglesFor(sourcePath))
     if (levels.length < 2) return
 
     const roots: (TransformNode[] | null)[] = levels.map(() => null)
@@ -4133,6 +4312,9 @@ export class ComparisonScene {
       : null
     const eye = this.camera.globalPosition
 
+    // Distance says what each model deserves...
+    const plan: (CrowdLevelRequest & { group: LodGroup })[] = []
+    const crowds: CrowdLevelRequest[] = []
     for (const group of this.lodGroups.values()) {
       if (group.parent.isDisposed()) continue
       const center = Vector3.TransformCoordinates(
@@ -4141,15 +4323,296 @@ export class ComparisonScene {
       )
       const pixels = apparentPixelHeight(
         group.radius,
-        Vector3.Distance(eye, center),
+        this.lodViewDistance(group, center, eye),
         viewportHeight,
         orthographic ? null : this.camera.fov,
         orthoHeight,
       )
-      const wanted = wantedLevel(group.levels, pixels, group.active)
-      if (group.levels[wanted].state === 'idle') void this.loadLodLevel(group, wanted)
-      this.applyLodLevel(group, resolveLevel(group.levels, wanted))
+      const units = this.fleetUnitsFor(group.key)
+      const entry = {
+        group,
+        levels: group.levels,
+        units,
+        wanted: wantedLevel(group.levels, pixels, group.active),
+      }
+      // A formation the camera has turned its back on is culled whole: it is
+      // not worth a triangle, and holding it at a fine level would only make
+      // the block you are looking at pay for it.
+      if (units > 1 && !this.blockOnScreen(group.key)) {
+        entry.wanted = group.levels.length - 1
+      } else if (units > 1) {
+        crowds.push(entry)
+      }
+      plan.push(entry)
     }
+
+    // ...and the formations standing behind them say what the frame can pay for.
+    fitCrowdLevels(crowds, FLEET_TRIANGLE_BUDGET)
+
+    for (const { group, wanted } of plan) {
+      if (group.levels[wanted].state === 'idle') void this.loadLodLevel(group, wanted)
+      const level = resolveLevel(group.levels, wanted)
+      if (level !== group.active) {
+        // Promoted copies are hidden in the level that is about to be put away.
+        // Give them back before it goes, or they come back to a block with
+        // holes in it the next time this level is the one on screen.
+        const placement = this.placements.get(group.key)
+        if (placement) this.clearFleetCloseUp(placement, group)
+      }
+      this.applyLodLevel(group, level)
+    }
+
+    // Every block has its level now; promote the copies under the camera.
+    for (const { group, units } of plan) {
+      if (units > 1 && this.blockOnScreen(group.key)) {
+        this.syncFleetCloseUp(group, eye, viewportHeight)
+      }
+    }
+  }
+
+  /**
+   * How far the camera is from the bulk of what this group draws: the model
+   * itself, or the middle of the formation standing behind it. The copies near
+   * the camera are not this level's problem — `syncFleetCloseUp` promotes those
+   * to a finer one of their own.
+   */
+  private lodViewDistance(group: LodGroup, center: Vector3, eye: Vector3): number {
+    const span = this.placements.get(group.key)?.fleetSpan
+    if (!span) return Vector3.Distance(eye, center)
+    const middle = new Vector3(
+      center.x + (span.minX + span.maxX) / 2,
+      center.y,
+      center.z + (span.minZ + span.maxZ) / 2,
+    )
+    // Floored at half the block's own radius. Fly into the middle of a
+    // formation and the distance to its centre goes to nothing, which would put
+    // every copy in it — including the ranks at the horizon — on the finest
+    // level there is. Half a radius is roughly where the copies actually are.
+    const radius = Math.hypot((span.maxX - span.minX) / 2, (span.maxZ - span.minZ) / 2)
+    return Math.max(Vector3.Distance(eye, middle), radius / 2)
+  }
+
+  /** How far the camera is from the nearest copy in this group's formation. */
+  private closeUpDistance(group: LodGroup, center: Vector3, eye: Vector3): number {
+    const span = this.placements.get(group.key)?.fleetSpan
+    if (!span) return Vector3.Distance(eye, center)
+    const x = Math.min(Math.max(eye.x, center.x + span.minX), center.x + span.maxX)
+    const z = Math.min(Math.max(eye.z, center.z + span.minZ), center.z + span.maxZ)
+    return Vector3.Distance(eye, new Vector3(x, center.y, z))
+  }
+
+  /**
+   * Draw the copies nearest the camera at a finer level than the rest of them.
+   *
+   * A block is one mesh set drawn n times, so the level is a property of the
+   * block, not of a copy — right for the ranks running to the horizon, wrong
+   * for the aircraft filling the screen, and standing inside a formation is
+   * exactly where the difference shows. A thin-instance draw has no per-copy
+   * level, so the near copies are drawn from a *second* level's meshes, enabled
+   * alongside the block's own, and hidden in the block's buffer by collapsing
+   * their matrices to nothing. Two draws over disjoint sets: no overdraw, and
+   * the far ranks stay exactly as cheap as they were.
+   *
+   * Re-picked only once the camera has moved far enough to change which copies
+   * are nearest, and the set is small — a few hundred matrices — so a re-pick
+   * is a short sort and one small buffer, not the megabytes that re-sorting the
+   * whole formation would cost.
+   */
+  private syncFleetCloseUp(group: LodGroup, eye: Vector3, viewportHeight: number) {
+    const placement = this.placements.get(group.key)
+    const copies = placement?.fleetCopies
+    if (!placement || !copies?.length || this.captureMode || this.posterPreview) {
+      if (placement) this.clearFleetCloseUp(placement, group)
+      return
+    }
+
+    const center = Vector3.TransformCoordinates(group.localCenter, group.parent.getWorldMatrix())
+    const pixels = apparentPixelHeight(
+      group.radius,
+      this.closeUpDistance(group, center, eye),
+      viewportHeight,
+      this.camera.mode === Camera.ORTHOGRAPHIC_CAMERA ? null : this.camera.fov,
+      null,
+    )
+    // `group.active` is what the block is already drawing: anything coarser or
+    // equal to it is on screen already and there is nothing to promote. The
+    // hysteresis is against the promoted level, so a set hovering on a
+    // threshold does not re-pick itself every frame.
+    const wanted = wantedLevel(
+      group.levels,
+      pixels,
+      placement.closeUp?.level ?? group.active,
+    )
+    if (wanted >= group.active) {
+      this.clearFleetCloseUp(placement, group)
+      return
+    }
+    const level = group.levels[wanted]
+    if (level.state === 'idle') void this.loadLodLevel(group, wanted)
+    if (level.state !== 'ready' || !group.roots[wanted]) {
+      this.clearFleetCloseUp(placement, group)
+      return
+    }
+
+    const origin = new Vector3(
+      eye.x - placement.root.position.x,
+      0,
+      eye.z - placement.root.position.z,
+    )
+    const unit = placement.unitBounds
+    const unitSize = unit ? Math.max(unit.max.x - unit.min.x, unit.max.z - unit.min.z, 1) : 1
+    const current = placement.closeUp
+    if (
+      current &&
+      current.level === wanted &&
+      current.hiddenIn === group.active &&
+      Vector3.Distance(current.origin, origin) < unitSize * CLOSE_UP_RESELECT_FRACTION
+    ) {
+      // Same copies, same levels: only the draw count can have been trodden on.
+      for (const mesh of current.meshes) mesh.thinInstanceCount = current.indices.length
+      return
+    }
+
+    const affordable = Math.floor(CLOSE_UP_TRIANGLE_BUDGET / Math.max(level.triangles, 1))
+    const count = Math.max(1, Math.min(MAX_CLOSE_UP_COPIES, affordable, copies.length + 1))
+    const indices = this.nearestCopyIndices(copies, origin, count)
+
+    this.clearFleetCloseUp(placement, group)
+    const meshes = new Set<Mesh>()
+    for (const mesh of this.levelMeshes(group, wanted)) {
+      this.writeCopyMatrices(mesh, copies, indices)
+      meshes.add(mesh)
+    }
+    if (meshes.size === 0) return
+    for (const mesh of this.levelMeshes(group, group.active)) {
+      this.hideCopies(mesh, indices)
+    }
+    for (const node of group.roots[wanted] ?? []) {
+      if (!node.isDisposed()) node.setEnabled(true)
+    }
+    placement.closeUp = { level: wanted, hiddenIn: group.active, indices, meshes, origin }
+  }
+
+  /** Put a promoted set back: block buffer restored, fine level stood down. */
+  private clearFleetCloseUp(placement: PlacedObject, group: LodGroup) {
+    const closeUp = placement.closeUp
+    if (!closeUp) return
+    placement.closeUp = null
+
+    const copies = placement.fleetCopies
+    if (copies) {
+      for (const mesh of this.levelMeshes(group, closeUp.hiddenIn)) {
+        this.restoreCopies(mesh, copies, closeUp.indices)
+      }
+      // The fine level goes back to holding the whole formation, so it is ready
+      // to become the block's own level when the camera keeps coming.
+      this.applyFleetInstances(placement, this.levelMeshes(group, closeUp.level))
+    }
+    if (closeUp.level !== group.active) {
+      for (const node of group.roots[closeUp.level] ?? []) {
+        if (!node.isDisposed()) node.setEnabled(false)
+      }
+    }
+  }
+
+  private levelMeshes(group: LodGroup, level: number): Mesh[] {
+    const roots = group.roots[level]
+    if (!roots) return []
+    const meshes: Mesh[] = []
+    for (const root of roots) {
+      if (root.isDisposed()) continue
+      if (root instanceof Mesh && root.getTotalVertices() >= 3) meshes.push(root)
+      for (const child of root.getChildMeshes(false)) {
+        if (child instanceof Mesh && child.getTotalVertices() >= 3) meshes.push(child)
+      }
+    }
+    return meshes
+  }
+
+  /** Slots of the `count` copies closest to `origin`; slot 0 is the lineup unit. */
+  private nearestCopyIndices(copies: FleetSlot[], origin: Vector3, count: number): number[] {
+    const scored: { index: number; distance: number }[] = [
+      { index: 0, distance: Math.hypot(origin.x, origin.z) },
+    ]
+    for (let i = 0; i < copies.length; i++) {
+      scored.push({
+        index: i + 1,
+        distance: Math.hypot(copies[i].x - origin.x, copies[i].z - origin.z),
+      })
+    }
+    scored.sort((a, b) => a.distance - b.distance)
+    return scored.slice(0, count).map((entry) => entry.index)
+  }
+
+  /** Give `mesh` just these copies, in slot order, and draw exactly them. */
+  private writeCopyMatrices(mesh: Mesh, copies: FleetSlot[], indices: number[]) {
+    mesh.computeWorldMatrix(true)
+    const inverse = Matrix.Invert(mesh.getWorldMatrix())
+    const offset = new Vector3()
+    const local = new Vector3()
+    const matrices = new Float32Array(indices.length * 16)
+    for (let i = 0; i < indices.length; i++) {
+      const copy = indices[i] === 0 ? null : copies[indices[i] - 1]
+      if (!copy) {
+        Matrix.IdentityToRef(this.scratchMatrix)
+      } else {
+        offset.set(copy.x, 0, copy.z)
+        Vector3.TransformNormalToRef(offset, inverse, local)
+        Matrix.TranslationToRef(local.x, local.y, local.z, this.scratchMatrix)
+      }
+      this.scratchMatrix.copyToArray(matrices, i * 16)
+    }
+    mesh.thinInstanceSetBuffer('matrix', matrices, 16, true)
+    mesh.thinInstanceRefreshBoundingInfo(true)
+  }
+
+  /** Collapse these slots to nothing, leaving the rest of the buffer alone. */
+  private hideCopies(mesh: Mesh, indices: number[]) {
+    Matrix.ScalingToRef(0, 0, 0, this.scratchMatrix)
+    let touched = false
+    for (const index of indices) {
+      if (index >= mesh.thinInstanceCount) continue
+      mesh.thinInstanceSetMatrixAt(index, this.scratchMatrix, false)
+      touched = true
+    }
+    if (touched) mesh.thinInstanceBufferUpdated('matrix')
+  }
+
+  /** Put these slots back where the formation says they belong. */
+  private restoreCopies(mesh: Mesh, copies: FleetSlot[], indices: number[]) {
+    mesh.computeWorldMatrix(true)
+    const inverse = Matrix.Invert(mesh.getWorldMatrix())
+    const offset = new Vector3()
+    const local = new Vector3()
+    let touched = false
+    for (const index of indices) {
+      if (index >= mesh.thinInstanceCount) continue
+      const copy = index === 0 ? null : copies[index - 1]
+      if (!copy) {
+        Matrix.IdentityToRef(this.scratchMatrix)
+      } else {
+        offset.set(copy.x, 0, copy.z)
+        Vector3.TransformNormalToRef(offset, inverse, local)
+        Matrix.TranslationToRef(local.x, local.y, local.z, this.scratchMatrix)
+      }
+      mesh.thinInstanceSetMatrixAt(index, this.scratchMatrix, false)
+      touched = true
+    }
+    if (touched) mesh.thinInstanceBufferUpdated('matrix')
+  }
+
+  /** Is any of this block inside the camera frustum? */
+  private blockOnScreen(key: string): boolean {
+    const placement = this.placements.get(key)
+    if (!placement) return true
+    const box = this.blockWorldBounds(placement)
+    return this.camera.isInFrustum(new BoundingInfo(box.min, box.max))
+  }
+
+  /** Copies this LOD group has to draw, the unit in the lineup included. */
+  private fleetUnitsFor(key: string): number {
+    const copies = this.placements.get(key)?.fleetCopies?.length ?? 0
+    return copies === 0 ? 1 : copies + 1
   }
 
   private applyLodLevel(group: LodGroup, index: number) {
@@ -4361,6 +4824,8 @@ export class ComparisonScene {
       clipPlaying: false,
       fleetCopies: null,
       unitBounds: null,
+      fleetSpan: null,
+      closeUp: null,
     }
 
     if (item.shape === 'person') {
@@ -4369,6 +4834,7 @@ export class ComparisonScene {
 
     if (item.model && baseRoots.length > 0) {
       this.registerLodGroup(instanceId, item.model.path, body, baseRoots, (root) => {
+        this.cropLodLevel(root, item)
         this.enableVertexColors(root)
         this.prepareImportedMaterials(root)
         if (item.model?.heightPaint) this.applyHeightPaint(root, item.model.heightPaint)
@@ -5113,6 +5579,40 @@ export class ComparisonScene {
   }
 
   /**
+   * Put a downloaded detail level through the same import crop LOD0 got.
+   *
+   * Its thresholds are in the model's authored units, and a level arrives
+   * already parented to a node carrying the metre scale, so crop it detached —
+   * the generated levels share the source file's coordinate system exactly,
+   * which is what makes that the same test. Without this, a stray part LOD0
+   * hid (the Skytrain has a wheel parked well off the airframe) comes back the
+   * moment the model swaps level, blown up by the scale with everything else
+   * and floating out in space where it was authored.
+   */
+  private cropLodLevel(root: TransformNode, item: CatalogItem) {
+    const parent = root.parent
+    const wasEnabled = root.isEnabled(false)
+    root.parent = null
+    // A level arrives parked disabled, and the crop only looks at meshes that
+    // are enabled — so switch it on for the measurement and put it back.
+    root.setEnabled(true)
+    try {
+      root.computeWorldMatrix(true)
+      for (const mesh of root.getChildMeshes(false)) {
+        mesh.computeWorldMatrix(true)
+        mesh.refreshBoundingInfo(true, true)
+      }
+      this.cropImportedModel(root, item)
+    } catch {
+      // Crop is a safety net; never fail a level swap over it.
+    } finally {
+      root.setEnabled(wasEnabled)
+      root.parent = parent
+      root.computeWorldMatrix(true)
+    }
+  }
+
+  /**
    * Hide needle AABBs left by sim "teleport to -8192" helpers. Do not infer
    * landing-gear contact or strip lights — that was collapsing whole aircraft.
    */
@@ -5273,6 +5773,7 @@ export class ComparisonScene {
       placement.body,
       item,
       placement.instanceId,
+      placement.fleetSpan,
     )
   }
 
@@ -5305,6 +5806,7 @@ export class ComparisonScene {
     body: TransformNode,
     item: CatalogItem,
     instanceId: string,
+    fleetSpan: FleetSpan | null = null,
   ): DynamicTexture {
     root.computeWorldMatrix(true)
     body.computeWorldMatrix(true)
@@ -5330,6 +5832,16 @@ export class ComparisonScene {
     for (let i = 1; i < corners.length; i++) {
       localMin = Vector3.Minimize(localMin, corners[i])
       localMax = Vector3.Maximize(localMax, corners[i])
+    }
+
+    // A block is what the plaque is labelling, so it sizes itself from the
+    // whole formation and seats itself in front of the front rank. `root` only
+    // translates, so its axes are the world axes the span is expressed in.
+    if (fleetSpan) {
+      localMin.x += fleetSpan.minX
+      localMax.x += fleetSpan.maxX
+      localMin.z += fleetSpan.minZ
+      localMax.z += fleetSpan.maxZ
     }
 
     const footprintW = Math.max(localMax.x - localMin.x, localMax.z - localMin.z, 0.4)
@@ -5532,7 +6044,7 @@ export class ComparisonScene {
     const body = placement.body
     body.computeWorldMatrix(true)
     for (const child of body.getChildMeshes()) child.computeWorldMatrix(true)
-    const { min, max } = this.visualBounds(body)
+    const { min, max } = this.blockWorldBounds(placement)
     const size = max.subtract(min)
     const center = min.add(max).scale(0.5)
     const magnitude = itemMagnitude(item)

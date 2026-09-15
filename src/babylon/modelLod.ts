@@ -46,19 +46,34 @@ export type LodLevel = {
   /** Path under `public/`; null for LOD0, which is already in the scene. */
   path: string | null
   switchBelowPixels: number
+  /** What one copy of the model costs at this level. */
+  triangles: number
   state: LodLevelState
 }
 
 /** LOD0 plus whatever the manifest has for this model, finest-first. */
-export function buildLodLevels(manifestLevels: ModelLodLevel[]): LodLevel[] {
+export function buildLodLevels(
+  manifestLevels: ModelLodLevel[],
+  sourceTriangles: number,
+): LodLevel[] {
   const levels: LodLevel[] = [
-    { path: null, switchBelowPixels: Number.POSITIVE_INFINITY, state: 'ready' },
+    {
+      path: null,
+      switchBelowPixels: Number.POSITIVE_INFINITY,
+      triangles: sourceTriangles,
+      state: 'ready',
+    },
   ]
   for (const level of manifestLevels) {
     const token = /\.(lod\d+)\.glb$/i.exec(level.path)?.[1]?.toLowerCase()
     const switchBelowPixels = token ? SWITCH_BELOW_PIXELS[token] : undefined
     if (switchBelowPixels === undefined) continue
-    levels.push({ path: level.path, switchBelowPixels, state: 'idle' })
+    levels.push({
+      path: level.path,
+      switchBelowPixels,
+      triangles: level.triangles,
+      state: 'idle',
+    })
   }
   // Coarsest last, and never let a coarser level claim a larger threshold.
   levels.sort((a, b) => b.switchBelowPixels - a.switchBelowPixels)
@@ -91,6 +106,52 @@ export function apparentPixelHeight(
   const frustumHeight = 2 * distance * Math.tan(fovRadians / 2)
   if (frustumHeight <= 1e-6) return Number.POSITIVE_INFINITY
   return ((2 * radius) / frustumHeight) * viewportHeightPx
+}
+
+/** One crowd's claim on the frame: what it wants, and what each copy costs. */
+export type CrowdLevelRequest = {
+  levels: LodLevel[]
+  /** Copies drawn from these levels, the unit in the lineup included. */
+  units: number
+  /** Level distance asked for, coarsened in place to fit the budget. */
+  wanted: number
+}
+
+/**
+ * Coarsen crowds until the whole stage fits `triangleBudget`.
+ *
+ * A fleet block is one LOD group: every copy draws at the level the group
+ * picks, so a level that is affordable for the plane under the camera but not
+ * for the four thousand behind it is not affordable at all. Left unchecked, the
+ * frame budget trims the block instead and most of the formation vanishes just
+ * as you approach it — so the choice has to be made here, in detail, rather
+ * than there, in how many copies survive.
+ *
+ * Priciest block first, one level at a time, so the cost comes off where it is
+ * largest and a small formation keeps its detail while a huge one gives it up.
+ */
+export function fitCrowdLevels(
+  requests: CrowdLevelRequest[],
+  triangleBudget: number,
+): void {
+  const cost = (request: CrowdLevelRequest) =>
+    request.levels[request.wanted].triangles * request.units
+  let total = 0
+  for (const request of requests) total += cost(request)
+
+  // Bounded by construction: every pass coarsens one crowd by one level.
+  let guard = requests.length * 8
+  while (total > triangleBudget && guard-- > 0) {
+    let worst: CrowdLevelRequest | null = null
+    for (const request of requests) {
+      if (request.wanted >= request.levels.length - 1) continue
+      if (!worst || cost(request) > cost(worst)) worst = request
+    }
+    if (!worst) return
+    total -= cost(worst)
+    worst.wanted += 1
+    total += cost(worst)
+  }
 }
 
 /** The level this model wants at `pixels`, ignoring what has been downloaded. */
