@@ -677,6 +677,150 @@ const CATALOG_SEED: CatalogSeed[] = [
     },
   },
   {
+    id: 'p51',
+    name: 'P-51 Mustang',
+    category: 'military',
+    length: 9.83,
+    width: 11.28,
+    height: 4.08,
+    shape: 'box',
+    color: '#8a9199',
+    blurb: 'North American P-51D Mustang, the escort fighter that could reach Berlin and back (11.3 m span).',
+    model: {
+      path: 'models/p51/model.glb',
+      scaleAxis: 'length',
+      // Authored at an off-axis heading; this squares the wings up with the
+      // nose on -Z, the way the rest of the catalog faces.
+      yawDegrees: 226.5,
+    },
+  },
+  {
+    id: 'p47',
+    name: 'P-47 Thunderbolt',
+    category: 'military',
+    length: 11.02,
+    width: 12.42,
+    height: 4.47,
+    shape: 'box',
+    color: '#6b7280',
+    blurb: 'Republic P-47D Thunderbolt, eight machine guns and a 2,000 kg bomb load on one radial engine (12.4 m span).',
+    model: {
+      path: 'models/p47/model.glb',
+      scaleAxis: 'length',
+      // Authored at an off-axis heading; this squares the wings up with the
+      // nose on -Z, the way the rest of the catalog faces.
+      yawDegrees: 128.25,
+    },
+  },
+  {
+    id: 'p38',
+    name: 'P-38 Lightning',
+    category: 'military',
+    length: 11.53,
+    width: 15.85,
+    height: 3.91,
+    shape: 'box',
+    color: '#7c8794',
+    blurb: 'Lockheed P-38L Lightning, twin boom, twin engine, the fighter that killed Yamamoto (15.9 m span).',
+    model: {
+      path: 'models/p38/model.glb',
+      scaleAxis: 'length',
+      // Authored at an off-axis heading; this squares the wings up with the
+      // nose on -Z, the way the rest of the catalog faces.
+      yawDegrees: 312.25,
+    },
+  },
+  {
+    id: 'f6f',
+    name: 'F6F Hellcat',
+    category: 'military',
+    length: 10.24,
+    width: 13.06,
+    height: 3.99,
+    shape: 'box',
+    color: '#374151',
+    blurb: 'Grumman F6F Hellcat, the carrier fighter built to beat the Zero — 19 kills for every loss (13.1 m span).',
+    model: {
+      path: 'models/f6f/model.glb',
+      scaleAxis: 'length',
+      // Authored at an off-axis heading; this squares the wings up with the
+      // nose on -Z, the way the rest of the catalog faces.
+      yawDegrees: 118.25,
+    },
+  },
+  {
+    id: 'f4u',
+    name: 'F4U Corsair',
+    category: 'military',
+    length: 10.26,
+    width: 12.5,
+    height: 4.5,
+    shape: 'box',
+    color: '#2f4858',
+    blurb: 'Vought F4U Corsair, the bent-wing Marine fighter, first from land and later from carriers (12.5 m span).',
+    model: {
+      path: 'models/f4u/model.glb',
+      scaleAxis: 'length',
+      // Authored at an off-axis heading; this squares the wings up with the
+      // nose on -Z, the way the rest of the catalog faces.
+      yawDegrees: 146.25,
+    },
+  },
+  {
+    id: 'b17',
+    name: 'B-17 Flying Fortress',
+    category: 'military',
+    length: 22.66,
+    width: 31.62,
+    height: 5.82,
+    shape: 'box',
+    color: '#a3a8ae',
+    blurb: 'Boeing B-17G Flying Fortress, thirteen machine guns and the daylight bombing campaign over Germany (31.6 m span).',
+    model: {
+      path: 'models/b17/model.glb',
+      scaleAxis: 'length',
+      // Authored at an off-axis heading; this squares the wings up with the
+      // nose on -Z, the way the rest of the catalog faces.
+      yawDegrees: 270,
+    },
+  },
+  {
+    id: 'b25',
+    name: 'B-25 Mitchell',
+    category: 'military',
+    length: 16.13,
+    width: 20.6,
+    height: 4.98,
+    shape: 'box',
+    color: '#6f7680',
+    blurb: 'North American B-25 Mitchell medium bomber, flown off a carrier deck for the Doolittle Raid (20.6 m span).',
+    model: {
+      path: 'models/b25/model.glb',
+      scaleAxis: 'length',
+      // Authored at an off-axis heading; this squares the wings up with the
+      // nose on -Z, the way the rest of the catalog faces.
+      yawDegrees: 90,
+    },
+  },
+  {
+    id: 'c47',
+    name: 'C-47 Skytrain',
+    category: 'military',
+    length: 19.43,
+    width: 29.41,
+    height: 5.18,
+    shape: 'box',
+    color: '#9aa0a6',
+    blurb: 'Douglas C-47 Skytrain, the DC-3 in uniform — paratroops on D-Day and the Hump into China (29.4 m span).',
+    model: {
+      path: 'models/c47/model.glb',
+      scaleAxis: 'length',
+      // Authored at an off-axis heading; this squares the wings up with the
+      // nose on -Z, the way the rest of the catalog faces.
+      yawDegrees: 129.25,
+    },
+  },
+  {
     id: 'b29',
     name: 'B-29 Superfortress',
     category: 'military',
@@ -3368,9 +3512,55 @@ export const COMPARISON_PRESETS: ComparisonPreset[] = [
     ],
   },
   {
+    id: 'us-air-power-1945',
+    name: 'US air power 1945',
+    description: 'The wartime air forces by type, at their August 1945 strength.',
+    tags: [
+      'air force',
+      'usaaf',
+      'fleet',
+      'ww2',
+      'world war ii',
+      '1945',
+      'fighters',
+      'bombers',
+      'order of battle',
+      'aircraft',
+    ],
+    itemIds: [
+      'person-male',
+      'p51',
+      'f6f',
+      'f4u',
+      'p47',
+      'p38',
+      'b25',
+      'c47',
+      'b17',
+      'b29',
+    ],
+    /*
+     * Aircraft on hand with the USAAF, Navy and Marines around the Japanese
+     * surrender, for the main types only. The full 1945 US inventory was some
+     * 63,000 aircraft; the B-24, the dive and torpedo bombers, the trainers and
+     * the liaison fleet have no model here, so this is roughly half of it.
+     */
+    fleet: {
+      p51: 5500,
+      f6f: 3600,
+      f4u: 2200,
+      p47: 5000,
+      p38: 1800,
+      b25: 2600,
+      c47: 4000,
+      b17: 2800,
+      b29: 2100,
+    },
+  },
+  {
     id: 'us-navy-1945',
     name: 'US Navy 1945',
-    description: 'The Pacific fleet at the Japanese surrender, class by class.',
+    description: 'Every major combatant afloat at the Japanese surrender — 803 ships.',
     tags: [
       'navy',
       'fleet',
@@ -3395,22 +3585,34 @@ export const COMPARISON_PRESETS: ComparisonPreset[] = [
       'essex-cv',
     ],
     /*
-     * Ships in commission in August 1945, counted by class rather than by role,
-     * so every block is the ship it says it is. That does mean the lineup is
-     * short of the Navy's full 1945 order of battle: the 71 escort carriers,
-     * the 361 destroyer escorts, the Baltimore heavy cruisers and the older
-     * battleships have no model here that could stand in honestly, and a fleet
-     * lineup that mislabels a hull is worse than one that is visibly partial.
-     * What is here — 311 ships — is the core of the fast carrier task forces.
+     * The August 1945 order of battle, counted by role: 28 fleet and light
+     * carriers, 71 escort carriers, 23 battleships, 72 cruisers, 377
+     * destroyers, 232 submarines. One class stands in for each role, because
+     * there is not a model per class:
+     *
+     *   essex-cv          all 28 fleet and light carriers
+     *   independence-cvl  the 71 escort carriers, on a light-carrier hull —
+     *                     the Casablancas were shorter and slower, and no CVE
+     *                     model was available under a licence this site can ship
+     *   south-dakota      the 19 battleships that are not Iowas, from the
+     *                     North Carolinas back to the 1916 dreadnoughts
+     *   cleveland         all 72 cruisers, heavy and light
+     *   fletcher          all 377 destroyers
+     *   gato              all 232 submarines, including the Balaos and Tenches
+     *
+     * The Navy counted 6,768 ships that August. The 4,698 not here are the
+     * frigates, the 2,547 amphibious craft, the minesweepers, the patrol boats
+     * and the auxiliaries — none of which has a model, and none of which any
+     * hull above could stand in for without being a different kind of ship.
      */
     fleet: {
-      gato: 77,
-      fletcher: 175,
-      cleveland: 26,
-      'independence-cvl': 8,
-      'south-dakota': 4,
+      gato: 232,
+      fletcher: 377,
+      cleveland: 72,
+      'independence-cvl': 71,
+      'south-dakota': 19,
       iowa: 4,
-      'essex-cv': 17,
+      'essex-cv': 28,
     },
   },
   {

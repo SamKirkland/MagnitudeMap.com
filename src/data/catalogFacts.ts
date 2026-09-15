@@ -227,6 +227,22 @@ export const CATALOG_FACTS: Record<string, string> = {
     'Soviet Union, two built 1967–1969. Helicopter carriers designed to hunt NATO ballistic-missile submarines in the Mediterranean with 14 Ka-25 helicopters. Poor seakeeping cut the class short.',
   'wasp':
     'USA, 1989–2009. Eight built at roughly $750 million each. 40,500 t — larger than most nations’ aircraft carriers — carrying about 31 aircraft plus 1,894 Marines, with a flooded well deck for landing craft.',
+  'p51':
+    'USA, 15,586 built. The Merlin-engined D model had the range to escort bombers from England to Berlin and fight when it got there — the single change that broke the Luftwaffe over Germany. 703 km/h, six 12.7 mm guns.',
+  'p47':
+    'USA, 15,636 built — more than any other US fighter. 8 t empty, twice a Spitfire, and it could absorb damage that would have killed anything else. Eight 12.7 mm guns and up to 1,100 kg of bombs made it the ground-attack aircraft of 1944–45.',
+  'p38':
+    'USA, 10,037 built. Twin engines, twin booms and a nose full of guns firing straight ahead instead of converging. Its range is what let 18 of them fly 1,600 km to intercept Admiral Yamamoto in April 1943.',
+  'f6f':
+    'USA, 12,275 built in just over two years. Designed around what the Navy had learned fighting the Zero, and it worked: Hellcats claimed 5,223 aircraft for 270 losses in air combat, more than half of all US Navy kills in the Pacific.',
+  'f4u':
+    'USA, 12,571 built over ten years, the longest production run of any US piston fighter. The inverted gull wing exists to give a 4 m propeller ground clearance without a stalky undercarriage. Judged too tricky for carriers at first, so the Marines flew it from islands.',
+  'b17':
+    'USA, 12,731 built. Thirteen 12.7 mm guns and a reputation for coming home on two engines. The Eighth Air Force flew it in daylight over Germany and lost 4,750 of them doing it.',
+  'b25':
+    'USA, 9,816 built. A medium bomber that ended up doing everything — 16 of them flew off the deck of USS Hornet in April 1942 to bomb Tokyo, a take-off no one had tried with an aircraft that size.',
+  'c47':
+    'USA, 10,174 built from the DC-3 airliner. It dropped the paratroops on D-Day, towed the gliders, and flew the Hump from India into China. Eisenhower named it one of the four weapons that won the war, alongside the bazooka, the jeep and the atom bomb.',
   'gato':
     'USA, 77 built 1941–1944, with 195 more of the near-identical Balao and Tench classes. 1,525 t submerged, ten 533 mm torpedo tubes, 21 knots on the surface and 9 submerged. US submarines were under 2 per cent of the Navy but sank over half of all Japanese merchant tonnage; 52 boats and 3,500 men were lost doing it.',
   'fletcher':

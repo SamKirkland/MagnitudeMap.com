@@ -3,10 +3,10 @@
   "file": "model.glb",
   "license": "CC-BY-4.0",
   "licenseLabel": "CC BY",
-  "author": "42manako",
-  "source": "https://sketchfab.com/3d-models/ukrainian-mil-mi-24p-2d8a8f13daae4757be0ff95195a6d6f3",
-  "sourceAsset": "Ukrainian Mil Mi-24P",
-  "sketchfabUid": "2d8a8f13daae4757be0ff95195a6d6f3",
-  "notes": "Requested model. Blades are modelled spread, so the app scales on width (17.3 m rotor diameter) per the helicopter rule; rendered length/height run ~10% over the catalog figures because of the spread blades.",
-  "attribution": "Ukrainian Mil Mi-24P by 42manako on Sketchfab (CC BY) — https://sketchfab.com/3d-models/ukrainian-mil-mi-24p-2d8a8f13daae4757be0ff95195a6d6f3"
+  "author": "Duane's Mind",
+  "source": "https://sketchfab.com/3d-models/mi-24-hind-004d68143e1a4df88e136dbc0a05f181",
+  "sourceAsset": "Mi-24 Hind",
+  "sketchfabUid": "004d68143e1a4df88e136dbc0a05f181",
+  "notes": "Original work — described by the uploader as 'Modelled in Maya and Textured in Zbrush', no third-party source claimed. Replaces an earlier Mi-24P from 42manako that was tagged CC-BY but described as 'Ripped from the Battlefield 2 mod Point of Existence'; the uploader held no rights in that geometry, so the CC grant was void. Low poly (4.2k tris). Shipped with the 'Wheels and Rotor' animation stripped and the gear-down pose (t=3.25 s) baked into node TRS — the file's own rest pose is gear-up. Authored tail-forward, so yawDegrees 180. Scaled on the 17.3 m rotor diameter (scaleAxis width); catalog length is the 21.35 m rotors-turning figure and will not match the mesh exactly.",
+  "attribution": "Mi-24 Hind by Duane's Mind on Sketchfab (CC BY) — https://sketchfab.com/3d-models/mi-24-hind-004d68143e1a4df88e136dbc0a05f181"
 }

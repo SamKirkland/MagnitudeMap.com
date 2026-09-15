@@ -251,6 +251,23 @@ type PlacedObject = {
 /** Concurrent LOD downloads. Enough to keep the pipe busy, few enough to stay polite. */
 const MAX_LOD_LOADS_IN_FLIGHT = 4
 
+/**
+ * Triangles a frame the fleet blocks may share between them. Set so the largest
+ * lineup — 29,600 aircraft, about 14.5M triangles once they are all at the swarm
+ * level — draws in full, while the first frames of that same lineup, at full
+ * detail because no coarse level has been fetched yet, are cut from roughly a
+ * billion triangles to something the tab survives. Blocks are trimmed from the
+ * back, so what you lose is the rank furthest from the camera, and you get it
+ * back a second later when the coarse levels land.
+ */
+const FLEET_TRIANGLE_BUDGET = 16_000_000
+/**
+ * The poster renders a single frame at its own resolution, so it gets a much
+ * larger allowance: a downloaded image should show the whole fleet, and the
+ * detail levels already pick themselves from the poster's apparent sizes.
+ */
+const POSTER_FLEET_BUDGET_MULTIPLIER = 12
+
 function sameFleetCounts(
   a: Record<string, number> | null,
   b: Record<string, number> | null,
@@ -546,6 +563,8 @@ export class ComparisonScene {
   private lodLoadsInFlight = 0
   /** How many of each type a fleet lineup is showing; null for one of each. */
   private fleetCounts: Record<string, number> | null = null
+  /** Last budget pass, surfaced through `window.__mmPerf` for tuning. */
+  private fleetDebug: { requested: number; scale: number; drawn: number; units: number } | null = null
   private readonly scratchMatrix = Matrix.Identity()
   private ground: Mesh
   private skybox: Mesh
@@ -3145,10 +3164,19 @@ export class ComparisonScene {
     let centerZ = hasItems ? (minZ + maxZ) / 2 : 0
 
     if (cityOn && this.cityFootprint.width > 1) {
-      width = Math.max(width, this.cityFootprint.width * 1.22)
-      depth = Math.max(depth, this.cityFootprint.depth * 1.22)
-      centerX = 0
-      centerZ = 0
+      const cityWidth = this.cityFootprint.width * 1.22
+      const cityDepth = this.cityFootprint.depth * 1.22
+      // Only re-centre on the plate where the plate is the wider thing. A fleet
+      // lineup runs 13 km along +X from the origin, and centring that on a 300 m
+      // stadium leaves half the fleet standing off the edge of the ground.
+      if (cityWidth > width) {
+        width = cityWidth
+        centerX = 0
+      }
+      if (cityDepth > depth) {
+        depth = cityDepth
+        centerZ = 0
+      }
     }
 
     this.rebuildGround(centerX, centerZ, width, depth)
@@ -3603,6 +3631,13 @@ export class ComparisonScene {
       activeMeshes: this.scene.getActiveMeshes().length,
       activeTriangles: Math.round(this.scene.getActiveIndices() / 3),
       lodLevels: [...lodLevels].map((n) => n ?? 0),
+      fleet: this.fleetDebug
+        ? {
+            unitsDrawn: this.fleetDebug.units,
+            budgetScale: Number(this.fleetDebug.scale.toFixed(3)),
+            trianglesM: Number((this.fleetDebug.drawn / 1e6).toFixed(1)),
+          }
+        : null,
     }
     ;(window as unknown as { __mmPerf: typeof stats }).__mmPerf = stats
     this.rendersThisSecond = 0
@@ -3884,6 +3919,58 @@ export class ComparisonScene {
     for (const placement of this.placements.values()) {
       this.applyFleetToPlacement(placement)
     }
+    this.applyFleetBudget()
+  }
+
+  /**
+   * Draw as much of each block as the frame can afford.
+   *
+   * The full US air power lineup is 29,600 aircraft. At the swarm level that is
+   * about 12M triangles, which is fine; at full detail it would be closer to a
+   * billion, and the first frames of a lineup are always at full detail because
+   * the coarse levels have not been fetched yet. So every block gets a share of
+   * one budget, proportional to what it asked for, and draws a prefix of its
+   * formation — the front ranks, which fill in from the back as the coarse
+   * levels arrive and the camera pulls away.
+   *
+   * `thinInstanceCount` is the knob: the matrix buffer stays at full size, and
+   * this only changes how many of them the GPU is asked to draw.
+   */
+  private applyFleetBudget() {
+    const blocks: { placement: PlacedObject; unitTriangles: number; copies: number }[] = []
+    let requested = 0
+    for (const placement of this.placements.values()) {
+      const copies = placement.fleetCopies?.length ?? 0
+      if (copies === 0) continue
+      let unitTriangles = 0
+      for (const mesh of placement.body.getChildMeshes(false)) {
+        if (!mesh.isEnabled() || mesh.isVisible === false) continue
+        unitTriangles += mesh.getTotalIndices() / 3
+      }
+      unitTriangles = Math.max(unitTriangles, 1)
+      blocks.push({ placement, unitTriangles, copies })
+      requested += unitTriangles * (copies + 1)
+    }
+    if (blocks.length === 0) return
+
+    // A poster is one frame, not sixty a second, so it can afford far more than
+    // the interactive view — and trimming a block there loses ships from a
+    // picture someone is about to download.
+    const budget = this.posterPreview
+      ? FLEET_TRIANGLE_BUDGET * POSTER_FLEET_BUDGET_MULTIPLIER
+      : FLEET_TRIANGLE_BUDGET
+    const scale = requested > budget ? budget / requested : 1
+    this.fleetDebug = { requested, scale, drawn: 0, units: 0 }
+    for (const block of blocks) {
+      const shown = Math.max(1, Math.min(block.copies + 1, Math.floor((block.copies + 1) * scale)))
+      this.fleetDebug.drawn += shown * block.unitTriangles
+      this.fleetDebug.units += shown
+      for (const mesh of block.placement.body.getChildMeshes(false)) {
+        if (!(mesh instanceof Mesh)) continue
+        if (mesh.thinInstanceCount === 0) continue
+        mesh.thinInstanceCount = shown
+      }
+    }
   }
 
   /**
@@ -4027,12 +4114,6 @@ export class ComparisonScene {
    */
   private updateLodGroups() {
     if (this.lodGroups.size === 0) return
-    // The poster wants the geometry it is about to rasterize, not an impostor.
-    if (this.posterPreview) {
-      for (const group of this.lodGroups.values()) this.applyLodLevel(group, 0)
-      return
-    }
-
     // Debug affordance, same spirit as `window.__mmPerf`: pin every model to one
     // level to eyeball a threshold, `null`/absent to go back to automatic.
     const pinned = (window as unknown as { __mmLodPin?: number | null }).__mmLodPin
@@ -4084,6 +4165,9 @@ export class ComparisonScene {
     group.active = index
     // The new meshes are not in the shadow map's render list yet.
     if (this.shadowsActive()) this.syncShadowCasters()
+    // A block's cost per copy just changed, so the whole budget has to be
+    // shared out again.
+    if (this.fleetCounts) this.applyFleetBudget()
     this.markDirty()
   }
 
@@ -4118,7 +4202,11 @@ export class ComparisonScene {
       // A fleet's copies live on the meshes, so a level that was not in the
       // scene when the formation was built has to be given them now.
       const placement = this.placements.get(group.key)
-      if (placement?.fleetCopies?.length) this.applyFleetInstances(placement)
+      if (placement?.fleetCopies?.length) {
+        this.applyFleetInstances(placement)
+        // Setting the buffer resets the draw count to the full formation.
+        this.applyFleetBudget()
+      }
       this.markDirty()
     } catch (error) {
       console.warn('Failed to load LOD level', level.path, error)
@@ -4141,14 +4229,18 @@ export class ComparisonScene {
     }
 
     for (const placement of this.placements.values()) {
+      // A fleet block re-renders every copy into the shadow map, which doubles
+      // the frame for a hundred aircraft-shaped shadows nobody can resolve at
+      // the zoom a fleet is viewed from. The lead unit still casts.
+      const instanced = Boolean(placement.fleetCopies?.length)
       if (placement.body instanceof AbstractMesh) {
         placement.body.receiveShadows = true
-        this.shadows.addShadowCaster(placement.body, true)
+        if (!instanced) this.shadows.addShadowCaster(placement.body, true)
       }
       for (const mesh of placement.body.getChildMeshes(false)) {
         if (!mesh.isVisible || mesh.getTotalVertices() < 3) continue
         mesh.receiveShadows = true
-        if (!(placement.body instanceof AbstractMesh)) {
+        if (!instanced && !(placement.body instanceof AbstractMesh)) {
           this.shadows.addShadowCaster(mesh, false)
         }
       }

@@ -87,6 +87,10 @@ export function fleetFormation(count: number, unitX: number, unitZ: number): Fle
     .filter((_, i) => i !== heroIndex)
     // Re-centre on the hero: it is the one the lineup already positioned.
     .map((slot) => ({ x: slot.x - hero.x, z: slot.z - hero.z }))
+    // Nearest the hero first, so that drawing only a prefix of the formation —
+    // which is what the triangle budget does when a block cannot be afforded in
+    // full — leaves a compact cluster rather than one very long front rank.
+    .sort((a, b) => Math.hypot(a.x, a.z) - Math.hypot(b.x, b.z))
 
   return {
     copies,

@@ -24,11 +24,13 @@ import type { ModelLodLevel } from '../data/modelLods'
  * 320 px is roughly a third of a tall viewport — past that the mid level's
  * halved triangle count and 512 px textures are indistinguishable. 96 px is
  * about where a model reads as a shape rather than an object, which is exactly
- * what the far level preserves.
+ * what the far level preserves. Below 34 px there is no shape left to lose, and
+ * the swarm level is what makes a lineup of thirty thousand aircraft draw at all.
  */
 const SWITCH_BELOW_PIXELS: Record<string, number> = {
   lod1: 320,
   lod2: 96,
+  lod3: 34,
 }
 
 /**

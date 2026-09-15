@@ -194,6 +194,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "notes": "Requested Ace_Fighter Atlantis City Ship (a4d4105890994f97b60632dcadb33875) is CC-BY-NC. Substituted 3D-LAND's downloadable CC-BY low-poly city-ship (similar snowflake silhouette). Scaled to ~3 km span in-app."
   },
   {
+    "id": "b17",
+    "catalogName": "B-17 Flying Fortress",
+    "author": "manilov.ap",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/b17-15d99f2396f7464cb2fb4098f2c234af",
+    "sourceAsset": "B17",
+    "attribution": "B17 by manilov.ap on Sketchfab (CC BY) — https://sketchfab.com/3d-models/b17-15d99f2396f7464cb2fb4098f2c234af",
+    "requiresAttribution": true,
+    "notes": "Original work — one of a broad, consistent series of aircraft on this account running from interwar types (Bristol 138, HP.42, TB-1) through Soviet and modern designs, which is the portfolio of a modeller rather than a re-upload channel. No third-party source, game or engine named in the description or tags. Scaled to 22.66 m length in-app."
+  },
+  {
     "id": "b1",
     "catalogName": "B-1B Lancer",
     "author": "Muhamad Mirza Arrafi",
@@ -228,6 +240,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "B-21 Raider by Ricardo3D on Sketchfab (CC BY) — https://sketchfab.com/3d-models/b-21-raider-21a6984123814efc83a77f7c03977af8",
     "requiresAttribution": true,
     "notes": "B-21 Raider (CC-BY, creadordemu). Linked yakudami model is Store-only/not downloadable. Scaled to ~45 m wingspan estimate in-app."
+  },
+  {
+    "id": "b25",
+    "catalogName": "B-25 Mitchell",
+    "author": "manilov.ap",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/b25-605ff21ad2c945989066529650f05c1c",
+    "sourceAsset": "B25",
+    "attribution": "B25 by manilov.ap on Sketchfab (CC BY) — https://sketchfab.com/3d-models/b25-605ff21ad2c945989066529650f05c1c",
+    "requiresAttribution": true,
+    "notes": "Original work — one of a broad, consistent series of aircraft on this account running from interwar types (Bristol 138, HP.42, TB-1) through Soviet and modern designs, which is the portfolio of a modeller rather than a re-upload channel. No third-party source, game or engine named in the description or tags. Scaled to 16.13 m length in-app."
   },
   {
     "id": "b29",
@@ -372,6 +396,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "C-18A Skylord Military Transport Aircraft by Muhamad Mirza Arrafi on Sketchfab (CC BY) — https://sketchfab.com/3d-models/c-18a-skylord-military-transport-aircraft-392a9149a8af42df95ac7f7e96eb0acf",
     "requiresAttribution": true,
     "notes": "C-18A Skylord by nazidefenseforceofficial (CC-BY; C-17-based concept). Scaled to C-17 size 53 m length in-app."
+  },
+  {
+    "id": "c47",
+    "catalogName": "C-47 Skytrain",
+    "author": "manilov.ap",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/c47-c4fb0f24d55f4866a9669aa952dceaf3",
+    "sourceAsset": "C47",
+    "attribution": "C47 by manilov.ap on Sketchfab (CC BY) — https://sketchfab.com/3d-models/c47-c4fb0f24d55f4866a9669aa952dceaf3",
+    "requiresAttribution": true,
+    "notes": "Original work — one of a broad, consistent series of aircraft on this account running from interwar types (Bristol 138, HP.42, TB-1) through Soviet and modern designs, which is the portfolio of a modeller rather than a re-upload channel. No third-party source, game or engine named in the description or tags. Scaled to 19.43 m length in-app. The model carries a radio mast and aerial wires and sits level rather than tail-down, so it renders about 7.5 m tall against the C-47's published 5.18 m to the fin — verify-models flags the height for this reason."
   },
   {
     "id": "c5",
@@ -744,6 +780,30 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "Low poly 1:1 F/A-18F SuperHornet by Yi Tsung Lee on Sketchfab (CC BY) — https://sketchfab.com/3d-models/low-poly-11-fa-18f-superhornet-635e68b7a0d24ac29c10f5fb9110129f",
     "requiresAttribution": true,
     "notes": "F/A-18F Super Hornet by Yi Tsung Lee (CC-BY). Replaces prior nazidefenseforceofficial stand-in. Scaled to 18.31 m length in-app."
+  },
+  {
+    "id": "f4u",
+    "catalogName": "F4U Corsair",
+    "author": "manilov.ap",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/f4u-b042ee1ca0674810a7d05a7a568dd284",
+    "sourceAsset": "F4u",
+    "attribution": "F4u by manilov.ap on Sketchfab (CC BY) — https://sketchfab.com/3d-models/f4u-b042ee1ca0674810a7d05a7a568dd284",
+    "requiresAttribution": true,
+    "notes": "Original work — one of a broad, consistent series of aircraft on this account running from interwar types (Bristol 138, HP.42, TB-1) through Soviet and modern designs, which is the portfolio of a modeller rather than a re-upload channel. No third-party source, game or engine named in the description or tags. Scaled to 10.26 m length in-app."
+  },
+  {
+    "id": "f6f",
+    "catalogName": "F6F Hellcat",
+    "author": "manilov.ap",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/f6f-d64f29e7f1c144e6a0712ea12d83a91e",
+    "sourceAsset": "F6f",
+    "attribution": "F6f by manilov.ap on Sketchfab (CC BY) — https://sketchfab.com/3d-models/f6f-d64f29e7f1c144e6a0712ea12d83a91e",
+    "requiresAttribution": true,
+    "notes": "Original work — one of a broad, consistent series of aircraft on this account running from interwar types (Bristol 138, HP.42, TB-1) through Soviet and modern designs, which is the portfolio of a modeller rather than a re-upload channel. No third-party source, game or engine named in the description or tags. Scaled to 10.24 m length in-app."
   },
   {
     "id": "falcon-9",
@@ -1368,6 +1428,42 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "Owl by po on Sketchfab (CC BY) — https://sketchfab.com/3d-models/owl-d177e1fbcce940cba32e434cc5a62f1a",
     "requiresAttribution": true,
     "notes": "Owl (CC-BY, pothedev, fly/walk/idle clips). Linked GremorySaiyan fly is Standard. Scaled to 1.4 m wingspan in-app."
+  },
+  {
+    "id": "p38",
+    "catalogName": "P-38 Lightning",
+    "author": "manilov.ap",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/p38-7eab500310604fd996b116f9cd7520a7",
+    "sourceAsset": "P38",
+    "attribution": "P38 by manilov.ap on Sketchfab (CC BY) — https://sketchfab.com/3d-models/p38-7eab500310604fd996b116f9cd7520a7",
+    "requiresAttribution": true,
+    "notes": "Original work — one of a broad, consistent series of aircraft on this account running from interwar types (Bristol 138, HP.42, TB-1) through Soviet and modern designs, which is the portfolio of a modeller rather than a re-upload channel. No third-party source, game or engine named in the description or tags. Scaled to 11.53 m length in-app."
+  },
+  {
+    "id": "p47",
+    "catalogName": "P-47 Thunderbolt",
+    "author": "manilov.ap",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/p47-30002b04d490465b90c7ecbfe01e0f52",
+    "sourceAsset": "P47",
+    "attribution": "P47 by manilov.ap on Sketchfab (CC BY) — https://sketchfab.com/3d-models/p47-30002b04d490465b90c7ecbfe01e0f52",
+    "requiresAttribution": true,
+    "notes": "Original work — one of a broad, consistent series of aircraft on this account running from interwar types (Bristol 138, HP.42, TB-1) through Soviet and modern designs, which is the portfolio of a modeller rather than a re-upload channel. No third-party source, game or engine named in the description or tags. Scaled to 11.02 m length in-app."
+  },
+  {
+    "id": "p51",
+    "catalogName": "P-51 Mustang",
+    "author": "manilov.ap",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/p51-11a78cd198c443969e8d741605d4e04f",
+    "sourceAsset": "P51",
+    "attribution": "P51 by manilov.ap on Sketchfab (CC BY) — https://sketchfab.com/3d-models/p51-11a78cd198c443969e8d741605d4e04f",
+    "requiresAttribution": true,
+    "notes": "Original work — one of a broad, consistent series of aircraft on this account running from interwar types (Bristol 138, HP.42, TB-1) through Soviet and modern designs, which is the portfolio of a modeller rather than a re-upload channel. No third-party source, game or engine named in the description or tags. Scaled to 9.83 m length in-app."
   },
   {
     "id": "alkesh",

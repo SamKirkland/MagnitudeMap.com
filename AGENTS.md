@@ -158,9 +158,9 @@ Sub-10 ft lengths render as feet and inches (`5 ft 9 in`) via `formatFeetInches`
 
 ## Level of detail
 
-`npm run generate-lods` writes `model.lod1.glb` / `model.lod2.glb` beside every
-`public/models/{id}/model.glb` (and the ground plates), plus the generated
-manifest `src/data/modelLods.ts`. **Commit all of it** — same rule as the GLB
+`npm run generate-lods` writes `model.lod1.glb` / `model.lod2.glb` /
+`model.lod3.glb` beside every `public/models/{id}/model.glb` (and the ground
+plates), plus the generated manifest `src/data/modelLods.ts`. **Commit all of it** — same rule as the GLB
 itself. `build` / `build:static` run the script and no-op when the source hash
 in the manifest still matches, so a normal build costs nothing.
 
@@ -169,29 +169,60 @@ Venator goes from 402k triangles / 22.5 MB to 8k / 675 KB, joined into one
 primitive per material. It is not meant to survive close inspection — it is
 meant to keep the silhouette at 50 px.
 
+The swarm level below it (`lod3`, ~400 triangles, 64 px textures) exists for one
+reason: the 1945 air power lineup is 29,600 aircraft, which is 90M triangles a
+frame at the far level and 12M at this one. Nothing but a fleet lineup ever
+reaches it — the threshold is 34 px.
+
 Levels are fetched lazily, per model, the first time the camera pulls back far
 enough to want one, and the switch is by apparent size in pixels rather than raw
 distance (`src/babylon/modelLod.ts`). `window.__mmLodPin = 0 | 1 | 2` pins every
 model to one level for eyeballing a threshold; `null` restores automatic. Level
 counts show up in `window.__mmPerf.lodLevels`, finest first.
 
-**Skinned GLBs get no LODs.** A level would arrive with its own skeleton, and
-the viewer poses skeletons per placement (rest pose, T-pose relaxation, the clip
-it plays on focus), so swapping one mid-clip needs its own design. Twenty-two of
-the twenty-four skinned models are `playClips` or `person` and animate on screen
-anyway; the four static ones (at-te, pelican, yf23, yoda) are the only ones a
-skin bake would win, which is why there is no skin bake.
+**Animation is baked away before anything is simplified**, because a level has
+to be static geometry. The generator loads the catalog through Vite to find out
+which pose the viewer would draw:
 
-Animated models *are* covered: the generator loads the catalog through Vite and
-bakes the pose the viewer draws — the last clip frame for `poseAtClipEnd` (the
-F-22's gear and boarding ladder), the rest pose otherwise — then drops the
-clips before simplifying. Keep `bakeAnimationPose` in lockstep with
-`holdClipEndPose` / `disposeImportedAnimations` in `ComparisonScene`.
+- **Node clips** are frozen at that pose — the last clip frame for
+  `poseAtClipEnd` (the F-22's gear and boarding ladder), the rest pose
+  otherwise — and the clips dropped. Keep `bakeAnimationPose` in lockstep with
+  `holdClipEndPose` / `disposeImportedAnimations` in `ComparisonScene`.
+- **Skins** are dropped outright, but only where that provably changes nothing.
+  A glTF skin whose node transforms *are* its bind pose contributes identity at
+  rest, so the raw vertex positions already are the pose a renderer draws, and
+  removing the skeleton is a no-op you can reason about. `skinRestDeviation`
+  measures it; over 1% the model is skipped. Seven qualify (ankylosaurus,
+  carnotaurus, elephant, leopard, rhino, stormtrooper, yf23).
 
-Models under ~4k triangles are skipped — there is nothing to win. So is any
-level that fails to beat the one above it by 40% on triangles or bytes, or that
-would be a larger download (Draco occasionally refuses a primitive and the
-"simplified" file comes out bigger than the source).
+  The other skinned models have a rest pose that is a real deformation, so
+  posing them statically needs a decision the file does not make — get it wrong
+  and you ship a mangled animal. An actual rest-pose bake (apply linear blend
+  skinning, then reparent into scene space) was tried and produced geometry
+  that did not match what Babylon draws; it needs a way to verify the result
+  against a real render before it is worth trusting. Until then those models
+  keep a single level, which is why the animals lineup is only partly covered.
+
+Because dropping a skin loses the walk cycle, skinned models only get the far
+and swarm levels, where they are too small for that to show (`allowSkinned`).
+People are skipped entirely: they ship in a T-pose that the viewer lowers on the
+live skeleton (`relaxTPoseArms`), and a static level would keep the arms out.
+
+Models under ~1.2k triangles are skipped — there is nothing to win. The bar is
+low because a fleet lineup multiplies it: 377 Fletchers at the source's 2,530
+triangles is 954k a frame, and at the swarm level's 400 it is 151k. A level is
+also dropped when it fails to beat the one above it by 40% on triangles or
+bytes, or when it would be a larger download without a fourfold triangle win
+(Draco occasionally refuses a primitive and the "simplified" file comes out
+bigger than the source).
+
+Two things the far level does only when they pay, both learned from getting it
+wrong: positions are welded across normal and UV seams only when the model is
+actually seam-heavy (`positionSplitRatio` ≥ 1.45 — hard-surface models sit at
+1.5–2.2, smooth organic ones near 1.2, and welding an elephant's ears together
+cost 2 m of height for no triangles at all); and normals are recomputed only
+when something invalidated them, because fresh normals on a mesh whose winding
+is not perfectly consistent make the surface read as loose sheets.
 
 The generator re-implements the viewer's helper crop (`cropHelpers` in
 `scripts/generate-lods.mjs`). It has to: LOD2 joins everything into one
@@ -217,6 +248,16 @@ Counts belong on the preset, not the catalog: `src/babylon/fleetFormation.ts`
 sizes each block from one unit's measured footprint so a long hull lands in few
 columns and a stubby one in many. The plaque title picks the count up
 automatically ("74 x Arleigh Burke-class destroyer").
+
+`FLEET_TRIANGLE_BUDGET` shares one frame's triangles between the blocks, because
+the first frames of a lineup are always at full detail — the coarse levels have
+not been fetched yet — and 29,600 aircraft at full detail is close to a billion
+triangles. A block that cannot be afforded draws a prefix of its formation, and
+the formation is ordered outward from the lead unit so that prefix is a compact
+cluster rather than one very long front rank. The poster gets a much larger
+allowance (`POSTER_FLEET_BUDGET_MULTIPLIER`): it is one frame, not sixty a
+second, and an exported image should show the whole fleet. Do not pin the poster
+to LOD0 — that blew the budget and cut a 19-aircraft block down to four.
 
 When a type has no model of its own, leave it out and say so in a comment on the
 preset rather than standing a different hull in for it — a lineup that claims to

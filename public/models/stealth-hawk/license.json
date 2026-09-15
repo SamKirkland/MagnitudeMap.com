@@ -1,0 +1,11 @@
+{
+  "id": "stealth-hawk",
+  "file": "model.glb",
+  "license": "3D Warehouse General Model License",
+  "licenseLabel": "3D Warehouse GML",
+  "author": "mandun",
+  "source": "https://3dwarehouse.sketchup.com/model/c3a0af8cded5316798d6c669641fb47e/MH-60-Stealth-Black-Hawk",
+  "sourceAsset": "MH-60 Stealth Black Hawk",
+  "notes": "NOT a Creative Commons asset. Sourced from Trimble 3D Warehouse under the General Model License (https://3dwarehouse.sketchup.com/tos/), which grants download, modification, derivative works, display and commercial distribution, but restricts distributing an individual model 'on a standalone basis' and aggregating 3D Warehouse content for redistribution. The entity reports isDownloadRestricted false and the GLB was pulled from the public binaries endpoint. Shipped as a deliberate, owner-approved exception to the CC-only rule in AGENTS.md, on the reading that the viewer renders the model inside a substantial combined work rather than offering it for download; note that model.glb is still served verbatim at a stable URL and committed to a public repo. No stealth Black Hawk exists under CC anywhere — the only Sketchfab MH-X is a Call of Duty rip tagged CC-BY by an uploader with no rights in it. The mesh is authored roughly 2.4x oversize (raw bounds 37.7 x 12.3 x 48.5 m) and is normalised by scaleAxis width against the 16.36 m UH-60 rotor diameter. Authored tail-forward, so yawDegrees 180. Dimensions are the UH-60's; the real aircraft's are unpublished.",
+  "attribution": "MH-60 Stealth Black Hawk by mandun on 3D Warehouse (General Model License) — https://3dwarehouse.sketchup.com/model/c3a0af8cded5316798d6c669641fb47e/MH-60-Stealth-Black-Hawk"
+}

@@ -8,6 +8,9 @@
  *   model.lod2.glb   far detail: a ~2.5k triangle budget, textures capped at 128,
  *                    hierarchy flattened and primitives joined so the whole model
  *                    draws in as few calls as the material count allows.
+ *   model.lod3.glb   swarm detail: ~400 triangles and 64 px textures. Only earns
+ *                    its keep on a fleet lineup — 30,000 aircraft at the far
+ *                    level is 90M triangles a frame, and at this one it is 12M.
  *
  * The point of LOD2 is the silhouette: meshoptimizer's simplifier is
  * error-bounded against the original surface, so the outline survives even when
@@ -17,19 +20,27 @@
  * A level that does not beat the one above it on either bytes or triangles is
  * deleted rather than shipped — a second download for nothing.
  *
+ * Animation is baked away before anything is simplified, because a level has to
+ * be static geometry:
+ *
+ *   node clips   Frozen at the pose the viewer actually draws — the last clip
+ *                frame for `poseAtClipEnd` (the F-22's gear and boarding
+ *                ladder), the rest pose otherwise.
+ *   skins        Dropped outright, but only for the models where that provably
+ *                changes nothing: a glTF skin whose node transforms are its own
+ *                bind pose contributes identity at rest, so the raw positions
+ *                already are the pose a renderer draws (`skinRestDeviation`).
+ *                It still loses the walk cycle, so those models only get the far
+ *                and swarm levels, where they are too small for that to show
+ *                (`allowSkinned`). A model whose rest pose is a real deformation
+ *                is skipped: posing it needs a decision the file does not make,
+ *                and a wrong guess ships a mangled animal.
+ *
  * Skipped models:
  *
- *   skinned      A LOD would arrive with its own skeleton, and the viewer poses
- *                skeletons per placement (rest pose, T-pose relaxation, the clip
- *                it plays on focus). Swapping one mid-clip needs its own design,
- *                so people and creatures keep a single level for now.
- *   playClips    An item the viewer animates on screen. A static level cannot
- *                stand in for it however small it gets.
  *   tiny         Under MIN_SOURCE_TRIANGLES there is nothing to win.
- *
- * Other animated models are baked into the pose the viewer actually draws —
- * the last clip frame for `poseAtClipEnd`, the rest pose otherwise — and their
- * clips dropped, before any simplification runs.
+ *   unlisted     An animated model with no catalog entry, since the pose to
+ *                bake comes from the catalog.
  *
  * Output is recorded in `src/data/modelLods.ts` (generated, committed) keyed by
  * the source path, with the source's content hash so a changed `model.glb`
@@ -84,21 +95,56 @@ const LEVELS = [
   },
   {
     suffix: 'lod2',
+    allowSkinned: true,
     triangleBudget: 2_500,
     minRatio: 0.02,
-    error: 0.25,
+    // Held well below the swarm level's: a quarter of the mesh radius folds an
+    // organic surface in on itself (the elephant's ears and trunk), and on
+    // hard-surface models the simplifier is topology-limited long before the
+    // error budget binds, so there is nothing to gain by being generous.
+    error: 0.08,
     maxTexture: 128,
     textureQuality: 60,
     collapse: true,
     weldPositions: true,
     recomputeNormals: true,
   },
+  {
+    suffix: 'lod3',
+    allowSkinned: true,
+    triangleBudget: 400,
+    minRatio: 0.002,
+    error: 0.8,
+    maxTexture: 64,
+    textureQuality: 55,
+    collapse: true,
+    collapseMaterials: true,
+    weldPositions: true,
+    sloppy: true,
+    recomputeNormals: true,
+  },
 ]
 
-/** Below this the source already draws for free; a LOD would only cost a fetch. */
-const MIN_SOURCE_TRIANGLES = 4000
-/** Never simplify a level below this — past it the silhouette starts to fold. */
+/**
+ * Below this the source already draws for free; a LOD would only cost a fetch.
+ * Kept low because a fleet lineup multiplies it: 377 Fletchers at the source's
+ * 2,530 triangles is 954k a frame, and at the swarm level's 400 it is 151k.
+ */
+const MIN_SOURCE_TRIANGLES = 1200
+/**
+ * Never simplify a level below this — past it the silhouette starts to fold.
+ * It is also the swarm level's whole budget, which is the point: at 30 px an
+ * aeroplane is a wing, a fuselage and a fin, and 400 triangles draw all three.
+ */
 const MIN_LEVEL_TRIANGLES = 400
+/**
+ * How far a vertex may move when the skeleton is collapsed for a skinned model
+ * still to qualify, as a fraction of the model's size. Effectively zero: the
+ * only skins accepted are the ones that do nothing at rest.
+ */
+const MAX_SKIN_REST_DEVIATION = 0.01
+/** Split ratio above which position welding is worth its damage. See `positionSplitRatio`. */
+const POSITION_WELD_SPLIT_RATIO = 1.45
 /** A level has to beat the one above it by this much on bytes or triangles to ship. */
 const LEVEL_WORTH_IT = 0.6
 /** ...and this much on triangles alone if its file is the larger of the two. */
@@ -198,6 +244,32 @@ async function getDeps() {
  * attributes; on the far level normals are recomputed afterwards anyway and the
  * UV discontinuity lands on a 128 px texture, so neither is visible.
  */
+/**
+ * How many times over the average position is duplicated. Hard-surface models
+ * split a vertex at every hard normal and UV seam and land well above 1.5 (a
+ * Venator 1.73, an Abrams 2.20); smooth organic meshes sit near 1.2 (a wolf
+ * 1.19, an elephant 1.39).
+ */
+function positionSplitRatio(document) {
+  let vertices = 0
+  let unique = 0
+  for (const mesh of document.getRoot().listMeshes()) {
+    for (const primitive of mesh.listPrimitives()) {
+      const position = primitive.getAttribute('POSITION')
+      if (!position) continue
+      const array = position.getArray()
+      const count = position.getCount()
+      const seen = new Set()
+      for (let i = 0; i < count; i++) {
+        seen.add(`${array[i * 3]},${array[i * 3 + 1]},${array[i * 3 + 2]}`)
+      }
+      vertices += count
+      unique += seen.size
+    }
+  }
+  return unique > 0 ? vertices / unique : 1
+}
+
 function weldPositions() {
   return (document) => {
     const buffer = document.getRoot().listBuffers()[0]
@@ -484,18 +556,225 @@ function dropNonTriangles(document) {
   return dropped
 }
 
+/**
+ * Put every primitive on one material, so `join` can merge the whole model into
+ * a single primitive.
+ *
+ * Simplification runs per primitive, and each one bottoms out at a handful of
+ * triangles it cannot collapse further. A model with twenty materials therefore
+ * has a floor of twenty times that: the P-38 would not go below 5,224 triangles
+ * however small the budget, which on a 1,800-aircraft block is 9M triangles a
+ * frame for aeroplanes 30 px tall. Collapsing to one material drops the floor to
+ * one primitive's worth.
+ *
+ * The survivor is whichever material covers the most triangles — on an aircraft
+ * that is the airframe paint, which is what the silhouette should be coloured.
+ * Only the swarm level does this; the far level still keeps its materials.
+ */
+function collapseMaterials(document) {
+  const share = new Map()
+  for (const mesh of document.getRoot().listMeshes()) {
+    for (const primitive of mesh.listPrimitives()) {
+      const material = primitive.getMaterial()
+      if (!material) continue
+      const indices = primitive.getIndices()
+      const position = primitive.getAttribute('POSITION')
+      const count = indices ? indices.getCount() : (position?.getCount() ?? 0)
+      share.set(material, (share.get(material) ?? 0) + count)
+    }
+  }
+  if (share.size < 2) return 0
+  let winner = null
+  let most = -1
+  for (const [material, count] of share) {
+    if (count > most) {
+      most = count
+      winner = material
+    }
+  }
+  for (const mesh of document.getRoot().listMeshes()) {
+    for (const primitive of mesh.listPrimitives()) primitive.setMaterial(winner)
+  }
+  return share.size - 1
+}
+
+/** Column-major 4x4 product, `a` applied after `b` to a column vector. */
+function mat4Multiply(a, b) {
+  const out = new Array(16).fill(0)
+  for (let col = 0; col < 4; col++) {
+    for (let row = 0; row < 4; row++) {
+      let sum = 0
+      for (let k = 0; k < 4; k++) sum += a[k * 4 + row] * b[col * 4 + k]
+      out[col * 4 + row] = sum
+    }
+  }
+  return out
+}
+
+/**
+ * Largest distance a vertex would move if the skeleton were collapsed into the
+ * geometry, as a fraction of the model's size.
+ *
+ * glTF stores skinned positions in bind space and poses them with
+ * `jointWorldMatrix x inverseBindMatrix`. When the file's node transforms are
+ * its bind pose those products are all identity, the skeleton does nothing at
+ * rest, and the raw positions are exactly what a renderer draws — so the skin
+ * can be dropped with no geometry change at all. When they are not, the rest
+ * pose is a real deformation and dropping the skin would show the bind pose
+ * instead: a different shape, and not one the file tells us is correct.
+ */
+function skinRestDeviation(document) {
+  let worst = 0
+  for (const node of document.getRoot().listNodes()) {
+    const skin = node.getSkin()
+    const mesh = node.getMesh()
+    if (!skin || !mesh) continue
+    const joints = skin.listJoints()
+    const ibmAccessor = skin.getInverseBindMatrices()
+    const jointMatrices = joints.map((joint, index) => {
+      const world = joint.getWorldMatrix()
+      if (!ibmAccessor) return world
+      return mat4Multiply(world, ibmAccessor.getElement(index, new Array(16).fill(0)))
+    })
+
+    for (const primitive of mesh.listPrimitives()) {
+      const position = primitive.getAttribute('POSITION')
+      const jointsAttribute = primitive.getAttribute('JOINTS_0')
+      const weights = primitive.getAttribute('WEIGHTS_0')
+      if (!position || !jointsAttribute || !weights) continue
+      const array = position.getArray()
+      const count = position.getCount()
+      const lo = position.getMin([])
+      const hi = position.getMax([])
+      const size = Math.max(Math.hypot(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]), 1e-6)
+
+      const skinMatrix = new Array(16)
+      const jointSlot = new Array(4)
+      const weightSlot = new Array(4)
+      const step = Math.max(1, Math.floor(count / 400))
+      for (let v = 0; v < count; v += step) {
+        skinMatrix.fill(0)
+        let total = 0
+        jointsAttribute.getElement(v, jointSlot)
+        weights.getElement(v, weightSlot)
+        for (let k = 0; k < 4; k++) {
+          const weight = weightSlot[k]
+          if (!weight) continue
+          const matrix = jointMatrices[jointSlot[k]]
+          if (!matrix) continue
+          for (let i = 0; i < 16; i++) skinMatrix[i] += matrix[i] * weight
+          total += weight
+        }
+        if (total <= 1e-6) continue
+        if (Math.abs(total - 1) > 1e-4) {
+          for (let i = 0; i < 16; i++) skinMatrix[i] /= total
+        }
+        const x = array[v * 3]
+        const y = array[v * 3 + 1]
+        const z = array[v * 3 + 2]
+        const moved = transformPoint(skinMatrix, x, y, z)
+        const drift = Math.hypot(moved[0] - x, moved[1] - y, moved[2] - z) / size
+        if (drift > worst) worst = drift
+      }
+    }
+  }
+  return worst
+}
+
+/**
+ * Turn a skinned mesh into static geometry by removing the skeleton and nothing
+ * else.
+ *
+ * Only safe when `skinRestDeviation` is ~0, which is the caller's job to check:
+ * then the skeleton is provably doing nothing at rest and the vertices are
+ * already in the pose a renderer draws. Deliberately no vertex maths, no
+ * reparenting and no transform changes — the file's geometry and hierarchy come
+ * out byte-identical apart from the skin itself, which is what makes this a
+ * change we can be sure of.
+ */
+function dropSkin(document) {
+  for (const node of document.getRoot().listNodes()) {
+    const mesh = node.getMesh()
+    if (!node.getSkin() || !mesh) continue
+    for (const primitive of mesh.listPrimitives()) {
+      for (const semantic of primitive.listSemantics()) {
+        if (/^(JOINTS|WEIGHTS)_\d+$/.test(semantic)) primitive.setAttribute(semantic, null)
+      }
+    }
+    node.setSkin(null)
+  }
+  for (const skin of document.getRoot().listSkins()) skin.dispose()
+  for (const animation of document.getRoot().listAnimations()) animation.dispose()
+}
+
+/**
+ * Last resort for the swarm level: meshoptimizer's sloppy simplifier.
+ *
+ * The ordinary simplifier preserves topology, so a model built from many small
+ * closed shells has a floor it will not go under — the P-38 stops at 4,400
+ * triangles however small the budget, and 1,800 of those is 8M triangles a frame
+ * for aeroplanes 30 px tall. `simplifySloppy` ignores topology entirely and hits
+ * the target. It smears UVs across what used to be separate shells, which is
+ * exactly the trade to make on a 64 px texture at 30 px on screen, and exactly
+ * the trade never to make anywhere else.
+ */
+function sloppySimplify(simplifier, targetTriangles) {
+  return (document) => {
+    for (const mesh of document.getRoot().listMeshes()) {
+      for (const primitive of mesh.listPrimitives()) {
+        const position = primitive.getAttribute('POSITION')
+        const indices = primitive.getIndices()
+        if (!position || !indices) continue
+        if (indices.getCount() / 3 <= targetTriangles * 1.5) continue
+        const source = indices.getArray()
+        const positions = position.getArray()
+        const [next] = simplifier.simplifySloppy(
+          source instanceof Uint32Array ? source : new Uint32Array(source),
+          positions instanceof Float32Array ? positions : new Float32Array(positions),
+          3,
+          // No locked vertices: nothing here shares a border with anything else.
+          null,
+          Math.max(12, Math.floor(targetTriangles) * 3),
+          1,
+        )
+        if (next.length >= source.length) continue
+        indices.setArray(new Uint32Array(next))
+      }
+    }
+  }
+}
+
 /** Why this model gets no LODs, or null if it should get them. */
 async function skipReason(document, triangles, sourcePath) {
-  if (document.getRoot().listSkins().length > 0) return 'skinned'
   if (triangles < MIN_SOURCE_TRIANGLES) return `only ${triangles} tris`
-  if (document.getRoot().listAnimations().length > 0) {
+  const skinned = document.getRoot().listSkins().length > 0
+  if (skinned || document.getRoot().listAnimations().length > 0) {
     const item = (await getCatalogByModelPath()).get(sourcePath)
-    // A `playClips` item is animating on screen, so a static level cannot
-    // stand in for it however small it gets.
+    // The pose to bake comes from the catalog.
     if (!item) return 'animated, not in the catalog'
-    if (item.playClips) return 'animated (plays clips)'
+    // People ship in a T-pose and the viewer lowers the arms on the live
+    // skeleton (`relaxTPoseArms`). A bake would keep the arms out, which reads
+    // as a scarecrow next to the figure it is standing in for — and the three
+    // person models are 4k triangles each, so there is nothing to win anyway.
+    if (skinned && item.shape === 'person') return 'person (T-pose is relaxed at runtime)'
+    if (skinned) {
+      const deviation = skinRestDeviation(document)
+      if (deviation > MAX_SKIN_REST_DEVIATION) {
+        return `skinned, rest pose is not the bind pose (${(deviation * 100).toFixed(0)}%)`
+      }
+    }
   }
   return null
+}
+
+/**
+ * Which levels this model gets. A skinned model is baked into its rest pose to
+ * become static (see `bakeSkin`), which costs the animation, so it only gets
+ * the levels small enough for that not to show.
+ */
+function levelsFor(document) {
+  if (document.getRoot().listSkins().length === 0) return LEVELS
+  return LEVELS.filter((level) => level.allowSkinned)
 }
 
 async function buildLevel(sourcePath, outPath, level, sourceTriangles) {
@@ -510,11 +789,14 @@ async function buildLevel(sourcePath, outPath, level, sourceTriangles) {
     prune,
     draco,
     textureCompress,
+    compactPrimitive,
   } = functions
 
   const document = await io.read(sourcePath)
   document.setLogger(quietLogger)
-  if (document.getRoot().listAnimations().length > 0) {
+  if (document.getRoot().listSkins().length > 0) {
+    dropSkin(document)
+  } else if (document.getRoot().listAnimations().length > 0) {
     const item = (await getCatalogByModelPath()).get(publicPath(sourcePath))
     bakeAnimationPose(document, Boolean(item?.model?.poseAtClipEnd))
   }
@@ -535,15 +817,39 @@ async function buildLevel(sourcePath, outPath, level, sourceTriangles) {
 
   if (level.collapse) dropNonTriangles(document)
 
+  if (level.collapseMaterials) collapseMaterials(document)
+
   const transforms = [dedup()]
   if (level.collapse) {
     // Fewer draw calls is the whole point of the far level: one primitive per
     // material instead of one per authored part.
     transforms.push(flatten(), joinPrimitives({ keepNamed: false }))
   }
-  transforms.push(level.weldPositions ? weldPositions() : weld())
+  // Position welding only pays on a model whose vertices are split by seams.
+  // On a smooth organic mesh the exact weld already reaches the triangle budget,
+  // and merging across the seams there just pulls the surface about — it cost
+  // the elephant 2 m of ear height for no triangles at all.
+  const seamy = positionSplitRatio(document) >= POSITION_WELD_SPLIT_RATIO
+  const welded = Boolean(level.weldPositions) && seamy
+  transforms.push(welded ? weldPositions() : weld())
   transforms.push(simplify({ simplifier, ratio, error: level.error }))
-  if (level.recomputeNormals) transforms.push(normals({ overwrite: true }))
+  // Sloppy pass, then a compaction to throw away the vertices it orphaned.
+  if (level.sloppy) {
+    transforms.push(sloppySimplify(simplifier, level.triangleBudget))
+    transforms.push((document) => {
+      for (const mesh of document.getRoot().listMeshes()) {
+        for (const primitive of mesh.listPrimitives()) compactPrimitive(primitive)
+      }
+    })
+  }
+  // Only recompute normals when something actually invalidated them: the
+  // position weld leaves a seam vertex holding the wrong one, and the sloppy
+  // pass rewrites the topology outright. Recomputing otherwise is destructive —
+  // on a mesh whose triangle winding is not perfectly consistent (the elephant)
+  // the fresh normals fight the winding and the surface reads as loose sheets.
+  if (level.recomputeNormals && (welded || level.sloppy)) {
+    transforms.push(normals({ overwrite: true }))
+  }
   transforms.push(
     prune(),
     textureCompress({
@@ -692,7 +998,7 @@ async function main() {
       const sourceBytes = statSync(glb).size
       let previous = { triangles: sourceTriangles, bytes: sourceBytes }
       const dropped = []
-      for (const level of LEVELS) {
+      for (const level of levelsFor(document)) {
         const outPath = join(dirname(glb), `model.${level.suffix}.glb`)
         const result = await buildLevel(glb, outPath, level, sourceTriangles)
         // A level has to be clearly cheaper than the one above it, on triangles
@@ -720,6 +1026,15 @@ async function main() {
         delete manifest[key]
         console.log(`skip  ${id} (no level beat the source)`)
         continue
+      }
+      // Levels this model is not entitled to may still be on disk from an
+      // earlier run with different rules.
+      const kept = new Set(levels.map((l) => l.path))
+      for (const level of LEVELS) {
+        const path = publicPath(join(dirname(glb), `model.${level.suffix}.glb`))
+        if (kept.has(path) || dropped.includes(level.suffix)) continue
+        const absolute = join(publicRoot, path)
+        if (existsSync(absolute)) unlinkSync(absolute)
       }
       manifest[key] = { sourceHash: hash, sourceTriangles, levels }
       built += 1
