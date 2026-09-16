@@ -1,0 +1,144 @@
+{
+  "//": "Models that already failed npm run verify-models when this gate was added. See model-geometry.test.mjs.",
+  "//how": "A new model must not appear here. Fixing one means deleting its line — the test fails on a stale entry, so this list can only shrink.",
+  "known": {
+    "iphone": [
+      "axis-length",
+      "axis-width",
+      "yaw-swapped"
+    ],
+    "firetruck": [
+      "axis-width"
+    ],
+    "abrams": [
+      "axis-height"
+    ],
+    "chieftain": [
+      "axis-height"
+    ],
+    "patriot": [
+      "axis-height",
+      "axis-width"
+    ],
+    "f22": [
+      "axis-width"
+    ],
+    "p51": [
+      "axis-height"
+    ],
+    "c47": [
+      "axis-width"
+    ],
+    "b21": [
+      "axis-length"
+    ],
+    "tu22m3": [
+      "ground-plate"
+    ],
+    "c130j": [
+      "ground-plate"
+    ],
+    "electron": [
+      "ground-plate"
+    ],
+    "falcon-9": [
+      "axis-length",
+      "axis-width"
+    ],
+    "new-glenn": [
+      "axis-length",
+      "axis-width"
+    ],
+    "sls": [
+      "axis-length"
+    ],
+    "starship": [
+      "axis-length",
+      "axis-width"
+    ],
+    "sydney-opera-house": [
+      "ground-plate"
+    ],
+    "ford-carrier": [
+      "axis-height"
+    ],
+    "nimitz": [
+      "axis-height"
+    ],
+    "virginia": [
+      "axis-height"
+    ],
+    "ohio": [
+      "axis-height"
+    ],
+    "independence": [
+      "axis-height"
+    ],
+    "type45": [
+      "axis-height"
+    ],
+    "moskva": [
+      "axis-height"
+    ],
+    "wasp": [
+      "axis-height",
+      "axis-width"
+    ],
+    "kiev": [
+      "axis-height"
+    ],
+    "hatak": [
+      "ground-plate"
+    ],
+    "atlantis": [
+      "ground-plate"
+    ],
+    "k2so": [
+      "axis-width"
+    ],
+    "at-te": [
+      "axis-height",
+      "axis-width"
+    ],
+    "death-star-ii": [
+      "ground-plate"
+    ],
+    "valdore": [
+      "axis-height",
+      "axis-width"
+    ],
+    "godzilla": [
+      "axis-length"
+    ],
+    "owl": [
+      "axis-width",
+      "sparse-aabb"
+    ],
+    "leopard": [
+      "axis-width"
+    ],
+    "eagle": [
+      "axis-height",
+      "axis-length"
+    ],
+    "horse": [
+      "axis-width",
+      "empty-aabb"
+    ],
+    "anaconda": [
+      "axis-height",
+      "axis-width"
+    ],
+    "ankylosaurus": [
+      "axis-height"
+    ],
+    "carnotaurus": [
+      "axis-height",
+      "axis-width"
+    ],
+    "giganotosaurus": [
+      "axis-height",
+      "axis-width"
+    ]
+  }
+}

@@ -8,12 +8,14 @@
  * https://www.worldometers.info/oil/oil-consumption-by-country/
  */
 
+import type { CountryCode } from './countries'
+
 export type OilReserve = {
   /** Catalog id suffix: `oil-{slug}`. */
   slug: string
   name: string
-  /** ISO 3166-1 alpha-2 code, for the flag emoji. */
-  iso: string
+  /** ISO 3166-1 alpha-2 code; the flag comes from `COUNTRIES`. */
+  iso: CountryCode
   /** Name as it reads mid-sentence ("the United States"). Defaults to `name`. */
   proseName?: string
   /** Proven reserves in barrels. */
@@ -47,11 +49,6 @@ export const OIL_RESERVES: OilReserve[] = [
   { slug: 'qatar', name: 'Qatar', iso: 'QA', barrels: 25_244_000_000, worldSharePct: 1.4, yearsLeft: 53, consumptionBpd: 276_281 },
   { slug: 'brazil', name: 'Brazil', iso: 'BR', barrels: 15_894_160_000, worldSharePct: 0.9, yearsLeft: 12, consumptionBpd: 3_268_781 },
 ]
-
-/** `US` → 🇺🇸 (two regional-indicator symbols). */
-export function flagEmoji(iso: string): string {
-  return String.fromCodePoint(...[...iso.toUpperCase()].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65))
-}
 
 export function oilReserveId(reserve: OilReserve): string {
   return `oil-${reserve.slug}`

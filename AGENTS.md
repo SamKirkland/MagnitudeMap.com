@@ -81,15 +81,19 @@ Do not leave uncompressed GLBs in `public/models/`. Production `build` / `build:
 3. **Crop and ground.** No dead space around the silhouette. Wheels or gear on the ground plane — not floating on engine nacelles or a helper mesh below the hull (747). Runtime crop in `ComparisonScene` is a safety net; still pick a clean asset.
 4. Register real-world meters + `scaleAxis`, tags in `src/data/catalogTags.ts`, then confirm scale against person-male (1.75 m).
 5. **Verify scale:** `npm run verify-models -- --only={id}`. Reads the GLB, applies catalog yaw/pitch/roll, crops helpers the same way the viewer does, and checks that length/width/height match catalog meters after the trusted `scaleAxis` is forced. With `--only`, it also screenshots the model next to person-male (`tmp/verify-models/`). Open those PNGs: Facing 0° must show +Z nose, the silhouette must sit on the ground, and height vs the 1.75 m adult must look right.
-6. **Lineups.** Put the item in **at least one** lineup in `COMPARISON_PRESETS` (`src/data/catalog.ts`), and check it is not sitting in a wrong one. Lineup cards are the only crawl path to the `/c/` pages, so an item in no lineup is reachable only by searching the library for it by name. `npm test` fails if anything is homeless.
-7. **Facts** in `src/data/catalogFacts.ts`, authored in metric (see the metric section below).
-8. **Compress** with `npm run compress-models -- --only={id}`, then
+6. **Verify ground contact.** The same run reports a `hovering` / `sunken` issue and prints `ground ±0.00 m` in the elevation caption. It has to be its own check because a wrong answer here looks like nothing: the viewer grounds a model by sitting the bottom of its measured *box* on y = 0, so a model whose box is bigger than its geometry still "lands" — on the phantom box, hanging in the air. See the section below.
+7. **Lineups.** Put the item in **at least one** lineup in `COMPARISON_PRESETS` (`src/data/catalog.ts`), and check it is not sitting in a wrong one. Lineup cards are the only crawl path to the `/c/` pages, so an item in no lineup is reachable only by searching the library for it by name. `npm test` fails if anything is homeless.
+8. **Facts** in `src/data/catalogFacts.ts`, authored in metric (see the metric section below).
+9. **Compress** with `npm run compress-models -- --only={id}`, then
    `npm run generate-lods -- --only={id}`, then `npm run sync-attributions`.
-9. **`npm test`** — catches homeless items, broken lineup ids, and metric prose the imperial converter cannot handle.
+10. **`npm test`** — now the backstop for every step above. It runs the whole
+    headless verify pass (~9 s, no browser), the asset rules, and the catalog
+    rules, so a half-finished import fails the build instead of shipping. See
+    **What `npm test` enforces** below.
 
 ### Import checklist
 
-Copy this into the task and tick it off. Steps 4–7 are the ones that get skipped.
+Copy this into the task and tick it off. Steps 4–8 are the ones that get skipped.
 
 ```text
 [ ] license: CC0 / CC-BY / CC-BY-SA and isDownloadable (never Editorial / Standard / NC)
@@ -102,11 +106,75 @@ Copy this into the task and tick it off. Steps 4–7 are the ones that get skipp
 [ ] facts in src/data/catalogFacts.ts (metric prose)
 [ ] LINEUP: added to >=1 preset in COMPARISON_PRESETS, and in the right one
 [ ] npm run verify-models -- --only={id}   (open the PNGs, do not just read PASS)
+[ ] ground contact: no `hovering` / `sunken` issue, and the wheels/feet/hull touch
+    the same line the 1.75 m adult stands on in the elevation PNG
 [ ] npm run compress-models -- --only={id}
 [ ] npm run generate-lods -- --only={id}   (commit the model.lod*.glb + src/data/modelLods.ts)
 [ ] npm run sync-attributions
-[ ] npm test && npx tsc --noEmit
+[ ] npm test && npx tsc --noEmit   (gates the geometry, asset and catalog rules above)
 ```
+
+### What `npm test` enforces
+
+Every rule in the checklist above used to be enforced by whoever remembered it.
+These four suites make the build remember instead. The whole run is about nine
+seconds and needs no browser.
+
+| Suite | Catches |
+| --- | --- |
+| `model-geometry.test.mjs` | Runs `verify-models --no-shots` over the whole catalog. A new model with any `fail` issue — wrong scale, swapped yaw, tipped onto its tail, leftover scenery, a missing GLB, **hovering** — breaks the build with the real message. |
+| `model-verify.test.mjs` | The checks themselves, on synthetic meshes shaped like the assets that taught us each rule, so a check cannot quietly stop firing. |
+| `model-assets.test.mjs` | Licence present and redistributable, provenance note recorded, GLB committed and compressed, tags and facts present, dimensions and authoring angles sane, ids unique. |
+| `ground-contact.test.mjs` | The hover thresholds, pinned to the B-2 regression. |
+
+**The two baselines.** 41 models already failed geometry verification and 7
+already shipped under a licence AGENTS.md forbids, so the gates hold those
+against `model-verify-baseline.json` and `model-asset-baseline.json` rather
+than pretending the catalog is clean. The rule that keeps them honest is that a
+**stale entry also fails**: fixing a model means deleting its line, so neither
+list can grow quietly or rot. A new model must never be added to either one —
+fix the model instead, and for a licence, ask the repo owner before accepting
+anything outside CC0 / CC-BY / CC-BY-SA.
+
+`verify-models` with shots is still worth running by hand for a new import.
+The gate reads numbers; only the PNG tells you the model looks right.
+
+### A model floats when its box is bigger than its geometry
+
+The viewer never reads "the ground" off the model. It measures the object,
+slides the bottom of that measurement to y = 0, and calls it landed. So the only
+way a model can hover is if what was measured is not what is drawn — and then it
+lands perfectly, on nothing.
+
+The cause that bit us is Babylon's world AABB. `minimumWorld` / `maximumWorld`
+are the eight corners of a mesh's **local** box pushed through its world matrix,
+so any mesh under an obliquely rotated node reports the box that contains its
+*rotated box*, which is strictly larger. The B-2's landing-gear node is tilted:
+a 2.3 m part measured 9.7 m, the model stood on the bottom of that, and the
+aircraft hung 3 m in the air. Eighteen catalog models were affected — the Ha'tak
+by 49 m — and the tell is always the same, a rendered height much larger than
+catalog with no visible reason.
+
+`ComparisonScene.visualBounds` therefore measures obliquely transformed meshes
+from their **vertices** (`exactMeshWorldBox`), falling back to Babylon's cheap
+box where it is already exact (axis-aligned matrices) or where raw positions are
+not what gets drawn (skinning, morph targets, thin instances). The result is
+cached per mesh until its world matrix moves, so the scan costs nothing on the
+models that do not need it.
+
+Other ways the same symptom shows up, all of them the same bug in a different
+coat — the thing at y = 0 is not the silhouette:
+
+- a transparent shadow slab or studio floor under the hull (`ground-plate`)
+- a stray helper parked below the model (`hanging-below`, `crop-helpers`)
+- a sim "teleport to y ≈ −8192" dummy the crop missed (`empty-aabb`)
+
+`npm run verify-models` measures the gap from raw vertices in the rendered
+scene — deliberately a separate walk from anything the viewer grounds on, so it
+cannot agree with a wrong answer by construction — and reports `hovering` or
+`sunken`. Skinned models report no gap at all (`ground n/a`): their drawn shape
+is not their vertex data, so there is nothing honest to measure. Judge those
+from the elevation PNG.
 
 ### Do not delete rotor discs
 

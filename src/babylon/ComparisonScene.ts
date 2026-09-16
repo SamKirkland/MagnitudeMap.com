@@ -4836,7 +4836,7 @@ export class ComparisonScene {
       this.registerLodGroup(instanceId, item.model.path, body, baseRoots, (root) => {
         this.cropLodLevel(root, item)
         this.enableVertexColors(root)
-        this.prepareImportedMaterials(root)
+        this.prepareImportedMaterials(root, this.untexturedTintFor(item))
         if (item.model?.heightPaint) this.applyHeightPaint(root, item.model.heightPaint)
         this.markPickable(root, item.id)
         root.computeWorldMatrix(true)
@@ -4880,6 +4880,16 @@ export class ComparisonScene {
       mat.specularColor = new Color3(0.15, 0.15, 0.15)
     }
     this.applyMaterial(body, mat)
+  }
+
+  /**
+   * Fallback albedo for a model whose GLB carries no materials — the catalog
+   * swatch, the same colour its stand-in box would have worn. heightPaint
+   * paints its own stages, so leave those alone.
+   */
+  private untexturedTintFor(item: CatalogItem): Color3 | undefined {
+    if (item.model?.heightPaint) return undefined
+    return Color3.FromHexString(item.color)
   }
 
   private async loadScaledModel(
@@ -4936,7 +4946,7 @@ export class ComparisonScene {
     }
 
     this.enableVertexColors(container)
-    this.prepareImportedMaterials(container)
+    this.prepareImportedMaterials(container, this.untexturedTintFor(item))
     if (item.shape === 'person') {
       this.preparePersonMaterials(container, item.id)
     }
@@ -5336,8 +5346,13 @@ export class ComparisonScene {
   /**
    * Sketchfab GLBs often need small fixes for a simple outdoor comparison scene:
    * wrong alphaMode (whole body BLEND), transmission tear films, dark-metal blacks.
+   *
+   * `untexturedTint` is the fallback colour for a model that shipped with no
+   * materials worth the name; it only lands when the whole model is white.
    */
-  private prepareImportedMaterials(root: TransformNode) {
+  private prepareImportedMaterials(root: TransformNode, untexturedTint?: Color3) {
+    const tint = untexturedTint && this.isUntexturedWhite(root) ? untexturedTint : null
+
     for (const mesh of root.getChildMeshes(false)) {
       const mat = mesh.material
       if (!(mat instanceof PBRMaterial)) continue
@@ -5442,8 +5457,58 @@ export class ComparisonScene {
         }
       }
 
+      // Untextured white models (the WWII warships) blow out to a flat blob.
+      // Paint them the catalog swatch so the lighting has something to shade.
+      if (tint) {
+        mat.albedoColor = tint
+        mat.metallic = Math.min(mat.metallic ?? 0, 0.15)
+        mat.roughness = Math.min(Math.max(mat.roughness ?? 0.6, 0.45), 0.8)
+      }
+
       mat.markDirty?.()
     }
+  }
+
+  /**
+   * True when every part of the model is untextured and near-white — a GLB that
+   * shipped geometry only. A single white part inside a textured model does not
+   * count: that one is usually painted white on purpose.
+   */
+  private isUntexturedWhite(root: TransformNode): boolean {
+    let found = false
+    for (const mesh of root.getChildMeshes(false)) {
+      const mat = mesh.material
+      if (!(mat instanceof PBRMaterial)) continue
+      if (this.hasPaintedVertexColors(mesh)) return false
+      if (mat.albedoTexture || mat.emissiveTexture) return false
+      const color = mat.albedoColor
+      if (!color || color.r < 0.9 || color.g < 0.9 || color.b < 0.9) return false
+      found = true
+    }
+    return found
+  }
+
+  /**
+   * True when a mesh's COLOR_0 actually paints something. The swarm LOD bakes
+   * every material colour into vertex colours, so a white model arrives there
+   * white throughout — that is not paint, and an albedo tint multiplies through
+   * it unchanged.
+   */
+  private hasPaintedVertexColors(mesh: AbstractMesh): boolean {
+    const data = mesh.getVerticesData(VertexBuffer.ColorKind)
+    if (!data || data.length === 0) return false
+    const vertices = mesh.getTotalVertices()
+    const stride = vertices > 0 ? Math.round(data.length / vertices) : 4
+    if (stride < 3) return false
+    // A few hundred samples is enough to catch real markings without walking a
+    // million-vertex buffer on every import.
+    const samples = Math.min(vertices, 512)
+    const step = Math.max(1, Math.floor(vertices / samples))
+    for (let v = 0; v < vertices; v += step) {
+      const i = v * stride
+      if (data[i] < 0.9 || data[i + 1] < 0.9 || data[i + 2] < 0.9) return true
+    }
+    return false
   }
 
   /** Ensure glTF COLOR_0 attributes actually tint the mesh (Babylon 9: flag lives on the mesh). */

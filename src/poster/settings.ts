@@ -95,6 +95,16 @@ export function posterLabelFontSize(width: number, itemCount: number): number {
   return Math.max(12, Math.round(width * (crowded ? 0.01 : 0.0125)))
 }
 
+/**
+ * A name's length in average glyph widths. A flag emoji is four UTF-16 code
+ * units but draws about as wide as two letters, so a plain `.length` would
+ * reserve a gutter half again too wide for a short flagged name.
+ */
+export function labelCharWidth(name: string): number {
+  const flags = name.match(/[\u{1F1E6}-\u{1F1FF}]{2}/gu)?.length ?? 0
+  return name.length - flags * 2
+}
+
 /** Vertical strip one row of labels needs, in pixels. */
 export function posterLabelBandPx(width: number, itemCount: number): number {
   const fontSize = posterLabelFontSize(width, itemCount)

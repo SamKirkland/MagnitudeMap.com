@@ -233,15 +233,35 @@ export function rotateBox(
   return { min: outMin, max: outMax }
 }
 
+/**
+ * Mirror a box on Z, the way Babylon's glTF loader does.
+ *
+ * glTF is right-handed and Babylon is left-handed, so the loader parents every
+ * import under a `__root__` node scaled (1, 1, -1). The catalog pose is applied
+ * *outside* that node, so a yaw of θ in the catalog turns the raw glTF
+ * coordinates these boxes come from by −θ. Skip this and an obliquely authored
+ * model measures as if it were yawed the wrong way round: the C-47 at its
+ * correct 129.25° came out 13.6 m across instead of 28.2 m, and the suggestion
+ * that followed would have rotated a right model 90° wrong.
+ */
+function mirrorBoxZ(box: MeshBox): MeshBox {
+  return {
+    ...box,
+    min: vec(box.min.x, box.min.y, -box.max.z),
+    max: vec(box.max.x, box.max.y, -box.min.z),
+  }
+}
+
 export function applyAuthoringPose(meshes: MeshBox[], item: CatalogItem): MeshBox[] {
   const model = item.model
-  if (!model || model.randomYaw) return meshes
+  const mirrored = meshes.map(mirrorBoxZ)
+  if (!model || model.randomYaw) return mirrored
   const pitch = ((model.pitchDegrees ?? 0) * Math.PI) / 180
   const yaw = ((model.yawDegrees ?? 0) * Math.PI) / 180
   const roll = ((model.rollDegrees ?? 0) * Math.PI) / 180
-  if (!pitch && !yaw && !roll) return meshes
+  if (!pitch && !yaw && !roll) return mirrored
   const q = quatFromPitchYawRoll(pitch, yaw, roll)
-  return meshes.map((mesh) => {
+  return mirrored.map((mesh) => {
     const rotated = rotateBox(mesh.min, mesh.max, q)
     return { ...mesh, min: rotated.min, max: rotated.max }
   })
@@ -639,8 +659,64 @@ export type VerifyCaptureItem = {
   status: ModelVerifyStatus
 }
 
-export function evaluateRuntimeCapture(item: CatalogItem, runtime: MeasuredMeters): VerifyIssue[] {
-  return evaluateRenderedSize(item, runtime, 'runtime')
+/**
+ * Does the model actually stand on the ground?
+ *
+ * The viewer grounds a model by sitting the bottom of its measured box on
+ * y = 0, so a gap can only mean the box is not the geometry. That happened for
+ * real: Babylon reports a mesh's world box as the corners of its *local* box
+ * pushed through the world matrix, which for an obliquely rotated node is far
+ * bigger than the part — the B-2 stood on a phantom 9.7 m box and floated 3 m.
+ *
+ * `gapMeters` is measured from raw vertices in the rendered scene, so it is an
+ * independent read of where the model really is, not a restatement of the
+ * bounds the viewer grounded on. Skinned meshes are excluded upstream (their
+ * drawn shape is not their vertex data), which is why the gap can be null.
+ */
+export function evaluateGroundContact(item: CatalogItem, gapMeters: number): VerifyIssue[] {
+  const height = Math.max(item.height, 0.01)
+  const failAt = Math.max(0.02 * height, 0.05)
+  const warnAt = Math.max(0.005 * height, 0.02)
+  if (gapMeters > failAt) {
+    return [
+      {
+        severity: 'fail',
+        code: 'hovering',
+        message: `Floats ${meters(gapMeters)} above the ground (${Math.round((gapMeters / height) * 100)}% of its height). The model is standing on a box bigger than its geometry — look for an obliquely rotated node, a shadow slab, or a stray helper mesh.`,
+      },
+    ]
+  }
+  if (gapMeters > warnAt) {
+    return [
+      {
+        severity: 'warn',
+        code: 'hovering',
+        message: `Floats ${meters(gapMeters)} above the ground. Small, but nothing should hover at all — check the lowest mesh.`,
+      },
+    ]
+  }
+  if (gapMeters < -failAt) {
+    return [
+      {
+        severity: 'fail',
+        code: 'sunken',
+        message: `Sits ${meters(-gapMeters)} below the ground. Geometry is being measured that the viewer does not draw.`,
+      },
+    ]
+  }
+  return []
+}
+
+export function evaluateRuntimeCapture(
+  item: CatalogItem,
+  runtime: MeasuredMeters,
+  groundGapMeters?: number | null,
+): VerifyIssue[] {
+  const issues = evaluateRenderedSize(item, runtime, 'runtime')
+  if (groundGapMeters != null && Number.isFinite(groundGapMeters)) {
+    issues.push(...evaluateGroundContact(item, groundGapMeters))
+  }
+  return issues
 }
 
 export function verifyItemFromGlb(

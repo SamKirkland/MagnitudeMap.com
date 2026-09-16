@@ -1,0 +1,14 @@
+{
+  "//": "Models that already broke an asset rule when this gate was added. See model-assets.test.mjs.",
+  "//how": "A new model must not appear here. Fixing one means deleting its line \u2014 the test fails on a stale entry, so this list can only shrink.",
+  "//nonRedistributable": "AGENTS.md says ship only CC0 / CC-BY / CC-BY-SA. These predate the gate and need replacing with redistributable models: six are CC-BY-NC-SA (NonCommercial), and stealth-hawk is under the 3D Warehouse General Model License.",
+  "nonRedistributable": [
+    "a320",
+    "b2",
+    "boeing-737",
+    "boeing-747",
+    "person-female",
+    "person-male",
+    "stealth-hawk"
+  ]
+}

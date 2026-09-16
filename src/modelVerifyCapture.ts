@@ -1,5 +1,7 @@
+import { VertexBuffer } from '@babylonjs/core/Buffers/buffer'
 import { ComparisonScene } from './babylon/ComparisonScene'
 import { CATALOG, CATALOG_BY_ID } from './data/catalog'
+import type { CatalogItem } from './data/catalog'
 import { skipReasonFor, evaluateRuntimeCapture, PERSON_MALE_HEIGHT_M, resultStatus } from './modelVerify'
 import { SPREAD_MIN } from './tourSettings'
 import { formatLength } from './units'
@@ -218,6 +220,41 @@ try {
   throw error
 }
 
+/**
+ * How far the lowest drawn vertex of an item sits above y = 0, in metres.
+ *
+ * Deliberately its own walk of the scene rather than anything the viewer uses
+ * to place the model: the viewer grounds on a *box*, and the whole point of
+ * this number is to catch a box that is not the geometry inside it.
+ *
+ * Returns null rather than a number it cannot stand behind. A skinned or
+ * morphed mesh draws somewhere other than its vertex data, and one mid-clip
+ * has no settled pose to measure — so a single such mesh disqualifies the whole
+ * item, not just itself. Measuring only the rigid leftovers is how the
+ * humpback (skinned body, rigid trim) came out 2.62 m off the ground while
+ * sitting exactly where it should.
+ */
+function measureGroundGap(item: CatalogItem): number | null {
+  if (item.playClips) return null
+  let lowest = Number.POSITIVE_INFINITY
+  for (const mesh of scene.scene.meshes) {
+    if (mesh.metadata?.itemId !== item.id) continue
+    if (!mesh.isEnabled() || mesh.isVisible === false) continue
+    if (mesh.skeleton || mesh.morphTargetManager) return null
+    if ((mesh as { thinInstanceCount?: number }).thinInstanceCount) return null
+    if (!mesh.isVerticesDataPresent(VertexBuffer.PositionKind)) continue
+    const positions = mesh.getVerticesData(VertexBuffer.PositionKind)
+    if (!positions) continue
+    mesh.computeWorldMatrix(true)
+    const m = mesh.getWorldMatrix().m
+    for (let i = 0; i + 2 < positions.length; i += 3) {
+      const y = m[1] * positions[i] + m[5] * positions[i + 1] + m[9] * positions[i + 2] + m[13]
+      if (y < lowest) lowest = y
+    }
+  }
+  return Number.isFinite(lowest) ? lowest : null
+}
+
 async function captureOne(row: CaptureRow): Promise<void> {
   const item = CATALOG_BY_ID[row.id]
   if (!item) throw new Error(`Unknown catalog id ${row.id}`)
@@ -239,7 +276,8 @@ async function captureOne(row: CaptureRow): Promise<void> {
     height: measured.height,
     length: measured.length,
   }
-  const issues = evaluateRuntimeCapture(item, runtime)
+  const groundGap = measureGroundGap(item)
+  const issues = evaluateRuntimeCapture(item, runtime, groundGap)
   const status = resultStatus(issues)
   const catalog = { width: item.width, height: item.height, length: item.length }
 
@@ -253,10 +291,12 @@ async function captureOne(row: CaptureRow): Promise<void> {
     width: WIDTH,
     height: HEIGHT,
   })
+  const groundLine =
+    groundGap == null ? 'ground n/a' : `ground ${groundGap >= 0 ? '+' : ''}${metersLabel(groundGap)}`
   const elevation = await captionPng(
     elevationRaw.image,
     `${item.name}  ·  ${status.toUpperCase()}  ·  vs adult ${PERSON_MALE_HEIGHT_M} m`,
-    [dimLine('catalog', catalog), dimLine('rendered', runtime)],
+    [dimLine('catalog', catalog), dimLine('rendered', runtime), groundLine],
     status,
   )
 

@@ -1,9 +1,10 @@
 import { CATALOG_FACTS } from './catalogFacts'
 import { CATALOG_TAGS } from './catalogTags'
+import { CATALOG_COUNTRIES, PRESET_COUNTRIES } from './catalogCountries'
+import { countrySearchTags, withFlags, type CountryCode } from './countries'
 import { packMoneyAmount } from './moneyPack'
 import {
   OIL_RESERVES,
-  flagEmoji,
   oilBlurb,
   oilCubeSideM,
   oilFacts,
@@ -101,6 +102,12 @@ export type CatalogItem = {
   facts?: string
   /** Keywords for library search. */
   tags: string[]
+  /**
+   * Country of origin, from `CATALOG_COUNTRIES`. Drawn as a flag ahead of the
+   * name (see `itemDisplayName`) and folded into `tags` so the country's name,
+   * demonym and short forms all find the item.
+   */
+  countries?: CountryCode[]
   /** Optional colored GLB; falls back to stand-in mesh. */
   model?: CatalogModelRef
   /** When set, spawn a packed grid of unit models instead of one scaled mesh. */
@@ -115,6 +122,8 @@ export type ComparisonPreset = {
   /** Short tooltip / search blurb — not shown on the card. */
   description: string
   tags: string[]
+  /** Country of origin for a national lineup; see `CatalogItem.countries`. */
+  countries?: CountryCode[]
   itemIds: string[]
   /**
    * Fleet lineup: how many of each type existed, keyed by the ids in
@@ -198,7 +207,8 @@ function oilItem(reserve: OilReserve): CatalogSeed {
   const side = oilCubeSideM(reserve)
   return {
     id: oilReserveId(reserve),
-    name: `${flagEmoji(reserve.iso)} ${reserve.name} oil`,
+    name: `${reserve.name} oil`,
+    countries: [reserve.iso],
     category: 'oil',
     length: side,
     width: side,
@@ -207,7 +217,7 @@ function oilItem(reserve: OilReserve): CatalogSeed {
     color: '#171412',
     blurb: oilBlurb(reserve),
     facts: oilFacts(reserve),
-    tags: ['oil', 'crude', 'petroleum', 'reserves', 'barrels', 'energy', reserve.name.toLowerCase()],
+    tags: ['oil', 'crude', 'petroleum', 'reserves', 'barrels', 'energy'],
   }
 }
 
@@ -3200,17 +3210,39 @@ const CATALOG_SEED: CatalogSeed[] = [
   ...OIL_RESERVES.map(oilItem),
 ]
 
-export const CATALOG: CatalogItem[] = CATALOG_SEED.map((item) => ({
-  ...item,
-  tags: CATALOG_TAGS[item.id] ?? item.tags ?? [item.category],
-  facts: CATALOG_FACTS[item.id] ?? item.facts,
-}))
+/** Tags plus the country's own words, deduped so "us" is not listed twice. */
+function withCountryTags(tags: string[], countries: CountryCode[] | undefined): string[] {
+  if (!countries?.length) return tags
+  return [...new Set([...tags, ...countrySearchTags(countries)])]
+}
+
+export const CATALOG: CatalogItem[] = CATALOG_SEED.map((item) => {
+  const countries = item.countries ?? CATALOG_COUNTRIES[item.id]
+  return {
+    ...item,
+    countries,
+    tags: withCountryTags(CATALOG_TAGS[item.id] ?? item.tags ?? [item.category], countries),
+    facts: CATALOG_FACTS[item.id] ?? item.facts,
+  }
+})
+
+/** Name as it is drawn for a reader: `🇺🇸 F-22 Raptor`. */
+export function itemDisplayName(item: Pick<CatalogItem, 'name' | 'countries'>): string {
+  return withFlags(item.name, item.countries)
+}
+
+/** Name as it is drawn for a reader: `🇺🇸 US Navy today`. */
+export function presetDisplayName(
+  preset: Pick<ComparisonPreset, 'name' | 'countries'>,
+): string {
+  return withFlags(preset.name, preset.countries)
+}
 
 export const CATALOG_BY_ID = Object.fromEntries(
   CATALOG.map((item) => [item.id, item]),
 ) as Record<string, CatalogItem>
 
-export const COMPARISON_PRESETS: ComparisonPreset[] = [
+const PRESET_SEED: ComparisonPreset[] = [
   // First entry is the homepage default lineup.
   {
     id: 'rockets',
@@ -3911,6 +3943,15 @@ export const COMPARISON_PRESETS: ComparisonPreset[] = [
     ],
   },
 ]
+
+export const COMPARISON_PRESETS: ComparisonPreset[] = PRESET_SEED.map((preset) => {
+  const countries = preset.countries ?? PRESET_COUNTRIES[preset.id]
+  return {
+    ...preset,
+    countries,
+    tags: withCountryTags(preset.tags, countries),
+  }
+})
 
 export const CATEGORY_LABELS: Record<CatalogCategory, string> = {
   reference: 'Reference',

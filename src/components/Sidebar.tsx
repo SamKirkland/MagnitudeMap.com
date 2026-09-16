@@ -8,6 +8,8 @@ import {
   CATALOG,
   CATEGORY_LABELS,
   COMPARISON_PRESETS,
+  itemDisplayName,
+  presetDisplayName,
   type CatalogCategory,
   type CatalogItem,
 } from '../data/catalog'
@@ -85,7 +87,7 @@ function LibraryRow({
         />
         <span className="swatch" style={{ background: item.color }} />
         <span className="item-text">
-          <span className="item-name">{item.name}</span>
+          <span className="item-name">{itemDisplayName(item)}</span>
           {checked && facts && (
             <span className="item-facts">{facts}</span>
           )}
@@ -247,7 +249,7 @@ export function Sidebar({
                     title={convertUnitsInText(preset.description, units)}
                   >
                     <PresetIcon presetId={preset.id} className="preset-icon" />
-                    <span className="preset-name">{preset.name}</span>
+                    <span className="preset-name">{presetDisplayName(preset)}</span>
                   </a>
                 </li>
               )
