@@ -172,14 +172,22 @@ test('no uncompressed GLB reaches public/models', () => {
 })
 
 test('every catalog item is searchable and has something to say', () => {
-  const untagged = CATALOG.filter((item) => !CATALOG_TAGS[item.id]?.length).map((i) => `  ${i.id}`)
-  assert.deepEqual(untagged, [], `Missing tags in src/data/catalogTags.ts:\n${untagged.join('\n')}\n`)
+  // Read the *resolved* catalog, not the authoring maps: generated items (oil)
+  // carry their tags and facts on their own seed, so CATALOG_TAGS / CATALOG_FACTS
+  // only ever hold the hand-authored half. catalog.ts resolves seed tags with no
+  // category fallback, so an item nobody authored still arrives here empty.
+  const untagged = CATALOG.filter((item) => !item.tags?.length).map((i) => `  ${i.id}`)
+  assert.deepEqual(
+    untagged,
+    [],
+    `Missing tags - add to src/data/catalogTags.ts, or to the seed for a generated item:\n${untagged.join('\n')}\n`,
+  )
 
-  const factless = CATALOG.filter((item) => !CATALOG_FACTS[item.id]?.trim()).map((i) => `  ${i.id}`)
+  const factless = CATALOG.filter((item) => !item.facts?.trim()).map((i) => `  ${i.id}`)
   assert.deepEqual(
     factless,
     [],
-    `Missing facts in src/data/catalogFacts.ts:\n${factless.join('\n')}\n`,
+    `Missing facts - add to src/data/catalogFacts.ts, or to the seed for a generated item:\n${factless.join('\n')}\n`,
   )
 })
 

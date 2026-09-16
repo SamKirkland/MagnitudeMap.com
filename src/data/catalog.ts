@@ -828,6 +828,14 @@ const CATALOG_SEED: CatalogSeed[] = [
       // Authored at an off-axis heading; this squares the wings up with the
       // nose on -Z, the way the rest of the catalog faces.
       yawDegrees: 129.25,
+      // ...and authored in flight, not parked: banked about 10° with the
+      // tailwheel 1.9 m in the air, which stood the fin 6.63 m up against a
+      // catalog 5.18 m. These put all three wheels on the ground with the
+      // wings level, which is the three-point stance the catalog height
+      // describes. Pitch and roll are applied before the yaw, so squaring a
+      // model yawed 129.25° takes both rather than pitch alone.
+      pitchDegrees: 0.85,
+      rollDegrees: -9.85,
     },
   },
   {
@@ -3210,9 +3218,13 @@ const CATALOG_SEED: CatalogSeed[] = [
   ...OIL_RESERVES.map(oilItem),
 ]
 
-/** Tags plus the country's own words, deduped so "us" is not listed twice. */
+/**
+ * Tags plus the country's own words, deduped so "us" is not listed twice.
+ * Country words only ever augment authored tags - an item with none stays
+ * empty, so the `npm test` tag gate still catches it.
+ */
 function withCountryTags(tags: string[], countries: CountryCode[] | undefined): string[] {
-  if (!countries?.length) return tags
+  if (!tags.length || !countries?.length) return tags
   return [...new Set([...tags, ...countrySearchTags(countries)])]
 }
 
@@ -3221,7 +3233,7 @@ export const CATALOG: CatalogItem[] = CATALOG_SEED.map((item) => {
   return {
     ...item,
     countries,
-    tags: withCountryTags(CATALOG_TAGS[item.id] ?? item.tags ?? [item.category], countries),
+    tags: withCountryTags(CATALOG_TAGS[item.id] ?? item.tags ?? [], countries),
     facts: CATALOG_FACTS[item.id] ?? item.facts,
   }
 })

@@ -243,6 +243,11 @@ export function rotateBox(
  * model measures as if it were yawed the wrong way round: the C-47 at its
  * correct 129.25° came out 13.6 m across instead of 28.2 m, and the suggestion
  * that followed would have rotated a right model 90° wrong.
+ *
+ * On its own the mirror changes nothing anyone measures — it moves a box
+ * without resizing it, and every box moves together, so extents and the crop
+ * centroid come out the same. It only bites in front of a rotation, which is
+ * why an unposed model is handed back untouched.
  */
 function mirrorBoxZ(box: MeshBox): MeshBox {
   return {
@@ -254,15 +259,15 @@ function mirrorBoxZ(box: MeshBox): MeshBox {
 
 export function applyAuthoringPose(meshes: MeshBox[], item: CatalogItem): MeshBox[] {
   const model = item.model
-  const mirrored = meshes.map(mirrorBoxZ)
-  if (!model || model.randomYaw) return mirrored
+  if (!model || model.randomYaw) return meshes
   const pitch = ((model.pitchDegrees ?? 0) * Math.PI) / 180
   const yaw = ((model.yawDegrees ?? 0) * Math.PI) / 180
   const roll = ((model.rollDegrees ?? 0) * Math.PI) / 180
-  if (!pitch && !yaw && !roll) return mirrored
+  if (!pitch && !yaw && !roll) return meshes
   const q = quatFromPitchYawRoll(pitch, yaw, roll)
-  return mirrored.map((mesh) => {
-    const rotated = rotateBox(mesh.min, mesh.max, q)
+  return meshes.map((mesh) => {
+    const mirrored = mirrorBoxZ(mesh)
+    const rotated = rotateBox(mirrored.min, mirrored.max, q)
     return { ...mesh, min: rotated.min, max: rotated.max }
   })
 }
