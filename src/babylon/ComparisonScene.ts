@@ -23,6 +23,7 @@ import { Engine } from '@babylonjs/core/Engines/engine'
 import { HemisphericLight } from '@babylonjs/core/Lights/hemisphericLight'
 import type { Material } from '@babylonjs/core/Materials/material'
 import { Matrix, Quaternion, Vector3 } from '@babylonjs/core/Maths/math.vector'
+import { InstancedMesh } from '@babylonjs/core/Meshes/instancedMesh'
 import { Mesh } from '@babylonjs/core/Meshes/mesh'
 // Thin instances are how a fleet block draws in one call; the methods live on
 // Mesh only after this side-effect import.
@@ -1036,7 +1037,9 @@ export class ComparisonScene {
     for (const placement of this.placements.values()) {
       this.thawPlacement(placement)
       placement.body.computeWorldMatrix(true)
-      const box = this.visualBounds(placement.body)
+      // Same measure the model was scaled and grounded by, so a rotated node's
+      // inflated box cannot report a size the viewer never drew.
+      const box = this.exactVisualBounds(placement.body)
       out.push({
         itemId: placement.itemId,
         width: box.max.x - box.min.x,
@@ -3933,11 +3936,13 @@ export class ComparisonScene {
     placement.root.computeWorldMatrix(true)
     placement.display.computeWorldMatrix(true)
     placement.body.computeWorldMatrix(true)
+    const fleet = Boolean(placement.fleetCopies?.length)
     for (const mesh of placement.root.getChildMeshes(false)) {
       mesh.computeWorldMatrix(true)
       mesh.doNotSyncBoundingInfo = true
       mesh.freezeWorldMatrix()
-      this.freezeMaterialTree(mesh.material)
+      if (fleet) this.thawMaterialTree(mesh.material)
+      else this.freezeMaterialTree(mesh.material)
     }
     placement.body.freezeWorldMatrix()
     placement.display.freezeWorldMatrix()
@@ -4211,10 +4216,12 @@ export class ComparisonScene {
     const copies = placement.fleetCopies
     const offset = new Vector3()
     const local = new Vector3()
+    // Before any source mesh is given thin instances, so no mesh ever holds both.
+    if (copies && copies.length > 0) this.materializeInstances(placement.body)
     // Rewriting the buffers wholesale drops whatever the close-up was holding.
     if (!meshes) placement.closeUp = null
     for (const mesh of meshes ?? placement.body.getChildMeshes(false)) {
-      if (!(mesh instanceof Mesh) || mesh.getTotalVertices() < 3) continue
+      if (mesh.isDisposed() || !(mesh instanceof Mesh) || mesh.getTotalVertices() < 3) continue
       if (!copies || copies.length === 0) {
         if (mesh.thinInstanceCount > 0) {
           mesh.thinInstanceCount = 0
@@ -4222,6 +4229,8 @@ export class ComparisonScene {
         }
         continue
       }
+      this.ensureOwnGeometry(mesh)
+      this.thawMaterialTree(mesh.material)
       mesh.computeWorldMatrix(true)
       const inverse = Matrix.Invert(mesh.getWorldMatrix())
       const matrices = new Float32Array((copies.length + 1) * 16)
@@ -4233,11 +4242,77 @@ export class ComparisonScene {
         Matrix.TranslationToRef(local.x, local.y, local.z, this.scratchMatrix)
         this.scratchMatrix.copyToArray(matrices, (i + 1) * 16)
       }
-      mesh.thinInstanceSetBuffer('matrix', matrices, 16, true)
+      // Updatable: the close-up hides and restores slots of this buffer in
+      // place, and Babylon silently drops writes to a static one.
+      mesh.thinInstanceSetBuffer('matrix', matrices, 16, false)
       // Without this the whole block is culled the moment the lead unit leaves
       // the frustum, and the lineup's own measurements would miss it too.
       mesh.thinInstanceRefreshBoundingInfo(true)
     }
+  }
+
+  /**
+   * Replace every `InstancedMesh` under `root` with a plain mesh of its own.
+   *
+   * glTF lets several nodes reference one mesh, and Babylon's loader turns the
+   * repeats into classic instances of the first. A thin-instanced mesh draws
+   * only its thin copies and skips its classic instances, so without this every
+   * copy in a fleet — the lead unit included — loses those parts (the C-47 went
+   * without two of each propeller's three blades and a main wheel).
+   *
+   * Only for models standing in a fleet; `ensureOwnGeometry` then gives each
+   * one its own vertex buffers before any thin instances are written.
+   */
+  private materializeInstances(root: TransformNode) {
+    const instances = root
+      .getChildMeshes(false)
+      .filter((mesh): mesh is InstancedMesh => mesh instanceof InstancedMesh && !mesh.isDisposed())
+    for (const instance of instances) {
+      const source = instance.sourceMesh
+      const geometry = source.geometry
+      if (!geometry) continue
+      const mesh = new Mesh(instance.name, this.scene)
+      geometry.applyToMesh(mesh)
+      mesh.material = source.material
+      mesh.subMeshes = []
+      for (const subMesh of source.subMeshes) subMesh.clone(mesh, mesh)
+      mesh.parent = instance.parent
+      mesh.position.copyFrom(instance.position)
+      mesh.scaling.copyFrom(instance.scaling)
+      if (instance.rotationQuaternion) {
+        mesh.rotationQuaternion = instance.rotationQuaternion.clone()
+      } else {
+        mesh.rotation.copyFrom(instance.rotation)
+      }
+      mesh.metadata = instance.metadata
+      mesh.isVisible = instance.isVisible
+      mesh.isPickable = instance.isPickable
+      mesh.receiveShadows = source.receiveShadows
+      mesh.doNotSyncBoundingInfo = source.doNotSyncBoundingInfo
+      mesh.setEnabled(instance.isEnabled(false))
+      // The instance's own children (rare, but legal in glTF) move to the mesh.
+      for (const child of instance.getChildren()) child.parent = mesh
+      instance.dispose(true)
+      mesh.computeWorldMatrix(true)
+      mesh.refreshBoundingInfo(true, true)
+    }
+  }
+
+  /**
+   * Give `mesh` a geometry nobody else draws, if it shares one.
+   *
+   * Babylon keeps vertex buffers on the geometry, and a thin-instance matrix
+   * buffer is attached as vertex buffers too — so meshes sharing a geometry
+   * share one instance slot, and all of them draw whichever buffer was written
+   * last, each converted through someone else's world matrix. The C-47's three
+   * propeller blades are one geometry turned 120° apart: two of the three drew
+   * the third's offsets, turned about the propeller axis, and the formation of
+   * blades stood up out of the ground as a sheet into the sky ("thousands of
+   * weird objects" when zoomed in), with the other sunk beneath the plate.
+   */
+  private ensureOwnGeometry(mesh: Mesh) {
+    const geometry = mesh.geometry
+    if (geometry && geometry.meshes.length > 1) mesh.makeGeometryUnique()
   }
 
   /**
@@ -4546,6 +4621,8 @@ export class ComparisonScene {
 
   /** Give `mesh` just these copies, in slot order, and draw exactly them. */
   private writeCopyMatrices(mesh: Mesh, copies: FleetSlot[], indices: number[]) {
+    this.ensureOwnGeometry(mesh)
+    this.thawMaterialTree(mesh.material)
     mesh.computeWorldMatrix(true)
     const inverse = Matrix.Invert(mesh.getWorldMatrix())
     const offset = new Vector3()
@@ -4721,6 +4798,29 @@ export class ComparisonScene {
     // MSAA can actually anti-alias silhouettes (gl_FragDepth kills coverage).
     this.setMaterialLogarithmicDepth(material, !this.posterPreview)
     if (!material.isFrozen) material.freeze()
+  }
+
+  /**
+   * `freezeMaterialTree` for a model standing in a fleet: same depth setup, but
+   * left unfrozen.
+   *
+   * A frozen material shared by several thin-instanced meshes binds the world
+   * matrix of whichever of them drew first, and the rest draw their copies
+   * through it. glTF parts that reuse a material are exactly that — the C-47's
+   * six propeller blades share one, each turned to its own angle — so a blade's
+   * formation offsets were turned through another part's rotation and stood up
+   * out of the ground into the sky: "thousands of weird objects" once the
+   * close-up level was drawn. Freezing only saves binds, and a fleet block is a
+   * handful of draw calls however many copies it holds.
+   */
+  private thawMaterialTree(material: Material | null | undefined) {
+    if (!material) return
+    if (material instanceof MultiMaterial) {
+      for (const sub of material.subMaterials) this.thawMaterialTree(sub)
+      return
+    }
+    this.setMaterialLogarithmicDepth(material, !this.posterPreview)
+    if (material.isFrozen) material.unfreeze()
   }
 
   private removePlacement(instanceId: string) {
@@ -5600,6 +5700,46 @@ export class ComparisonScene {
   }
 
   /**
+   * `visualBounds`, but measured from the vertices wherever that differs.
+   *
+   * Babylon's world box is the corners of a mesh's local box pushed through its
+   * world matrix. For a node that is not axis-aligned that box is bigger than
+   * the part, and grounding on it stands the model on air: the C-47, pitched
+   * and rolled into its three-point stance, floated 1 m on the corners of its
+   * own gear boxes. An axis-aligned mesh's box is already exact, so only the
+   * rotated ones pay for the vertex walk — and this only runs when a model is
+   * scaled and grounded, not per frame. Skinned meshes keep the box: their
+   * drawn shape is not their vertex data.
+   */
+  private exactVisualBounds(root: TransformNode): { min: Vector3; max: Vector3 } {
+    root.computeWorldMatrix(true)
+    const min = new Vector3(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY)
+    const max = new Vector3(Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY)
+    const point = new Vector3()
+    for (const mesh of root.getChildMeshes(false)) {
+      if (!this.isVisualMesh(mesh)) continue
+      const world = mesh.computeWorldMatrix(true)
+      const m = world.m
+      const axisAligned =
+        Math.abs(m[1]) + Math.abs(m[2]) + Math.abs(m[4]) + Math.abs(m[6]) + Math.abs(m[8]) + Math.abs(m[9]) < 1e-9
+      const positions = mesh.skeleton || axisAligned ? null : mesh.getVerticesData(VertexBuffer.PositionKind)
+      if (!positions) {
+        if (mesh.skeleton) mesh.refreshBoundingInfo(true, true)
+        const box = mesh.getBoundingInfo().boundingBox
+        Vector3.CheckExtends(box.minimumWorld, min, max)
+        Vector3.CheckExtends(box.maximumWorld, min, max)
+        continue
+      }
+      for (let i = 0; i + 2 < positions.length; i += 3) {
+        Vector3.TransformCoordinatesFromFloatsToRef(positions[i], positions[i + 1], positions[i + 2], world, point)
+        Vector3.CheckExtends(point, min, max)
+      }
+    }
+    if (!Number.isFinite(min.x) || min.x > max.x) return this.visualBounds(root)
+    return { min, max }
+  }
+
+  /**
    * Hide stray helper triangles parked far from the silhouette (draft horse
    * tail-print mesh at y≈90). Vertex-weighted centroid so the body wins.
    */
@@ -5710,7 +5850,7 @@ export class ComparisonScene {
       // Crop is a safety net; never fail the load.
     }
 
-    const { min, max } = this.visualBounds(root)
+    const { min, max } = this.exactVisualBounds(root)
     const size = max.subtract(min)
     const authoringYaw = item.model?.randomYaw ? 0 : (item.model?.yawDegrees ?? 0)
     const current = this.axisSize(size, axis, authoringYaw)
@@ -5723,7 +5863,7 @@ export class ComparisonScene {
       }
     }
 
-    const bounds = this.visualBounds(root)
+    const bounds = this.exactVisualBounds(root)
     if (!Number.isFinite(bounds.min.x) || bounds.min.x > bounds.max.x) return
     const centerX = (bounds.min.x + bounds.max.x) / 2
     const centerZ = (bounds.min.z + bounds.max.z) / 2

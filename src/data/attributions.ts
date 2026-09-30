@@ -1031,7 +1031,7 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "sourceAsset": "USS Independence - Model for 1/4000 printing",
     "attribution": "USS Independence - Model for 1/4000 printing by KTKloss on Sketchfab (CC BY) — https://sketchfab.com/3d-models/uss-independence-model-for-14000-printing-ec30b6bdd81e4a3292685933b9f4ea13",
     "requiresAttribution": true,
-    "notes": "Original work — the uploader states \"This model was made by me with the help of the original recognition manual from the US Navy\" and prints the series himself at 1/4000; no third-party source claimed. Part of a coherent 1/4000 wargaming series. Scaled to 189.7 m length in-app. Waterline hull, no below-water section."
+    "notes": "Original work — the uploader states \"This model was made by me with the help of the original recognition manual from the US Navy\" and prints the series himself at 1/4000; no third-party source claimed. Part of a coherent 1/4000 wargaming series. Scaled to 189.7 m length in-app. Waterline hull, no below-water section. In the 1945 fleet lineup this hull also stands in for the 71 Casablanca- and Bogue-class escort carriers, which were shorter and slower; no escort-carrier model was available under a redistributable licence."
   },
   {
     "id": "intrepid-type",
@@ -1164,6 +1164,18 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "attribution": "General Dynamics M1A2 Abrams Main Battle Tank by Muhamad Mirza Arrafi on Sketchfab (CC BY) — https://sketchfab.com/3d-models/general-dynamics-m1a2-abrams-main-battle-tank-10a16c96ca8b4ebc855915f5d5202046",
     "requiresAttribution": true,
     "notes": "M1A2 Abrams (CC-BY). Scaled to 9.77 m length in-app."
+  },
+  {
+    "id": "bradley",
+    "catalogName": "M2 Bradley",
+    "author": "LM3D (lm9241221)",
+    "license": "CC-BY-4.0",
+    "licenseLabel": "CC BY",
+    "source": "https://sketchfab.com/3d-models/m2-bradleylow-poly-3518dc3125f9421a9374fff1ee09b152",
+    "sourceAsset": "M2 BRADLEY(LOW POLY)",
+    "attribution": "M2 BRADLEY(LOW POLY) by LM3D on Sketchfab (CC BY) — https://sketchfab.com/3d-models/m2-bradleylow-poly-3518dc3125f9421a9374fff1ee09b152",
+    "requiresAttribution": true,
+    "notes": "Substitution for requested ab022158ab5f4fbfa55d4142db7595ab (42manako, a known rip channel; description credits 'Model created by Alec Moody'). The M2A3 by ScurvyWoof (d691ec8d9a1a4981b4c246c59b8ef370) was also rejected: its GLB contains this model's 'M2 BRADLEY(LOW POLY)' node, so it is an uncredited derivative. Provenance: original work — uploaded 2022 by an account whose portfolio is Brazilian armour including many 'esboço' (sketch) WIP models, no third-party source claimed. Removed a 9.8 m 'Wet_Dirt' ground disc. Scaled to 6.55 m length; rendered height (~4.0 m) exceeds the 2.98 m catalog figure because of the antennas and raised sensor masts."
   },
   {
     "id": "sherman",
@@ -1595,7 +1607,7 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "sourceAsset": "USS South Dakota - Model for 1/4000 printing",
     "attribution": "USS South Dakota - Model for 1/4000 printing by KTKloss on Sketchfab (CC BY) — https://sketchfab.com/3d-models/uss-south-dakota-model-for-14000-printing-662dccefc8414a4eabdd26555f159ad0",
     "requiresAttribution": true,
-    "notes": "Original work — the uploader states \"This model was made by me with the help of the original recognition manual from the US Navy\" and prints the series himself at 1/4000; no third-party source claimed. Part of a coherent 1/4000 wargaming series. Scaled to 210 m length in-app. Waterline hull, no below-water section."
+    "notes": "Original work — the uploader states \"This model was made by me with the help of the original recognition manual from the US Navy\" and prints the series himself at 1/4000; no third-party source claimed. Part of a coherent 1/4000 wargaming series. Scaled to 210 m length in-app. Waterline hull, no below-water section. In the 1945 fleet lineup this hull also stands in for the 19 battleships that were not Iowas, back to the 1916 dreadnoughts."
   },
   {
     "id": "sovereign",

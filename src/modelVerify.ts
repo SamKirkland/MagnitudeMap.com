@@ -234,26 +234,27 @@ export function rotateBox(
 }
 
 /**
- * Mirror a box on Z, the way Babylon's glTF loader does.
+ * Mirror a box on X, the way Babylon's glTF loader does.
  *
  * glTF is right-handed and Babylon is left-handed, so the loader parents every
- * import under a `__root__` node scaled (1, 1, -1). The catalog pose is applied
- * *outside* that node, so a yaw of θ in the catalog turns the raw glTF
- * coordinates these boxes come from by −θ. Skip this and an obliquely authored
- * model measures as if it were yawed the wrong way round: the C-47 at its
- * correct 129.25° came out 13.6 m across instead of 28.2 m, and the suggestion
- * that followed would have rotated a right model 90° wrong.
+ * import under a `__root__` node rotated 180° about Y and scaled (1, 1, -1),
+ * which together flip X. The catalog pose is applied *outside* that node, so
+ * it turns mirrored coordinates, not the raw glTF ones these boxes come from.
+ * Skip this and an obliquely authored model measures as if it were yawed the
+ * wrong way round: the C-47 at its correct 129.25° came out 13.6 m across
+ * instead of 28.2 m, and the suggestion that followed would have rotated a
+ * right model 90° wrong. Pitch and roll come out with their signs flipped too.
  *
  * On its own the mirror changes nothing anyone measures — it moves a box
  * without resizing it, and every box moves together, so extents and the crop
  * centroid come out the same. It only bites in front of a rotation, which is
  * why an unposed model is handed back untouched.
  */
-function mirrorBoxZ(box: MeshBox): MeshBox {
+function mirrorBoxX(box: MeshBox): MeshBox {
   return {
     ...box,
-    min: vec(box.min.x, box.min.y, -box.max.z),
-    max: vec(box.max.x, box.max.y, -box.min.z),
+    min: vec(-box.max.x, box.min.y, box.min.z),
+    max: vec(-box.min.x, box.max.y, box.max.z),
   }
 }
 
@@ -266,7 +267,7 @@ export function applyAuthoringPose(meshes: MeshBox[], item: CatalogItem): MeshBo
   if (!pitch && !yaw && !roll) return meshes
   const q = quatFromPitchYawRoll(pitch, yaw, roll)
   return meshes.map((mesh) => {
-    const mirrored = mirrorBoxZ(mesh)
+    const mirrored = mirrorBoxX(mesh)
     const rotated = rotateBox(mirrored.min, mirrored.max, q)
     return { ...mesh, min: rotated.min, max: rotated.max }
   })

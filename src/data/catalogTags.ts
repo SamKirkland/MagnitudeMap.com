@@ -52,6 +52,7 @@ export const CATALOG_TAGS: Record<string, string[]> = {
   'container-20': ['shipping', 'cargo', 'iso', 'freight', 'intermodal', 'box', '40ft'],
   sherman: ['tank', 'ww2', 'wwii', 'armor', 'm4', 'military', 'tracked'],
   abrams: ['tank', 'mbt', 'armor', 'm1', 'military', 'tracked', 'us'],
+  bradley: ['ifv', 'infantry fighting vehicle', 'armor', 'm2', 'military', 'tracked', 'us'],
   chieftain: ['tank', 'mbt', 'armor', 'british', 'military', 'tracked', 'uk'],
   t72: ['tank', 'mbt', 'armor', 'soviet', 'russia', 'military', 'tracked'],
   patriot: ['sam', 'missile', 'air defense', 'patriot', 'mim104', 'military', 'launcher'],

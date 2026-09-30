@@ -401,6 +401,22 @@ const CATALOG_SEED: CatalogSeed[] = [
     },
   },
   {
+    id: 'bradley',
+    name: 'M2 Bradley',
+    category: 'military',
+    length: 6.55,
+    width: 3.6,
+    height: 2.98,
+    shape: 'box',
+    color: '#6b6a4f',
+    blurb: 'M2 Bradley infantry fighting vehicle (~6.6 m long).',
+    model: {
+      path: 'models/bradley/model.glb',
+      scaleAxis: 'length',
+      yawDegrees: 180,
+    },
+  },
+  {
     id: 'chieftain',
     name: 'Chieftain Mk 5',
     category: 'military',
@@ -834,8 +850,8 @@ const CATALOG_SEED: CatalogSeed[] = [
       // wings level, which is the three-point stance the catalog height
       // describes. Pitch and roll are applied before the yaw, so squaring a
       // model yawed 129.25° takes both rather than pitch alone.
-      pitchDegrees: 0.85,
-      rollDegrees: -9.85,
+      pitchDegrees: -0.85,
+      rollDegrees: 9.9,
     },
   },
   {
@@ -3291,6 +3307,7 @@ const PRESET_SEED: ComparisonPreset[] = [
       'container-20',
       'sherman',
       'abrams',
+      'bradley',
       'chieftain',
       't72',
       'patriot',

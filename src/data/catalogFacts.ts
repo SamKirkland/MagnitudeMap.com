@@ -33,6 +33,8 @@ export const CATALOG_FACTS: Record<string, string> = {
     'USA, 1942–1957. 49,234 built — the most-produced US tank ever. 30 t, 75 mm gun, about $45,000 in 1944 (roughly $800,000 today). Mass production, not protection, was the point: Shermans were outgunned by Panthers and Tigers but arrived in overwhelming numbers.',
   'abrams':
     'USA, 1980–present. Around 10,000 M1-series built. 73 t, 120 mm smoothbore, and a 1,500 hp gas turbine good for 67 km/h. An M1A2 SEPv3 runs about $10 million and burns roughly 1.5 litres of fuel per kilometre.',
+  'bradley':
+    'USA, 1981–present. About 6,700 built across the M2 and M3. Around 27 t on the M2A2, a 25 mm Bushmaster chain gun, twin TOW missiles and room for six infantry in the back. Designed to keep pace with the Abrams, it tops out near 61 km/h, and in 2023 it went to Ukraine.',
   'chieftain':
     'United Kingdom, 1966–1996. About 2,265 built, including 707 for Iran. 55 t with a 120 mm rifled gun — the heaviest-armed and best-armoured tank in the world when it entered service, but chronically underpowered.',
   't72':
