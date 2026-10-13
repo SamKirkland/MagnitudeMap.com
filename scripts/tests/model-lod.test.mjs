@@ -8,7 +8,7 @@
  * Run with `npm test`.
  */
 import assert from 'node:assert/strict'
-import { existsSync } from 'node:fs'
+import { existsSync, statSync } from 'node:fs'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
@@ -32,8 +32,22 @@ await esbuild.build({
   logLevel: 'silent',
 })
 
-const { apparentPixelHeight, buildLodLevels, resolveLevel, wantedLevel, MODEL_LODS, lodLevelsFor } =
-  await import(pathToFileURL(outFile).href)
+const {
+  apparentPixelHeight,
+  buildLodLevels,
+  resolveLevel,
+  wantedLevel,
+  MODEL_BYTES,
+  MODEL_LODS,
+  lodLevelsFor,
+  modelBytesFor,
+  PREVIEW_MAX_FRACTION,
+  PREVIEW_MIN_SOURCE_BYTES,
+  forEachLimited,
+  orderBySize,
+  previewLevelPath,
+  CATALOG,
+} = await import(pathToFileURL(outFile).href)
 
 const ready = (levels) => levels.map((level) => ({ ...level, state: 'ready' }))
 
@@ -130,5 +144,62 @@ test('every manifest level exists on disk and is smaller than its source', () =>
     }
     assert.deepEqual(lodLevelsFor(sourcePath), entry.levels)
     assert.deepEqual(lodLevelsFor(`/${sourcePath}`), entry.levels)
+  }
+})
+
+test('a preview is the smallest non-swarm level, and only when it is worth a request', () => {
+  const big = 4 * 1024 * 1024
+  const levels = [
+    { path: 'models/x/model.lod1.glb', triangles: 20000, bytes: 900_000 },
+    { path: 'models/x/model.lod2.glb', triangles: 2500, bytes: 120_000 },
+    { path: 'models/x/model.lod3.glb', triangles: 400, bytes: 9_000 },
+  ]
+  assert.equal(previewLevelPath(levels, big), 'models/x/model.lod2.glb')
+  // Without a far level, the mid level still beats the full file.
+  assert.equal(previewLevelPath(levels.slice(0, 1), big), 'models/x/model.lod1.glb')
+  // The swarm level alone is never a preview.
+  assert.equal(previewLevelPath(levels.slice(2), big), null)
+  // A small model downloads as fast as its preview would.
+  assert.equal(previewLevelPath(levels, PREVIEW_MIN_SOURCE_BYTES - 1), null)
+  // A level that is most of the file is a second download for nothing.
+  const heavy = [{ path: 'models/x/model.lod2.glb', triangles: 1, bytes: big * PREVIEW_MAX_FRACTION + 1 }]
+  assert.equal(previewLevelPath(heavy, big), null)
+  assert.equal(previewLevelPath(levels, undefined), null)
+})
+
+test('downloads go smallest first, unknown sizes last, ties in lineup order', () => {
+  const sizes = { a: 500, b: 10, c: undefined, d: 10, e: 0 }
+  assert.deepEqual(
+    orderBySize(Object.keys(sizes), (id) => sizes[id]),
+    ['e', 'b', 'd', 'a', 'c'],
+  )
+})
+
+test('the download pool never exceeds its limit and finishes everything', async () => {
+  let inFlight = 0
+  let peak = 0
+  const done = []
+  await forEachLimited([5, 1, 4, 2, 3, 0], 2, async (ms) => {
+    inFlight += 1
+    peak = Math.max(peak, inFlight)
+    await new Promise((resolve) => setTimeout(resolve, ms))
+    done.push(ms)
+    inFlight -= 1
+  })
+  assert.equal(peak, 2)
+  assert.deepEqual([...done].sort(), [0, 1, 2, 3, 4, 5])
+  await forEachLimited([], 4, async () => assert.fail('no items, no calls'))
+})
+
+test('every catalog model has a size in the manifest, so none sorts last by accident', () => {
+  for (const item of CATALOG) {
+    if (!item.model) continue
+    const bytes = modelBytesFor(item.model.path)
+    assert.ok(bytes > 0, `${item.model.path} has no MODEL_BYTES entry — run \`npm run generate-lods\``)
+    const onDisk = statSync(path.join(ROOT, 'public', item.model.path.replace(/^\//, ''))).size
+    assert.equal(bytes, onDisk, `${item.model.path} changed size — run \`npm run generate-lods\``)
+  }
+  for (const sourcePath of Object.keys(MODEL_BYTES)) {
+    assert.ok(existsSync(path.join(ROOT, 'public', sourcePath)), `${sourcePath} is in MODEL_BYTES but not on disk`)
   }
 })

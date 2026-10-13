@@ -94,7 +94,7 @@ import {
   packMoneyAmount,
 } from '../data/moneyPack'
 import { createMoneyTiledPile } from './moneyTiledMesh'
-import { lodLevelsFor, lodSourceTrianglesFor } from '../data/modelLods'
+import { lodLevelsFor, lodSourceTrianglesFor, modelBytesFor } from '../data/modelLods'
 import { fleetFormation, type FleetSlot, type FleetSpan } from './fleetFormation'
 import {
   apparentPixelHeight,
@@ -105,6 +105,12 @@ import {
   type CrowdLevelRequest,
   type LodLevel,
 } from './modelLod'
+import {
+  FULL_MODEL_LOADS_IN_FLIGHT,
+  forEachLimited,
+  orderBySize,
+  previewLevelPath,
+} from './loadOrder'
 import { formatLength, type UnitSystem } from '../units'
 import { convertUnitsInText } from '../unitText'
 import {
@@ -222,6 +228,16 @@ type LodGroup = {
   prepare: (root: TransformNode) => void
 }
 
+/**
+ * Kept on a plaque mesh's metadata: the size it was built at, so a relayout can
+ * stretch it by scaling instead of rebuilding, and what its texture shows.
+ */
+type PlaqueShape = {
+  width: number
+  depth: number
+  paintKey: string
+}
+
 type PlacedObject = {
   instanceId: string
   itemId: string
@@ -264,6 +280,12 @@ type PlacedObject = {
     meshes: Set<Mesh>
     origin: Vector3
   } | null
+  /**
+   * Standing in with a coarse LOD level while the full model downloads. Scaled
+   * from its own bounds, so it is never kept across lineups and never gets a
+   * LOD group of its own; the real placement replaces it on arrival.
+   */
+  preview: boolean
 }
 
 /**
@@ -673,6 +695,8 @@ export class ComparisonScene {
   private readonly modelTemplates = new Map<string, Mesh>()
   private readonly modelTemplateLoading = new Map<string, Promise<Mesh>>()
   private renderNeeded = true
+  /** An arrival is waiting for `settleLineup`; the next frame runs it. */
+  private settlePending = false
   private heldIdle = false
   private readyWaits = 0
   private idleSettleTimer: number | null = null
@@ -1123,6 +1147,8 @@ export class ComparisonScene {
 
     const toRemove = [...existingByItem.entries()].filter(([itemId, placement]) => {
       if (!desired.has(itemId)) return true
+      // A preview was scaled from a coarse level; only a full load replaces it.
+      if (placement.preview) return true
       // Detonation mode changed for this munition — rebuild the mesh.
       return placement.effectKey !== this.effectKeyFor(itemId)
     })
@@ -1158,28 +1184,68 @@ export class ComparisonScene {
     }
 
     this.startLoadProgress(generation, sorted.length, toLoad.length)
-    await Promise.all(
-      toLoad.map(async (item) => {
-        if (this.disposed || generation !== this.loadGeneration) return
-        const placement = await this.createPlacement(item, {
+    const stale = () => this.disposed || generation !== this.loadGeneration
+    // Reveal on arrival. Everything that follows is per-object work the old
+    // all-at-once swap did in one batch.
+    const reveal = (placement: PlacedObject) => {
+      this.placements.set(placement.instanceId, placement)
+      existingByItem.set(placement.itemId, placement)
+      placement.root.setEnabled(true)
+      this.requestSettle()
+    }
+
+    // Coarse previews go out first and all at once: each is a few percent of
+    // its model, so the whole lineup is standing long before full detail is.
+    const previews = new Map<string, PlacedObject>()
+    const arrived = new Set<string>()
+    const previewLoads = toLoad.map(async (item) => {
+      const previewPath = this.previewPathFor(item)
+      if (!previewPath) return
+      let placement: PlacedObject
+      try {
+        placement = await this.createPlacement(item, {
           x: xs.get(item.id) ?? 0,
           hidden: true,
-          onProgress: (fraction) =>
-            this.noteItemLoadProgress(generation, item.id, fraction),
+          previewPath,
         })
-        if (this.disposed || generation !== this.loadGeneration) {
-          this.disposePlacement(placement)
-          return
-        }
-        // Reveal on arrival. Everything that follows is per-object work the
-        // old all-at-once swap did in one batch.
-        this.placements.set(placement.instanceId, placement)
-        existingByItem.set(placement.itemId, placement)
-        placement.root.setEnabled(true)
-        this.settleLineup()
-        this.noteItemLoaded(generation, item.id)
-      }),
+      } catch {
+        // The full model is on its way regardless.
+        return
+      }
+      if (stale() || arrived.has(item.id)) {
+        this.disposePlacement(placement)
+        return
+      }
+      previews.set(item.id, placement)
+      reveal(placement)
+    })
+
+    // Then full detail, smallest file first and a few at a time, so each
+    // download gets the bandwidth instead of all of them finishing together.
+    const bySize = orderBySize(toLoad, (item) =>
+      item.model ? modelBytesFor(item.model.path) : 0,
     )
+    await forEachLimited(bySize, FULL_MODEL_LOADS_IN_FLIGHT, async (item) => {
+      if (stale()) return
+      const placement = await this.createPlacement(item, {
+        x: xs.get(item.id) ?? 0,
+        hidden: true,
+        onProgress: (fraction) => this.noteItemLoadProgress(generation, item.id, fraction),
+      })
+      if (stale()) {
+        this.disposePlacement(placement)
+        return
+      }
+      arrived.add(item.id)
+      const preview = previews.get(item.id)
+      if (preview) {
+        previews.delete(item.id)
+        this.removePlacement(preview.instanceId)
+      }
+      reveal(placement)
+      this.noteItemLoaded(generation, item.id)
+    })
+    await Promise.all(previewLoads)
 
     if (this.disposed || generation !== this.loadGeneration) return
     this.emitLoadProgress(null)
@@ -1210,6 +1276,17 @@ export class ComparisonScene {
   }
 
   /**
+   * The coarse level to show while `item`'s full model downloads, or null.
+   * Capture renders the real thing; people and instance grids have no levels.
+   */
+  private previewPathFor(item: CatalogItem): string | null {
+    if (this.captureMode || !item.model || item.instanceGrid || item.shape === 'person') {
+      return null
+    }
+    return previewLevelPath(lodLevelsFor(item.model.path), modelBytesFor(item.model.path))
+  }
+
+  /**
    * On-demand rendering: the frames right after a load draw before the new
    * models' shaders and textures are up, and nothing else moves. Repaint once
    * the scene is ready. Mirrors what syncGroundPlate does for the plate.
@@ -1222,13 +1299,28 @@ export class ComparisonScene {
   }
 
   /**
+   * Settle before the next frame draws, however many objects arrive before it.
+   *
+   * A settle re-measures every placement, so running one per arrival made a
+   * load quadratic: the Star Wars lineup spent 0.9 s of main thread in it, up
+   * to 137 ms a call. Arrivals that land between two frames now share one.
+   * Running it ahead of the first draw also sets each new material's depth
+   * mode before its shader compiles, instead of compiling it twice.
+   */
+  private requestSettle() {
+    this.settlePending = true
+    this.markDirty()
+  }
+
+  /**
    * Repack and re-dress the lineup around whatever is currently standing.
-   * Runs once per arrival during a load and once more at the end.
+   * Runs at most once a frame during a load and once more at the end.
    */
   private settleLineup() {
+    this.settlePending = false
     // Catalog width is body diameter; pack again from real mesh AABBs so
     // Tight never overlaps fins / legs / wings.
-    this.relayoutLineup()
+    this.positionLineup()
 
     // Re-seat plaques in root-local space (fixes offsets from lineup moves /
     // older world-space placement bugs).
@@ -2952,12 +3044,24 @@ export class ComparisonScene {
   }
 
   private relayoutLineup() {
-    if (this.sortedItems.length === 0) return
+    if (!this.positionLineup()) return
+    this.resizeGroundToContent()
+    this.freezeStaticScene()
+    this.markDirty()
+  }
+
+  /**
+   * Move every placement to its slot, leaving them thawed. False when there was
+   * nothing to move: an empty lineup, or a poster preview, which only records
+   * the slots for when it closes.
+   */
+  private positionLineup(): boolean {
+    if (this.sortedItems.length === 0) return false
     const xs = layoutRevealPositions(this.sortedItems, this.layoutView())
     this.itemXs = xs
     if (this.posterPreview) {
       this.posterPreview.saved.positions = this.positionsFromLineupXs(xs)
-      return
+      return false
     }
     for (const item of this.sortedItems) {
       const placement = this.placementForItem(item.id)
@@ -2965,9 +3069,7 @@ export class ComparisonScene {
       this.thawPlacement(placement)
       placement.root.position.set(xs.get(item.id) ?? 0, 0, 0)
     }
-    this.resizeGroundToContent()
-    this.freezeStaticScene()
-    this.markDirty()
+    return true
   }
 
   private positionsFromLineupXs(xs: Map<string, number>) {
@@ -3362,7 +3464,14 @@ export class ComparisonScene {
   }
 
   private rebuildGround(centerX: number, centerZ: number, width: number, depth: number) {
+    // Each slab builds its own materials; a bare mesh dispose left them in the
+    // scene, four per rebuild. The textures are shared and stay.
+    const material = this.ground.material
     this.ground.dispose()
+    if (material instanceof MultiMaterial) {
+      for (const sub of new Set(material.subMaterials)) sub?.dispose(false, false)
+    }
+    material?.dispose(false, false)
     this.ground = this.buildEarthSlab(centerX, centerZ, width, depth)
   }
 
@@ -3726,6 +3835,7 @@ export class ComparisonScene {
       return
     }
 
+    if (this.settlePending) this.settleLineup()
     this.syncCameraClipPlanes()
     this.syncCameraNavigationScale()
     this.updateLodGroups()
@@ -4859,6 +4969,11 @@ export class ComparisonScene {
       hidden?: boolean
       /** 0–1 of the model file downloaded, when the server reports a length. */
       onProgress?: (fraction: number) => void
+      /**
+       * Load this LOD level as a preview instead of the full model. A preview
+       * that fails rejects rather than falling back to a stand-in box.
+       */
+      previewPath?: string
     } = {},
   ): Promise<PlacedObject> {
     const instanceId = `${item.id}-${crypto.randomUUID()}`
@@ -4881,19 +4996,28 @@ export class ComparisonScene {
       }
     } else if (item.model) {
       try {
-        const loaded = await this.loadScaledModel(item, instanceId, opts.onProgress)
+        const source = opts.previewPath
+          ? { ...item, model: { ...item.model, path: opts.previewPath } }
+          : item
+        const loaded = await this.loadScaledModel(source, instanceId, opts.onProgress)
         body = loaded.container
         baseRoots = loaded.roots
         animationGroups = loaded.animationGroups
         skeletons = loaded.skeletons
       } catch (error) {
-        console.warn(`Failed to load ${item.model.path}, using stand-in.`, error)
+        if (!opts.previewPath) {
+          console.warn(`Failed to load ${item.model.path}, using stand-in.`, error)
+        }
         // Dispose any partial import Babylon may have left in the scene.
         this.scene.meshes
           .filter((mesh) => mesh.name?.includes(instanceId) || mesh.id?.includes(instanceId))
           .forEach((mesh) => {
             if (!mesh.isDisposed()) mesh.dispose(false, true)
           })
+        if (opts.previewPath) {
+          root.dispose(false, true)
+          throw error
+        }
         body = this.buildStandInMesh(item, instanceId)
         this.tintStandIn(body, item, instanceId)
       }
@@ -4926,13 +5050,14 @@ export class ComparisonScene {
       unitBounds: null,
       fleetSpan: null,
       closeUp: null,
+      preview: Boolean(opts.previewPath),
     }
 
     if (item.shape === 'person') {
       this.preparePersonRestPose(placement, skeletons)
     }
 
-    if (item.model && baseRoots.length > 0) {
+    if (item.model && baseRoots.length > 0 && !opts.previewPath) {
       this.registerLodGroup(instanceId, item.model.path, body, baseRoots, (root) => {
         this.cropLodLevel(root, item)
         this.enableVertexColors(root)
@@ -5968,6 +6093,28 @@ export class ComparisonScene {
     }
     const item = resolveDetonationItem(base, this.detonationMode)
 
+    // Every settle re-seats every plaque, and most of them only move or
+    // stretch. Rebuilding meant a fresh canvas, paint, texture upload and
+    // material each time: 437 ms of a fleet lineup's load. Keep the plaque
+    // whenever its texture would come out the same.
+    const layout = this.plaqueLayout(placement.root, placement.body, item, placement.fleetSpan)
+    const existing = placement.root
+      .getChildMeshes(true)
+      .find((child) => child.name.startsWith('label-')) as Mesh | undefined
+    const shape = existing?.metadata?.plaque as PlaqueShape | undefined
+    if (
+      existing &&
+      shape &&
+      placement.labelTex &&
+      shape.paintKey === this.plaqueKey(item, layout.texW, layout.texH)
+    ) {
+      existing.unfreezeWorldMatrix()
+      existing.doNotSyncBoundingInfo = false
+      existing.position.copyFrom(layout.position)
+      existing.scaling.set(layout.labelW / shape.width, 1, layout.labelD / shape.depth)
+      return
+    }
+
     for (const child of [...placement.root.getChildren()]) {
       if (child.name.startsWith('label-')) {
         child.dispose(false, true)
@@ -6006,13 +6153,27 @@ export class ComparisonScene {
     return Math.max(lane * PLAQUE_LANE_MARGIN, PLAQUE_MIN_WIDTH_M)
   }
 
-  private attachPlaque(
+  /**
+   * Everything a plaque's texture is painted from. Two plaques with the same
+   * key draw identical pixels, so one can stand in for the other.
+   */
+  private plaqueKey(item: CatalogItem, texW: number, texH: number): string {
+    return [
+      texW,
+      texH,
+      this.plaqueTitle(item),
+      this.labelDimensions(item),
+      ...plaqueFactLines(item, texW, this.units),
+    ].join('\n')
+  }
+
+  /** Where `item`'s plaque goes and how big it is, in `root`-local space. */
+  private plaqueLayout(
     root: TransformNode,
     body: TransformNode,
     item: CatalogItem,
-    instanceId: string,
-    fleetSpan: FleetSpan | null = null,
-  ): DynamicTexture {
+    fleetSpan: FleetSpan | null,
+  ): { labelW: number; labelD: number; texW: number; texH: number; position: Vector3 } {
     root.computeWorldMatrix(true)
     body.computeWorldMatrix(true)
     for (const child of body.getChildMeshes()) child.computeWorldMatrix(true)
@@ -6065,20 +6226,43 @@ export class ComparisonScene {
     const gap = Math.max(labelD * 0.2, footprintW * 0.06, magnitude * 0.02)
     const z = localMin.z - gap - labelD * 0.5
 
+    return {
+      labelW,
+      labelD,
+      texW,
+      texH: Math.round(texW * aspect),
+      position: new Vector3(
+        (localMin.x + localMax.x) * 0.5,
+        Math.max(0.05, magnitude * 0.002),
+        z,
+      ),
+    }
+  }
+
+  private attachPlaque(
+    root: TransformNode,
+    body: TransformNode,
+    item: CatalogItem,
+    instanceId: string,
+    fleetSpan: FleetSpan | null = null,
+  ): DynamicTexture {
+    const { labelW, labelD, texW, texH, position } = this.plaqueLayout(root, body, item, fleetSpan)
+
     const label = MeshBuilder.CreateGround(
       `label-${instanceId}`,
       { width: labelW, height: labelD },
       this.scene,
     )
     label.parent = root
-    label.position.set(
-      (localMin.x + localMax.x) * 0.5,
-      Math.max(0.05, magnitude * 0.002),
-      z,
-    )
+    label.position.copyFrom(position)
     label.isPickable = false
+    const shape: PlaqueShape = {
+      width: labelW,
+      depth: labelD,
+      paintKey: this.plaqueKey(item, texW, texH),
+    }
+    label.metadata = { plaque: shape }
 
-    const texH = Math.round(texW * aspect)
     const tex = new DynamicTexture(
       `label-tex-${instanceId}`,
       { width: texW, height: texH },
@@ -6199,6 +6383,15 @@ export class ComparisonScene {
       if (!base || !placement.labelTex) continue
       const item = resolveDetonationItem(base, this.detonationMode)
       this.paintPlaqueTexture(placement.labelTex, item)
+      // The pixels changed under the mesh; record what they are now.
+      const label = placement.root
+        .getChildMeshes(true)
+        .find((child) => child.name.startsWith('label-'))
+      const shape = label?.metadata?.plaque as PlaqueShape | undefined
+      if (shape) {
+        const size = placement.labelTex.getSize()
+        shape.paintKey = this.plaqueKey(item, size.width, size.height)
+      }
     }
   }
 

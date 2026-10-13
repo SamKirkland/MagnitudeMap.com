@@ -227,6 +227,23 @@ function listSourceGlbs() {
   return out.sort((a, b) => a.id.localeCompare(b.id))
 }
 
+/**
+ * Size on disk of every source GLB, keyed by its public path. Always the whole
+ * catalog, `--only` or not: the viewer orders downloads by it, so a scoped run
+ * must not drop the models it was not asked about.
+ */
+function listSourceBytes() {
+  const out = {}
+  for (const root of modelRoots) {
+    if (!existsSync(root)) continue
+    for (const id of readdirSync(root)) {
+      const glb = join(root, id, 'model.glb')
+      if (existsSync(glb) && statSync(glb).isFile()) out[publicPath(glb)] = statSync(glb).size
+    }
+  }
+  return out
+}
+
 /** Path as the runtime sees it: relative to `public/`, forward slashes. */
 function publicPath(absolute) {
   return relative(publicRoot, absolute).split(sep).join(posix.sep)
@@ -1205,10 +1222,14 @@ function readExistingManifest() {
   }
 }
 
-function writeManifest(entries) {
+function writeManifest(entries, sourceBytes) {
   const paths = Object.keys(entries).sort()
   const body = paths
     .map((path) => `  ${JSON.stringify(path)}: ${JSON.stringify(entries[path])},`)
+    .join('\n')
+  const bytesBody = Object.keys(sourceBytes)
+    .sort()
+    .map((path) => `  ${JSON.stringify(path)}: ${sourceBytes[path]},`)
     .join('\n')
   writeFileSync(
     manifestPath,
@@ -1251,6 +1272,19 @@ export function lodLevelsFor(sourcePath: string): ModelLodLevel[] {
 /** Triangles in the model as authored — what one copy of LOD0 costs. */
 export function lodSourceTrianglesFor(sourcePath: string): number {
   return MODEL_LODS[sourcePath.replace(/^\\//, '')]?.sourceTriangles ?? 0
+}
+
+/**
+ * Bytes of every LOD0 file, including the models that have no levels. The
+ * viewer downloads a lineup smallest-first, so the most models appear soonest.
+ */
+export const MODEL_BYTES: Record<string, number> = {
+${bytesBody}
+}
+
+/** Size of a catalog model's LOD0 file, or undefined when it is not on disk. */
+export function modelBytesFor(sourcePath: string): number | undefined {
+  return MODEL_BYTES[sourcePath.replace(/^\\//, '')]
 }
 `,
   )
@@ -1377,7 +1411,7 @@ async function main() {
     }
   }
 
-  if (!dryRun) writeManifest(manifest)
+  if (!dryRun) writeManifest(manifest, listSourceBytes())
   console.log(
     dryRun
       ? `Dry run. ${sources.length} models.`
