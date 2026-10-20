@@ -239,7 +239,7 @@ export const MODEL_ATTRIBUTIONS: ModelAttribution[] = [
     "sourceAsset": "B-21 Raider",
     "attribution": "B-21 Raider by Ricardo3D on Sketchfab (CC BY) — https://sketchfab.com/3d-models/b-21-raider-21a6984123814efc83a77f7c03977af8",
     "requiresAttribution": true,
-    "notes": "B-21 Raider (CC-BY, creadordemu). Linked yakudami model is Store-only/not downloadable. Scaled to ~45 m wingspan estimate in-app."
+    "notes": "B-21 Raider (CC-BY, creadordemu). Linked yakudami model is Store-only/not downloadable. Scaled to 46.3 m (152 ft) wingspan, 18.6 m (61 ft) length from Google Earth imagery analysed by TWZ (twz.com/air/we-finally-know-the-b-21-raiders-true-wingspan)."
   },
   {
     "id": "b25",

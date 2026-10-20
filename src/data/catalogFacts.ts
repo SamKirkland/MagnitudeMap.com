@@ -84,7 +84,7 @@ export const CATALOG_FACTS: Record<string, string> = {
   'b52':
     'USA, 1955–1962. 744 built, and 76 are still flying — the airframes are older than the crews’ grandparents, with service now projected past 2050, a century after first flight. 32,000 kg payload, 14,080 km unrefuelled range, and eight engines being replaced with modern turbofans. Its radar cross-section is around 100 m² — a house — which is why it now flies as a standoff missile truck instead of penetrating defended airspace.',
   'b21':
-    'USA, first flight November 2023. At least 100 planned at about $692 million each in 2022 dollars. Designed around open-architecture upgrades, and smaller than the B-2 it replaces. Exact dimensions and radar cross-section remain classified; it is intended to better the B-2’s, itself quoted near 0.1 m².',
+    'USA, first flight November 2023. At least 100 planned at about $692 million each in 2022 dollars. Designed around open-architecture upgrades, and smaller than the B-2 it replaces. Satellite imagery puts it at about 46 m span and 18.6 m long, roughly 12% smaller than the B-2 in both; radar cross-section remains classified, and is intended to better the B-2’s, itself quoted near 0.1 m².',
   'b2':
     'USA, 1997–present. Only 21 built after the Cold War ended, at roughly $2.1 billion each including development — the most expensive aircraft ever. 11,000 km unrefuelled range, and a flying-wing shape with no vertical surfaces to reflect radar. Its cross-section is commonly quoted near 0.1 m² — a pigeon’s worth of return from an aircraft with a 52 m wingspan.',
   'b1':
