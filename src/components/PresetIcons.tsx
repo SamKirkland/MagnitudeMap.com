@@ -1,4 +1,4 @@
-import type { ComponentType, SVGProps } from 'react'
+import type { ComponentPropsWithoutRef, ComponentType } from 'react'
 import {
   BanknotesIcon,
   BuildingLibraryIcon,
@@ -9,7 +9,7 @@ import {
   StarIcon,
 } from '@heroicons/react/24/outline'
 
-type IconProps = SVGProps<SVGSVGElement>
+type IconProps = ComponentPropsWithoutRef<'svg'>
 
 /** Classic cartoon bomb — used for the Nuclear bombs lineup. */
 export function BombIcon(props: IconProps) {
